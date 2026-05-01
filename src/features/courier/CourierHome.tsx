@@ -285,20 +285,30 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
   courier: Courier;
   onChange: () => void;
 }) {
+  const { session } = useAuth();
+  const setOrderStatusRpc = useServerFn(setOrderStatusFn);
   const [busy, setBusy] = useState(false);
   const [proofOpen, setProofOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
 
   const goInTransit = async () => {
+    const token = session?.access_token;
+    if (!token) { toast.error("Sesión expirada."); return; }
     setBusy(true);
-    const res = await setOrderStatusFn({ data: { orderId: order.id, status: "in_transit" } });
+    const res = await setOrderStatusRpc({
+      headers: { Authorization: `Bearer ${token}` },
+      data: { orderId: order.id, status: "in_transit" },
+    });
     setBusy(false);
     if (!res?.ok) return toast.error(res?.message ?? "No se pudo actualizar");
     onChange();
   };
 
   const finalizeDelivery = async (proofPath: string, lat: number, lng: number): Promise<void> => {
-    const res = await setOrderStatusFn({
+    const token = session?.access_token;
+    if (!token) { toast.error("Sesión expirada."); return; }
+    const res = await setOrderStatusRpc({
+      headers: { Authorization: `Bearer ${token}` },
       data: {
         orderId: order.id,
         status: "delivered",
