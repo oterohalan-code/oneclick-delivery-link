@@ -29,6 +29,18 @@ export function AdminHome() {
   const [list, setList] = useState<Pending[]>([]);
   const [loading, setLoading] = useState(true);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+  const [stale, setStale] = useState<StaleOrder[]>([]);
+
+  const loadStale = async () => {
+    const cutoff = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    const { data } = await supabase
+      .from("orders")
+      .select("id,pickup_address,dropoff_address,amount_to_collect,external_order_id,created_at")
+      .eq("status", "pending")
+      .lt("created_at", cutoff)
+      .order("created_at", { ascending: true });
+    setStale((data as any) ?? []);
+  };
 
   const load = async () => {
     setLoading(true);
