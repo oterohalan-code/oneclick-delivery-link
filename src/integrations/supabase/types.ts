@@ -95,6 +95,41 @@ export type Database = {
         }
         Relationships: []
       }
+      order_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          order_id: string
+          sender_id: string
+          sender_role: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          order_id: string
+          sender_id: string
+          sender_role: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          order_id?: string
+          sender_id?: string
+          sender_role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_messages_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           accepted_at: string | null
@@ -108,6 +143,7 @@ export type Database = {
           delivered_lat: number | null
           delivered_lng: number | null
           delivery_proof_url: string | null
+          distance_km: number | null
           dropoff_address: string
           dropoff_lat: number | null
           dropoff_lng: number | null
@@ -118,6 +154,7 @@ export type Database = {
           pickup_lat: number | null
           pickup_lng: number | null
           restaurant_id: string
+          shipping_fee: number
           status: Database["public"]["Enums"]["order_status"]
         }
         Insert: {
@@ -132,6 +169,7 @@ export type Database = {
           delivered_lat?: number | null
           delivered_lng?: number | null
           delivery_proof_url?: string | null
+          distance_km?: number | null
           dropoff_address: string
           dropoff_lat?: number | null
           dropoff_lng?: number | null
@@ -142,6 +180,7 @@ export type Database = {
           pickup_lat?: number | null
           pickup_lng?: number | null
           restaurant_id: string
+          shipping_fee?: number
           status?: Database["public"]["Enums"]["order_status"]
         }
         Update: {
@@ -156,6 +195,7 @@ export type Database = {
           delivered_lat?: number | null
           delivered_lng?: number | null
           delivery_proof_url?: string | null
+          distance_km?: number | null
           dropoff_address?: string
           dropoff_lat?: number | null
           dropoff_lng?: number | null
@@ -166,6 +206,7 @@ export type Database = {
           pickup_lat?: number | null
           pickup_lng?: number | null
           restaurant_id?: string
+          shipping_fee?: number
           status?: Database["public"]["Enums"]["order_status"]
         }
         Relationships: [
@@ -401,6 +442,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_order_participant: {
+        Args: { _order_id: string; _user_id: string }
         Returns: boolean
       }
       restaurant_owns_order_for_courier: {
