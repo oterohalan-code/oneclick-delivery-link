@@ -39,7 +39,7 @@ const STATUS_META: Record<string, { label: string; color: string; icon: any }> =
 };
 
 export function RestaurantHome() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [rest, setRest] = useState<Restaurant | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -70,7 +70,8 @@ export function RestaurantHome() {
 
   // Cargar info de los couriers asignados
   useEffect(() => {
-    if (!user?.id) return;
+    const token = session?.access_token;
+    if (!user?.id || !token) return;
     const ordersWithCourier = orders.filter(
       (o) => o.courier_id && (o.status === "assigned" || o.status === "in_transit") && !courierByOrder[o.id],
     );
@@ -80,7 +81,10 @@ export function RestaurantHome() {
       for (const o of ordersWithCourier) {
         if (cancelled) return;
         try {
-          const res = await getCourierForOrderRpc({ data: { orderId: o.id } }).catch((err) => {
+          const res = await getCourierForOrderRpc({
+            headers: { Authorization: `Bearer ${token}` },
+            data: { orderId: o.id },
+          }).catch((err) => {
             console.warn("getCourierForOrder request failed", err);
             return null;
           });
@@ -99,7 +103,7 @@ export function RestaurantHome() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orders, user?.id]);
+  }, [orders, user?.id, session?.access_token]);
 
   // Realtime updates on this restaurant's orders
   useEffect(() => {
