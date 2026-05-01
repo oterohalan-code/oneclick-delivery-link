@@ -202,10 +202,19 @@ export function CourierHome() {
             <p className="text-sm text-muted-foreground">No hay pedidos por ahora. Te avisaremos al instante.</p>
           ) : (
             <div className="space-y-3">
-              {sorted.map(({ o, dist }) => (
+              {sorted.map(({ o, dist }) => {
+                const r = restaurants[o.restaurant_id];
+                return (
                 <Card key={o.id} className="p-4">
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="font-semibold">{restaurants[o.restaurant_id]?.name ?? "Restaurante"}</div>
+                    <div className="flex items-center gap-3 min-w-0">
+                      {r?.facadeUrl ? (
+                        <img src={r.facadeUrl} alt={r.name} className="h-12 w-12 rounded-lg object-cover border" loading="lazy" />
+                      ) : (
+                        <div className="h-12 w-12 rounded-lg bg-muted grid place-items-center text-muted-foreground text-lg">🍽️</div>
+                      )}
+                      <div className="font-semibold truncate">{r?.name ?? "Restaurante"}</div>
+                    </div>
                     <Badge variant="secondary">{dist.toFixed(1)} km</Badge>
                   </div>
                   <div className="text-sm text-muted-foreground flex gap-1 items-start"><MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" /> {o.pickup_address}</div>
@@ -225,7 +234,8 @@ export function CourierHome() {
                     </Button>
                   </div>
                 </Card>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
