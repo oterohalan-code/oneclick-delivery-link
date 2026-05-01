@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, Crown, ArrowDownCircle, ArrowUpCircle } from "lucide-react";
+import { Loader2, Plus, Crown, ArrowDownCircle, ArrowUpCircle, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/app/wallet")({
