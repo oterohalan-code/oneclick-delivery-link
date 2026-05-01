@@ -1,7 +1,9 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 const THREE_MIN = 3 * 60 * 1000;
+
+export type GeoPermission = "unknown" | "granted" | "denied" | "prompt" | "unsupported";
 
 /**
  * Tracks the courier's geolocation and persists lat/lng on the couriers table
@@ -12,9 +14,24 @@ export function useCourierLocationTracker(opts: {
   enabled: boolean;
   courierId: string | null | undefined;
 }) {
-  const [permission, setPermission] = useState<
-    "unknown" | "granted" | "denied" | "prompt" | "unsupported"
-  >("unknown");
+  const [permission, setPermission] = useState<GeoPermission>("unknown");
+
+  // Re-checks the permission status. Useful after the user re-enables
+  // location from the browser/system settings without a page reload.
+  const refreshPermission = useCallback(async () => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      setPermission("unsupported");
+      return;
+    }
+    if ("permissions" in navigator) {
+      try {
+        const p = await navigator.permissions.query({ name: "geolocation" as PermissionName });
+        setPermission(p.state as GeoPermission);
+      } catch {
+        /* ignore */
+      }
+    }
+  }, []);
 
   useEffect(() => {
     if (!opts.enabled || !opts.courierId) return;
@@ -81,5 +98,5 @@ export function useCourierLocationTracker(opts: {
     };
   }, [opts.enabled, opts.courierId]);
 
-  return { permission };
+  return { permission, refreshPermission };
 }
