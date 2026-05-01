@@ -14,16 +14,368 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      couriers: {
+        Row: {
+          address: string | null
+          backpack_url: string | null
+          created_at: string
+          id: string
+          ine_back_url: string | null
+          ine_front_url: string | null
+          lat: number | null
+          license_url: string | null
+          lng: number | null
+          moto_url: string | null
+          plan: Database["public"]["Enums"]["courier_plan"]
+          plate: string | null
+          plate_url: string | null
+          rejection_reason: string | null
+          status: Database["public"]["Enums"]["courier_status"]
+          subscription_active: boolean
+          subscription_expires_at: string | null
+          updated_at: string
+          user_id: string
+          wallet_balance: number
+        }
+        Insert: {
+          address?: string | null
+          backpack_url?: string | null
+          created_at?: string
+          id?: string
+          ine_back_url?: string | null
+          ine_front_url?: string | null
+          lat?: number | null
+          license_url?: string | null
+          lng?: number | null
+          moto_url?: string | null
+          plan?: Database["public"]["Enums"]["courier_plan"]
+          plate?: string | null
+          plate_url?: string | null
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["courier_status"]
+          subscription_active?: boolean
+          subscription_expires_at?: string | null
+          updated_at?: string
+          user_id: string
+          wallet_balance?: number
+        }
+        Update: {
+          address?: string | null
+          backpack_url?: string | null
+          created_at?: string
+          id?: string
+          ine_back_url?: string | null
+          ine_front_url?: string | null
+          lat?: number | null
+          license_url?: string | null
+          lng?: number | null
+          moto_url?: string | null
+          plan?: Database["public"]["Enums"]["courier_plan"]
+          plate?: string | null
+          plate_url?: string | null
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["courier_status"]
+          subscription_active?: boolean
+          subscription_expires_at?: string | null
+          updated_at?: string
+          user_id?: string
+          wallet_balance?: number
+        }
+        Relationships: []
+      }
+      orders: {
+        Row: {
+          accepted_at: string | null
+          amount_to_collect: number
+          courier_id: string | null
+          created_at: string
+          delivered_at: string | null
+          dropoff_address: string
+          dropoff_lat: number | null
+          dropoff_lng: number | null
+          external_order_id: string | null
+          id: string
+          notes: string | null
+          pickup_address: string
+          pickup_lat: number | null
+          pickup_lng: number | null
+          restaurant_id: string
+          status: Database["public"]["Enums"]["order_status"]
+        }
+        Insert: {
+          accepted_at?: string | null
+          amount_to_collect?: number
+          courier_id?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          dropoff_address: string
+          dropoff_lat?: number | null
+          dropoff_lng?: number | null
+          external_order_id?: string | null
+          id?: string
+          notes?: string | null
+          pickup_address: string
+          pickup_lat?: number | null
+          pickup_lng?: number | null
+          restaurant_id: string
+          status?: Database["public"]["Enums"]["order_status"]
+        }
+        Update: {
+          accepted_at?: string | null
+          amount_to_collect?: number
+          courier_id?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          dropoff_address?: string
+          dropoff_lat?: number | null
+          dropoff_lng?: number | null
+          external_order_id?: string | null
+          id?: string
+          notes?: string | null
+          pickup_address?: string
+          pickup_lat?: number | null
+          pickup_lng?: number | null
+          restaurant_id?: string
+          status?: Database["public"]["Enums"]["order_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_courier_id_fkey"
+            columns: ["courier_id"]
+            isOneToOne: false
+            referencedRelation: "couriers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string | null
+          id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string | null
+          id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      restaurants: {
+        Row: {
+          address: string
+          category: string
+          created_at: string
+          id: string
+          lat: number | null
+          lng: number | null
+          name: string
+          phone: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          address: string
+          category: string
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          name: string
+          phone: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          address?: string
+          category?: string
+          created_at?: string
+          id?: string
+          lat?: number | null
+          lng?: number | null
+          name?: string
+          phone?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          amount: number
+          courier_id: string
+          created_at: string
+          expires_at: string
+          id: string
+          started_at: string
+          status: string
+        }
+        Insert: {
+          amount?: number
+          courier_id: string
+          created_at?: string
+          expires_at: string
+          id?: string
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          amount?: number
+          courier_id?: string
+          created_at?: string
+          expires_at?: string
+          id?: string
+          started_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_courier_id_fkey"
+            columns: ["courier_id"]
+            isOneToOne: false
+            referencedRelation: "couriers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wallet_transactions: {
+        Row: {
+          amount: number
+          balance_after: number | null
+          courier_id: string
+          created_at: string
+          description: string | null
+          id: string
+          order_id: string | null
+          type: Database["public"]["Enums"]["wallet_tx_type"]
+        }
+        Insert: {
+          amount: number
+          balance_after?: number | null
+          courier_id: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_id?: string | null
+          type: Database["public"]["Enums"]["wallet_tx_type"]
+        }
+        Update: {
+          amount?: number
+          balance_after?: number | null
+          courier_id?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_id?: string | null
+          type?: Database["public"]["Enums"]["wallet_tx_type"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_transactions_courier_id_fkey"
+            columns: ["courier_id"]
+            isOneToOne: false
+            referencedRelation: "couriers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "wallet_transactions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "restaurant" | "courier" | "admin"
+      courier_plan: "pps" | "subscription"
+      courier_status: "pending_validation" | "active" | "rejected" | "suspended"
+      order_status:
+        | "pending"
+        | "assigned"
+        | "in_transit"
+        | "delivered"
+        | "cancelled"
+      wallet_tx_type: "topup" | "order_fee" | "subscription_charge" | "refund"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +502,18 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["restaurant", "courier", "admin"],
+      courier_plan: ["pps", "subscription"],
+      courier_status: ["pending_validation", "active", "rejected", "suspended"],
+      order_status: [
+        "pending",
+        "assigned",
+        "in_transit",
+        "delivered",
+        "cancelled",
+      ],
+      wallet_tx_type: ["topup", "order_fee", "subscription_charge", "refund"],
+    },
   },
 } as const
