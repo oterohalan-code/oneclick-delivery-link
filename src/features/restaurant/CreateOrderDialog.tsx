@@ -52,6 +52,18 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
   const [loading, setLoading] = useState(false);
   const [routeInfo, setRouteInfo] = useState<{ distanceKm: number; durationMin: number } | null>(null);
   const [routeLoading, setRouteLoading] = useState(false);
+  const [addressLoading, setAddressLoading] = useState(false);
+
+  const handleMapClick = useCallback(async (lat: number, lng: number) => {
+    setForm((f) => ({ ...f, lat, lng }));
+    setAddressLoading(true);
+    try {
+      const addr = await reverseGeocode(lat, lng);
+      setForm((f) => ({ ...f, dropoff_address: addr ?? `Pin: ${lat.toFixed(5)}, ${lng.toFixed(5)}` }));
+    } finally {
+      setAddressLoading(false);
+    }
+  }, []);
 
   const distanceKm = routeInfo?.distanceKm ?? null;
   const shippingFee = useMemo(() => (distanceKm == null ? 0 : calcShippingFee(distanceKm)), [distanceKm]);
