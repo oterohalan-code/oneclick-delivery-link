@@ -45,6 +45,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
   onCreated: () => void;
 }) {
   const [form, setForm] = useState({
+    customer_name: "", customer_phone: "",
     dropoff_address: "", lat: null as number | null, lng: null as number | null,
     amount: "", payment: "pending" as PaymentStatus, notes: "",
   });
