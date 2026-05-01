@@ -1,97 +1,64 @@
-## Problemas a resolver
+## Cambios sin notificaciones push
 
-1. **El mapa se "traba" y no desaparece** cuando el pedido cambia de estado o se entrega.
-2. El **repartidor** debe ver: nombre del restaurante + **fachada (foto)**.
-3. El **restaurante** debe ver: nombre y **teléfono del repartidor** asignado (hoy no puede leer `profiles` por RLS).
-4. **Notificaciones push** en cada actualización importante (nuevo pedido, aceptado, en camino, entregado, mensaje de chat).
+Mantener: arreglo del mapa, fachada al repartidor, info del repartidor al restaurante, chat vía server function. Quitar todo lo de push (queda como stub para no romper imports).
 
----
+## 1. Mapa que no se desmonta
 
-## 1. Arreglar el mapa "atorado"
+- `MapView.tsx`: cleanup robusto en unmount (`map.off()`, `clearLayers()`, `map.remove()` en try/catch) y `ResizeObserver` para llamar `invalidateSize()` cuando el contenedor cambie de tamaño/visibilidad.
+- `CourierHome.tsx` (`ActiveOrderView`): renderizar el bloque del mapa solo cuando `status === "assigned" || "in_transit"` y al menos un pin válido, con `key={`map-${order.id}-${order.status}`}` para forzar remount al cambiar de fase.
 
-Causa: `MapView` se monta una sola vez (init en `useEffect([])`) y se re-renderiza con nuevos pins, pero al cambiar de "pedido activo" a "feed" o al entregar, el contenedor a veces queda visible porque el `<div className="h-72">` se mantiene y Leaflet conserva tiles cacheados sin `invalidateSize`. Además, `pins` se recrea en cada render → el efecto re-dispara fetch a OSRM aunque pinsKey sea estable, y deja capas pegadas si el componente padre no desmonta.
+## 2. Fachada del restaurante para el repartidor
 
-Cambios:
-- En `MapView.tsx`: forzar **`key`-based remount** desde el padre cuando cambia el contexto (status del pedido) y limpiar layers + abortar fetch en cleanup (ya hace, pero reforzar con `mapRef.current?.off()` y eliminar event listeners en unmount).
-- Agregar `ResizeObserver` para llamar `invalidateSize()` cuando el contenedor cambie de tamaño/visibilidad.
-- En `CourierHome.tsx`: usar `key={`map-${order.status}`}` en `<MapView>` para que se desmonte al cambiar de fase (`assigned` → `in_transit` → `delivered`). Y solo renderizar el bloque del mapa si `pins.length >= 1`.
-- Cuando el pedido pase a `delivered`/`cancelled`, `ActiveOrderView` ya deja de renderizarse (porque `load()` lo limpia), pero garantizar el desmonte envolviendo el bloque del mapa con `{order.status !== "delivered" && ...}`.
+- En `CourierHome.load()`: incluir `facade_url` en el SELECT de restaurantes y generar URL firmada con `supabase.storage.from('restaurant-photos').createSignedUrl(path, 3600)`.
+- Mostrar miniatura cuadrada (h-12) en cada tarjeta del feed y h-14 en `ActiveOrderView`. Fallback a un emoji 🍽️ si no hay foto.
 
-## 2. Mostrar fachada del restaurante al repartidor
+## 3. Nombre y teléfono del repartidor para el restaurante
 
-- Agregar `facade_url` al `select` de restaurantes en `CourierHome.load()`.
-- En `ActiveOrderView` y en cada tarjeta del feed, mostrar miniatura/imagen redonda con la fachada al lado del nombre.
-- Generar URL firmada del bucket privado `restaurant-photos` con `supabase.storage.from('restaurant-photos').createSignedUrl(path, 3600)` (cachear en estado).
+`profiles` tiene RLS estricta, así que va por server function.
 
-## 3. Mostrar nombre + teléfono del repartidor al restaurante
+- Nuevo server fn `getCourierForOrder({ orderId })` en `src/server/orders.functions.ts`:
+  - Valida que el `auth.uid()` es dueño del restaurante del pedido.
+  - Devuelve `{ fullName, phone, phoneDialCode }` del repartidor vía `supabaseAdmin`.
+- `RestaurantHome.tsx`: para cada pedido `assigned`/`in_transit` con `courier_id`, cargar la info y mostrar:
+  - 🛵 Nombre del repartidor
+  - 📞 Link `tel:+52...`
+  - Pasar `peerName` y `peerPhone` reales al `<OrderChat>` (hoy va hardcodeado "Repartidor").
 
-Como `profiles` tiene RLS estricta, crear un **server function** con `requireSupabaseAuth` que valide que el usuario es dueño del restaurante del pedido y devuelva `{ full_name, phone, phone_dial_code }` del courier vía `supabaseAdmin`.
+## 4. Chat vía server function (sin push)
 
-- Nuevo archivo: `src/server/orders.functions.ts` → agregar `getCourierForOrder({ orderId })`.
-- En `RestaurantHome.tsx`: cuando un pedido tiene `courier_id`, llamar a la función y guardar `courierInfo[orderId]`.
-- Mostrar en la tarjeta: 👤 Nombre · 📞 teléfono (link `tel:` y `wa.me`).
-- Pasar `peerName` y `peerPhone` reales al `<OrderChat>` del restaurante (hoy va hardcodeado "Repartidor").
+- Nuevo server fn `sendOrderMessage({ orderId, content, senderRole })`:
+  - Inserta en `order_messages` respetando RLS (`is_order_participant`).
+  - **No** envía push (stub).
+- `OrderChat.tsx`: `send()` llama al server fn en vez de hacer `insert` directo. Lectura inicial y realtime siguen igual.
+- Toast de mensajes entrantes en foreground en `RestaurantHome` y `CourierHome` (suscripción a `INSERT` de `order_messages`).
 
-## 4. Notificaciones push reales
+## 5. Server fn para avanzar estado del pedido (sin push)
 
-La tabla `push_subscriptions` existe pero no hay service worker, ni VAPID, ni edge/server function que envíe. Implementar Web Push end-to-end:
+- `setOrderStatus({ orderId, status: "in_transit"|"delivered", proofUrl?, deliveredLat?, deliveredLng? })` que hace el update en `orders` y devuelve ok.
+- `ActiveOrderView` usa esta fn en vez de `supabase.from('orders').update()` directo. Ya queda preparado para enchufar push cuando lo activemos.
 
-### Frontend
-- Crear `public/sw.js` (service worker mínimo con handler `push` → muestra notificación con `title`, `body`, `data.url`; y `notificationclick` → abre la URL).
-- Crear `src/lib/push.ts` con `enablePush(userId)`:
-  - Registra `/sw.js`.
-  - Pide `Notification.requestPermission()`.
-  - `pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: VAPID_PUBLIC })`.
-  - Hace upsert en `push_subscriptions` (endpoint, p256dh, auth).
-- Llamar `enablePush()` automáticamente desde `CourierHome` y `RestaurantHome` después del login (con un toast/botón "Activar notificaciones" si el permiso es `default`).
+## 6. Push: queda como stub
 
-### Backend (TanStack server function, no edge function)
-- `src/server/push.functions.ts` con `notifyUsers({ userIds, title, body, url })`:
-  - Lee `push_subscriptions` con `supabaseAdmin`.
-  - Usa la librería `web-push` con secrets `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` / `VAPID_SUBJECT` (pedirlos con `add_secret` — y dar un comando para generarlos).
-  - Hace POST a cada endpoint; si responde 404/410 borra la suscripción.
+- `src/lib/push.ts` → `enablePush()` devuelve `false` (no-op).
+- `src/server/push.server.ts` → `sendPushToUsers()` no-op.
+- Borrar `public/sw.js`.
+- No se pedirán secrets VAPID por ahora.
+- `acceptOrder`, `setOrderStatus`, `sendOrderMessage` y `notifyCouriersNewOrder` siguen importando `sendPushToUsers` pero al ser no-op no envían nada — listos para activar cuando quieras.
 
-### Triggers de notificaciones
-Llamar `notifyUsers` desde el flujo correspondiente:
-| Evento | Quién recibe | Mensaje |
-|---|---|---|
-| Restaurante crea pedido | Todos los couriers `active` con saldo/sub | "📦 Nuevo pedido cerca" |
-| Courier acepta | Dueño del restaurante | "🛵 {nombre} aceptó tu pedido" |
-| Courier marca "En camino" | Restaurante | "🚚 Pedido en camino al cliente" |
-| Courier entrega | Restaurante | "✅ Pedido entregado" |
-| Mensaje de chat | El otro participante | "💬 {peerName}: {preview}" |
+## Archivos que se editan/crean
 
-- En `acceptOrder` server fn → push al restaurant owner.
-- En las llamadas `supabase.from('orders').update({status})` reemplazar por server fns `setOrderInTransit` / `setOrderDelivered` que además disparen push (la lógica de cobro $5 PPS también debería estar en server).
-- Para el chat: nuevo server fn `sendOrderMessage` que inserte el mensaje y dispare push al peer (usa `is_order_participant` para validar). El cliente lo llama en vez de insert directo.
-- Para "nuevo pedido": en `createOrder` (donde sea que viva la lógica de inserción) agregar push masivo a couriers elegibles.
-
-### Foreground (cuando la app está abierta)
-- El realtime ya está; agregar `toast` consistente en `RestaurantHome` (ya hay) y mejorar el de `CourierHome` para `UPDATE` (ej. si su pedido cambia).
-- Para el chat, mostrar toast al peer si el `OrderChat` no está abierto.
-
----
-
-## Archivos a tocar
-
-- `src/components/MapView.tsx` — cleanup robusto + ResizeObserver.
-- `src/features/courier/CourierHome.tsx` — `key` en MapView, desmonte por status, fachada del restaurante, llamada a `enablePush`, usar server fns para update de status, `sendOrderMessage` indirecto vía `OrderChat`.
-- `src/features/restaurant/RestaurantHome.tsx` — `getCourierForOrder`, mostrar teléfono, pasar peerName/peerPhone reales, `enablePush`, toast de chat.
-- `src/components/OrderChat.tsx` — usar server fn `sendOrderMessage`; toast cuando llega mensaje y el dialog está cerrado (via prop o callback).
-- **Nuevos**:
-  - `public/sw.js`
-  - `src/lib/push.ts`
-  - `src/server/push.functions.ts`
-  - `src/server/orders.functions.ts` (extender con `getCourierForOrder`, `setOrderInTransit`, `setOrderDelivered`, `sendOrderMessage`, `notifyNewOrder`)
-- **Secrets nuevos** (pediré al confirmar): `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`. También expondré `VITE_VAPID_PUBLIC_KEY` para el `subscribe` del navegador.
-- **Dependencia npm**: `web-push`.
-
----
+- `src/components/MapView.tsx` — cleanup + ResizeObserver.
+- `src/components/OrderChat.tsx` — usar `sendOrderMessage` server fn.
+- `src/features/courier/CourierHome.tsx` — fachada, mapa con `key`, server fn de status, toast de chat.
+- `src/features/restaurant/RestaurantHome.tsx` — info del repartidor, peerName/peerPhone reales, toast de chat.
+- `src/features/restaurant/CreateOrderDialog.tsx` — devuelve `inserted.id` y llama (no-op) `notifyCouriersNewOrder` para dejarlo listo.
+- `src/server/orders.functions.ts` — nuevas fns: `getCourierForOrder`, `setOrderStatus`, `sendOrderMessage`, `notifyCouriersNewOrder`.
+- `src/server/push.server.ts` — stub no-op.
+- `src/lib/push.ts` — stub no-op.
+- `public/sw.js` — borrado.
 
 ## Notas
 
-- No se requieren cambios de schema (las tablas `push_subscriptions` y columnas necesarias ya existen).
-- iOS Safari requiere que la app esté instalada como PWA para recibir push; lo aclararé en el toast de "Activar notificaciones".
-- El chat seguirá siendo en tiempo real (Supabase Realtime) cuando la app está abierta; el push es para cuando está cerrada o en background.
-
-¿Apruebas?
+- Sin migraciones de base de datos.
+- Sin secrets nuevos.
+- Cuando quieras activar push después, solo hay que reemplazar los dos stubs por la implementación real con `web-push` y registrar el service worker.
