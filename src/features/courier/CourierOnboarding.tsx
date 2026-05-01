@@ -139,10 +139,9 @@ export function CourierOnboarding({ existing, onDone }: Props) {
       return toast.error(upErr.message);
     }
 
-    // Persistir la URL en la columna
-    const colUpdate: Record<string, string> = {};
-    colUpdate[DOCS.find((x) => x.key === key)!.columnUrl] = path;
-    await supabase.from("couriers").update(colUpdate).eq("user_id", user.id);
+    // Persistir la URL en la columna correcta
+    const colName = DOCS.find((x) => x.key === key)!.columnUrl;
+    await supabase.from("couriers").update({ [colName]: path } as never).eq("user_id", user.id);
 
     setDocs((d) => ({ ...d, [key]: { ...d[key], status: "validating", path } }));
 
