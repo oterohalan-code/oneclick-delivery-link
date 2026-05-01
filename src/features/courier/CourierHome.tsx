@@ -28,7 +28,8 @@ interface OrderRow {
 }
 
 export function CourierHome() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
+  const acceptOrderRpc = useServerFn(acceptOrderFn);
   const [courier, setCourier] = useState<Courier | null>(null);
   const [feed, setFeed] = useState<OrderRow[]>([]);
   const [active, setActive] = useState<OrderRow | null>(null);
