@@ -1,41 +1,37 @@
-## Arreglar el mapa: loop infinito y marcadores rotos
+## Agregar nombre del cliente y WhatsApp al pedido
 
-### Diagnóstico
-En el session replay se ve que el mapa parpadea sin parar (~6 veces por segundo): añade marcadores + línea punteada → cambia a línea verde → vuelve a empezar. Esto es un **bucle infinito de renderizado**.
+Añadiré dos campos nuevos al formulario de creación de pedido y los mostraré al repartidor cuando vea / acepte el pedido. Para que la información esté estructurada (no escondida en `notes`), se añadirán columnas dedicadas en la tabla `orders`.
 
-Causa: el `useEffect` de `MapView` depende de `pins` (un array nuevo en cada render del padre). Dentro del efecto se llama `onRouteInfoRef.current?.({...})`, que actualiza `routeInfo` en el diálogo padre → re-render del padre → nuevo array `pins` → vuelve a correr el efecto → nuevo fetch a OSRM → nuevo `setRouteInfo` → loop. El resultado: marcadores y rutas se borran y redibujan constantemente, los pines parecen "no aparecer", y hay decenas de fetches a OSRM por segundo.
+### 1. Base de datos
+Migración para agregar a `orders`:
+- `customer_name TEXT` (nullable)
+- `customer_phone TEXT` (nullable, formato E.164 ej. `+5215512345678`)
+- `customer_phone_dial_code TEXT DEFAULT '+52'`
 
-Adicionalmente, el icono por defecto de Leaflet a veces no se ve porque el contenedor cambia de tamaño tras montar (dentro del Dialog) y necesita `invalidateSize()`.
+Sin cambios en RLS (las políticas existentes aplican).
 
-### Cambios
+### 2. Formulario `CreateOrderDialog.tsx`
+Agregar dos inputs nuevos arriba de "Dirección de entrega":
+- **Nombre del cliente** — texto, requerido, 2–80 caracteres.
+- **WhatsApp del cliente** — input numérico con prefijo `+52` (igual que registro), 10 dígitos, validado con zod.
 
-**`src/components/MapView.tsx`**
-1. Reemplazar la dependencia `pins` del `useEffect` por una **clave estable** derivada de las coordenadas:
-   ```ts
-   const pinsKey = pins
-     .filter(p => Number.isFinite(p.lat) && Number.isFinite(p.lng))
-     .map(p => `${p.lat.toFixed(6)},${p.lng.toFixed(6)},${p.label ?? ""}`)
-     .join("|");
-   ```
-   y usar `[pinsKey, showRoute, zoom]` como deps. Así el efecto sólo corre cuando realmente cambian las coordenadas, no en cada render del padre.
-2. Llamar `mapRef.current?.invalidateSize()` después de actualizar (en un `setTimeout(..., 0)`) para forzar el re-cálculo de tamaño cuando el mapa vive dentro del Dialog (el contenedor se mide tarde y por eso a veces no se ven los tiles/iconos).
+El `submit` insertará `customer_name` y `customer_phone` (concatenando dial code + número) en las nuevas columnas. Schema zod actualizado.
 
-**`src/features/restaurant/CreateOrderDialog.tsx`**
-1. Memoizar el array `pins` con `useMemo` para que la referencia sea estable cuando las coords no cambian (defensa en profundidad, además del `pinsKey` interno):
-   ```ts
-   const pins = useMemo(() => [
-     ...(restaurant.lat && restaurant.lng ? [{ lat: restaurant.lat, lng: restaurant.lng, label: "Recogida" }] : []),
-     ...(form.lat && form.lng ? [{ lat: form.lat, lng: form.lng, label: "Entrega" }] : []),
-   ], [restaurant.lat, restaurant.lng, form.lat, form.lng]);
-   ```
-2. Memoizar `handleRouteInfo` con `useCallback` para no recrearlo en cada render.
+### 3. Vista del repartidor `CourierHome.tsx`
+En la tarjeta del pedido pendiente y en la vista del pedido aceptado, mostrar:
+- 👤 Nombre del cliente
+- 📱 Botón "WhatsApp" que abre `https://wa.me/<numero>` en nueva pestaña (sólo visible cuando el pedido ya fue aceptado, para evitar contacto antes de aceptar).
 
-### Resultado esperado
-- El mapa monta una vez; los marcadores Recogida/Entrega aparecen estables.
-- Al elegir destino: línea punteada gris breve → ruta verde por calles. Sin parpadeo.
-- Una sola petición a OSRM por cambio de destino (no decenas por segundo).
-- La distancia y total del envío se calculan una vez y quedan estables.
+### 4. Vista del restaurante
+En `RestaurantHome.tsx` mostrar el nombre del cliente bajo la dirección, para referencia rápida.
+
+### Detalles técnicos
+- Validación con zod: `customer_name: z.string().trim().min(2).max(80)`, `customer_phone: z.string().regex(/^\d{10}$/)`.
+- El número se guarda ya con dial code (ej. `+5215512345678`) listo para `wa.me`.
+- Tipos de Supabase se regeneran automáticamente tras la migración.
 
 ### Archivos a modificar
-- `src/components/MapView.tsx`
+- Migración SQL (nueva)
 - `src/features/restaurant/CreateOrderDialog.tsx`
+- `src/features/courier/CourierHome.tsx`
+- `src/features/restaurant/RestaurantHome.tsx`
