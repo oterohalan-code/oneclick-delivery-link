@@ -63,10 +63,19 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
     setRouteLoading(true);
   }, [restaurant.lat, restaurant.lng, form.lat, form.lng]);
 
-  const handleRouteInfo = (info: { distanceKm: number; durationMin: number } | null) => {
+  const handleRouteInfo = useCallback((info: { distanceKm: number; durationMin: number } | null) => {
     setRouteInfo(info);
     setRouteLoading(false);
-  };
+  }, []);
+
+  const pins = useMemo(() => [
+    ...(restaurant.lat != null && restaurant.lng != null
+      ? [{ lat: restaurant.lat, lng: restaurant.lng, label: "Recogida" }]
+      : []),
+    ...(form.lat != null && form.lng != null
+      ? [{ lat: form.lat, lng: form.lng, label: "Entrega" }]
+      : []),
+  ], [restaurant.lat, restaurant.lng, form.lat, form.lng]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
