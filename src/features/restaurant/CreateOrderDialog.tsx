@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AddressSearch } from "@/components/AddressSearch";
-import { MapView } from "@/components/MapView";
+import { MapView, reverseGeocode } from "@/components/MapView";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -52,6 +52,18 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
   const [loading, setLoading] = useState(false);
   const [routeInfo, setRouteInfo] = useState<{ distanceKm: number; durationMin: number } | null>(null);
   const [routeLoading, setRouteLoading] = useState(false);
+  const [addressLoading, setAddressLoading] = useState(false);
+
+  const handleMapClick = useCallback(async (lat: number, lng: number) => {
+    setForm((f) => ({ ...f, lat, lng }));
+    setAddressLoading(true);
+    try {
+      const addr = await reverseGeocode(lat, lng);
+      setForm((f) => ({ ...f, dropoff_address: addr ?? `Pin: ${lat.toFixed(5)}, ${lng.toFixed(5)}` }));
+    } finally {
+      setAddressLoading(false);
+    }
+  }, []);
 
   const distanceKm = routeInfo?.distanceKm ?? null;
   const shippingFee = useMemo(() => (distanceKm == null ? 0 : calcShippingFee(distanceKm)), [distanceKm]);
@@ -158,19 +170,29 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
             </div>
           </div>
           <div>
-            <Label>Dirección de entrega</Label>
+            <Label>Buscar dirección (opcional)</Label>
             <AddressSearch
               value={form.dropoff_address}
               onChange={(a, lat, lng) => setForm({ ...form, dropoff_address: a, lat: lat ?? form.lat, lng: lng ?? form.lng })}
             />
+            <p className="text-xs text-muted-foreground mt-1">O toca el mapa para colocar el pin del destino.</p>
           </div>
           <div className="h-56">
             <MapView
               pins={pins}
               showRoute
-              onMapClick={(lat, lng) => setForm({ ...form, lat, lng })}
+              onMapClick={handleMapClick}
               onRouteInfo={handleRouteInfo}
               height="100%"
+            />
+          </div>
+          <div>
+            <Label>Destino seleccionado</Label>
+            <Input
+              readOnly
+              className="bg-muted"
+              value={addressLoading ? "Obteniendo dirección…" : form.dropoff_address}
+              placeholder="Selecciona en el mapa o busca arriba"
             />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
