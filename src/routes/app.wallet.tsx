@@ -90,8 +90,20 @@ function WalletPage() {
     load();
   };
 
+  const lowFunds = !subActive && Number(courier.wallet_balance) < 5;
+
   return (
     <div className="space-y-5">
+      {lowFunds && (
+        <Card className="p-4 bg-warning/10 border-warning">
+          <div className="flex gap-2">
+            <AlertCircle className="h-5 w-5 text-warning shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <strong>No estás recibiendo pedidos.</strong> Recarga al menos $5 MXN o activa la suscripción para empezar a repartir.
+            </div>
+          </div>
+        </Card>
+      )}
       <Card className="p-6 bg-gradient-to-br from-brand to-sidebar-accent text-brand-foreground border-0">
         <p className="text-xs opacity-70 uppercase tracking-wider">Saldo disponible</p>
         <p className="font-display text-4xl font-bold mt-1">${Number(courier.wallet_balance).toFixed(2)}</p>
