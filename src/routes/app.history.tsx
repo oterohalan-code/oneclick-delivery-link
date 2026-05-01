@@ -43,6 +43,18 @@ function HistoryPage() {
         count: delivered.length,
         total: delivered.reduce((sum, o) => sum + Number(o.amount_to_collect), 0),
       });
+
+      // Signed URLs for delivery proofs
+      const proofMap: Record<string, string> = {};
+      for (const o of list) {
+        if (o.delivery_proof_url) {
+          const { data: s } = await supabase.storage
+            .from("delivery-proofs")
+            .createSignedUrl(o.delivery_proof_url, 3600);
+          if (s?.signedUrl) proofMap[o.id] = s.signedUrl;
+        }
+      }
+      setProofs(proofMap);
       setLoading(false);
     })();
   }, [user?.id, role]);
