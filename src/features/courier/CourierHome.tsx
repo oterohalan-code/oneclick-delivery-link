@@ -108,6 +108,23 @@ export function CourierHome() {
     return () => { supabase.removeChannel(ch); };
   }, [courier?.id, courier?.status, canAcceptRT]);
 
+  // Toast de mensajes de chat entrantes (foreground)
+  useEffect(() => {
+    if (!user?.id) return;
+    const ch = supabase.channel(`courier-msgs-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "order_messages" },
+        (payload: any) => {
+          const m = payload.new;
+          if (!m || m.sender_id === user.id) return;
+          toast.info(`💬 ${(m.content ?? "").slice(0, 80)}`);
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user?.id]);
+
   if (loading) return <div className="grid place-items-center py-20"><Loader2 className="h-6 w-6 animate-spin" /></div>;
   if (!courier) return <div className="grid place-items-center py-20"><Loader2 className="h-6 w-6 animate-spin" /></div>;
 
