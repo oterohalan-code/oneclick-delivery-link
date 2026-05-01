@@ -247,7 +247,7 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
       delivered_lat: lat,
       delivered_lng: lng,
     }).eq("id", order.id);
-    if (error) return toast.error(error.message);
+    if (error) { toast.error(error.message); return; }
 
     // PPS charge if no active subscription
     const subActive = courier.subscription_active && courier.subscription_expires_at && new Date(courier.subscription_expires_at) > new Date();
