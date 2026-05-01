@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, MapPin, DollarSign, AlertCircle, Truck, CheckCircle2 } from "lucide-react";
+import { Loader2, MapPin, DollarSign, AlertCircle, Truck, CheckCircle2, Wallet, Crown } from "lucide-react";
 import { CourierOnboarding } from "./CourierOnboarding";
 import { MapView, haversine } from "@/components/MapView";
+import { acceptOrder as acceptOrderFn } from "@/server/orders.functions";
 import { toast } from "sonner";
 
 interface Courier {
