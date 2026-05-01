@@ -31,7 +31,9 @@ function calcShippingFee(km: number): number {
 }
 
 const schema = z.object({
-  dropoff_address: z.string().trim().min(5).max(300),
+  customer_name: z.string().trim().min(2, "Nombre del cliente requerido").max(80),
+  customer_phone: z.string().regex(/^\d{10}$/, "WhatsApp: 10 dígitos"),
+  dropoff_address: z.string().trim().min(5, "Dirección de entrega requerida").max(300),
   total: z.number().min(0).max(100000),
   payment: z.enum(["pending", "all", "paid"]),
   notes: z.string().trim().max(500).optional(),
