@@ -148,6 +148,17 @@ export function CourierHome() {
         </Badge>
       </Card>
 
+      {geoPermission === "denied" && (
+        <Card className="p-3 bg-warning/10 border-warning">
+          <div className="flex gap-2 text-sm">
+            <AlertCircle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+            <div>
+              <strong>Activa tu ubicación</strong> para recibir pedidos cercanos y poder marcar entregas.
+            </div>
+          </div>
+        </Card>
+      )}
+
       {!canAccept ? (
         <Card className="p-6 bg-warning/10 border-warning text-center space-y-3">
           <AlertCircle className="h-10 w-10 text-warning mx-auto" />
