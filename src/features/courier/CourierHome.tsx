@@ -275,10 +275,25 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
     onChange();
   };
 
-  const pins = [
-    ...(order.pickup_lat && order.pickup_lng ? [{ lat: order.pickup_lat, lng: order.pickup_lng, label: "Recogida" }] : []),
-    ...(order.dropoff_lat && order.dropoff_lng ? [{ lat: order.dropoff_lat, lng: order.dropoff_lng, label: "Entrega" }] : []),
-  ];
+  // Pins según estado: "assigned" = courier→restaurante (recoger), "in_transit" = restaurante→cliente
+  const goingToPickup = order.status === "assigned";
+  const pins = goingToPickup
+    ? [
+        ...(courier.lat != null && courier.lng != null
+          ? [{ lat: courier.lat, lng: courier.lng, label: "Tú" }]
+          : []),
+        ...(order.pickup_lat && order.pickup_lng
+          ? [{ lat: order.pickup_lat, lng: order.pickup_lng, label: "Restaurante" }]
+          : []),
+      ]
+    : [
+        ...(order.pickup_lat && order.pickup_lng
+          ? [{ lat: order.pickup_lat, lng: order.pickup_lng, label: "Recogida" }]
+          : []),
+        ...(order.dropoff_lat && order.dropoff_lng
+          ? [{ lat: order.dropoff_lat, lng: order.dropoff_lng, label: "Entrega" }]
+          : []),
+      ];
 
   return (
     <div className="space-y-4">
