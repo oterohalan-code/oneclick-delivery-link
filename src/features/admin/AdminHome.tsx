@@ -222,6 +222,7 @@ export function AdminHome() {
           </Card>
         ))
       )}
+      </section>
     </div>
   );
 }
