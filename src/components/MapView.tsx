@@ -26,14 +26,17 @@ interface Props {
   zoom?: number;
   height?: string;
   onMapClick?: (lat: number, lng: number) => void;
+  onRouteInfo?: (info: { distanceKm: number; durationMin: number } | null) => void;
 }
 
 const CANCUN: [number, number] = [21.1619, -86.8515];
 
-export function MapView({ pins = [], showRoute, center, zoom = 13, height = "320px", onMapClick }: Props) {
+export function MapView({ pins = [], showRoute, center, zoom = 13, height = "320px", onMapClick, onRouteInfo }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const layerRef = useRef<L.LayerGroup | null>(null);
+  const onRouteInfoRef = useRef(onRouteInfo);
+  onRouteInfoRef.current = onRouteInfo;
 
   // init
   useEffect(() => {
@@ -57,7 +60,7 @@ export function MapView({ pins = [], showRoute, center, zoom = 13, height = "320
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // update pins
+  // update pins + route
   useEffect(() => {
     if (!mapRef.current || !layerRef.current) return;
     layerRef.current.clearLayers();
@@ -66,18 +69,49 @@ export function MapView({ pins = [], showRoute, center, zoom = 13, height = "320
       const m = L.marker([p.lat, p.lng]).bindPopup(p.label ?? "");
       layerRef.current!.addLayer(m);
     });
+
+    let cancelled = false;
+    const controller = new AbortController();
+
     if (showRoute && valid.length >= 2) {
-      const line = L.polyline(valid.map((p) => [p.lat, p.lng]) as [number, number][], {
-        color: "#22c55e", weight: 4, opacity: 0.85,
+      // Provisional straight line while routing loads
+      const straight = L.polyline(valid.map((p) => [p.lat, p.lng]) as [number, number][], {
+        color: "#94a3b8", weight: 3, opacity: 0.6, dashArray: "6 6",
       });
-      layerRef.current.addLayer(line);
+      layerRef.current.addLayer(straight);
+
+      fetchRoute({ lat: valid[0].lat, lng: valid[0].lng }, { lat: valid[1].lat, lng: valid[1].lng }, controller.signal)
+        .then((route) => {
+          if (cancelled || !mapRef.current || !layerRef.current) return;
+          if (!route) {
+            onRouteInfoRef.current?.(null);
+            return;
+          }
+          layerRef.current.removeLayer(straight);
+          const line = L.polyline(route.coords, { color: "#22c55e", weight: 5, opacity: 0.9 });
+          layerRef.current.addLayer(line);
+          const bounds = L.latLngBounds(route.coords);
+          mapRef.current.fitBounds(bounds, { padding: [40, 40] });
+          onRouteInfoRef.current?.({ distanceKm: route.distanceKm, durationMin: route.durationMin });
+        })
+        .catch(() => {
+          if (!cancelled) onRouteInfoRef.current?.(null);
+        });
+    } else if (showRoute) {
+      onRouteInfoRef.current?.(null);
     }
+
     if (valid.length === 1) {
       mapRef.current.setView([valid[0].lat, valid[0].lng], Math.max(zoom, 14));
     } else if (valid.length >= 2) {
       const bounds = L.latLngBounds(valid.map((p) => [p.lat, p.lng] as [number, number]));
       mapRef.current.fitBounds(bounds, { padding: [40, 40] });
     }
+
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
   }, [pins, showRoute, zoom]);
 
   return <div ref={containerRef} style={{ height, width: "100%" }} className="rounded-xl overflow-hidden border border-border" />;

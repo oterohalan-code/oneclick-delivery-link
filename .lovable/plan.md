@@ -1,53 +1,44 @@
-## Agregar Distancia y Total del envío al diálogo de pedido
+## Trazar ruta real por calles (estilo Waze/Google) y usar distancia de ruta
 
-### UI (`src/features/restaurant/CreateOrderDialog.tsx`)
+### Resumen
+Hoy el mapa une pickup y destino con una línea recta y la distancia se calcula con haversine (línea recta). Vamos a:
+- Trazar la ruta real siguiendo las calles usando **OSRM público** (`https://router.project-osrm.org`, gratuito, sin API key).
+- Mostrar la polilínea sobre el mapa siguiendo el trazo de las calles.
+- Usar la **distancia de la ruta** (km por calle) para calcular la tarifa de envío, en lugar de la línea recta.
+- Mostrar también el tiempo estimado de viaje.
 
-Añadir dos campos de solo lectura debajo de la fila Total/Estado de pago:
+### Cambios
 
-- **Distancia (km)**: calculada en vivo con `haversine()` entre el pickup del restaurante y el dropoff seleccionado. Se muestra con 2 decimales. Vacío si falta alguna coordenada.
-- **Total del envío**: calculado en vivo según la tarifa, en MXN. No editable (`readOnly`, fondo `muted`).
+**`src/components/MapView.tsx`**
+1. Añadir helper exportado:
+   ```ts
+   export async function fetchRoute(a, b): Promise<{
+     coords: [number, number][]; // [lat, lng] siguiendo calles
+     distanceKm: number;
+     durationMin: number;
+   } | null>
+   ```
+   Llama a `https://router.project-osrm.org/route/v1/driving/{lng1},{lat1};{lng2},{lat2}?overview=full&geometries=geojson`.
+2. Añadir prop opcional `onRouteInfo?: (info | null) => void` al `MapView`.
+3. Cuando `showRoute && valid.length >= 2`:
+   - Llamar `fetchRoute()` (con AbortController para evitar carreras al mover el pin).
+   - Si responde, dibujar `L.polyline` con las coords reales (color primario, peso 5) y emitir `onRouteInfo({ distanceKm, durationMin })`.
+   - Si falla, fallback a la línea recta actual y emitir `onRouteInfo(null)`.
+4. Mantener el `fitBounds` actual.
 
-Layout: dos columnas en desktop, apiladas en móvil — espejo de la fila anterior.
+**`src/features/restaurant/CreateOrderDialog.tsx`**
+1. Nuevo state: `routeInfo: { distanceKm, durationMin } | null`.
+2. Pasar `onRouteInfo={setRouteInfo}` al `MapView`.
+3. Reemplazar `distanceKm` (haversine) por `routeInfo?.distanceKm`. Mientras se calcula, mostrar "Calculando ruta…" en los campos de Distancia y Total del envío.
+4. La tarifa (`calcShippingFee`) ahora usa la distancia de ruta.
+5. En `notes` incluir también el tiempo: `[Envío: $80 · 6.42 km · ~12 min]`.
+6. Si la ruta falla (sin internet a OSRM), fallback a haversine para no bloquear al usuario, con una nota visible.
 
-### Tarifa de envío (helper local en el mismo archivo)
-
-```text
-0   – 3.0 km  → $40
-3.1 – 5.0 km  → $50
-5.1 – 7.0 km  → $60
-7.1 – 9.0 km  → $70
-9.1 – 10.9 km → $80
-≥ 11 km       → $80 + $10 por cada km completo arriba de 11
-```
-
-```typescript
-function calcShippingFee(km: number): number {
-  if (!Number.isFinite(km) || km <= 0) return 0;
-  if (km <= 3)    return 40;
-  if (km <= 5)    return 50;
-  if (km <= 7)    return 60;
-  if (km <= 9)    return 70;
-  if (km <= 10.9) return 80;
-  const extra = Math.ceil(km - 11); // cada km extra (o fracción) suma $10
-  return 80 + 10 + extra * 10;       // 11km exactos = $90, 11.1 = $100, etc.
-}
-```
-
-Nota sobre el tramo "arriba de 11km": el enunciado dice "$10 extra por km dentro de la ciudad". Interpretación: en 11.0 km ya entra el primer extra ($90) y se suma $10 por cada km adicional iniciado. Si prefieres otra interpretación (p.ej. solo km enteros completos), dilo y lo ajusto.
-
-### Lógica de submit
-
-- `shipping_fee = calcShippingFee(km)` (calculado, no del form).
-- `amount_to_collect` según `payment`:
-  - `pending` → `total + shipping_fee` (cliente paga producto y envío al recibir)
-  - `all`     → `total + shipping_fee` (igual)
-  - `paid`    → `0`
-- Prefijo en `notes` se amplía para incluir la info del envío:
-  `[Pago: <estado>] [Envío: $<fee> · <km> km] <notas>`
-  Así el repartidor ve la tarifa sin cambios de schema.
-
-### Base de datos
-Sin cambios. (`orders` no tiene columna dedicada para `shipping_fee`/`distance_km`; se conserva en `notes`.)
+### Notas técnicas
+- OSRM público es gratuito y no requiere clave; tiene un fair-use razonable. Si más adelante quieres más control, podemos cambiar a Mapbox Directions o GraphHopper con API key.
+- Se usa `AbortController` dentro del `useEffect` de `MapView` para cancelar fetches obsoletos cuando el destino cambia rápidamente.
+- No hay cambios de base de datos.
 
 ### Archivos a modificar
-- `src/features/restaurant/CreateOrderDialog.tsx` (importar `haversine` desde `@/components/MapView`, añadir `useMemo` para km y fee, dos inputs readOnly, ajustar submit).
+- `src/components/MapView.tsx`
+- `src/features/restaurant/CreateOrderDialog.tsx`
