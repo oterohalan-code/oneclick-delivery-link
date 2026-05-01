@@ -297,10 +297,22 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
 
   return (
     <div className="space-y-4">
-      <Badge className="bg-primary text-primary-foreground">Pedido activo</Badge>
+      <Badge className="bg-primary text-primary-foreground">
+        {goingToPickup ? "En camino al restaurante" : "Pedido activo"}
+      </Badge>
       <Card className="p-4 space-y-2">
-        <div className="font-display text-lg font-bold">{restaurant?.name ?? "Restaurante"}</div>
-        <div className="text-sm">📞 {restaurant?.phone}</div>
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <div className="font-display text-lg font-bold">{restaurant?.name ?? "Restaurante"}</div>
+            {restaurant?.phone && (
+              <a href={`tel:${restaurant.phone}`} className="text-sm text-primary hover:underline">📞 {restaurant.phone}</a>
+            )}
+          </div>
+          <div className="text-right">
+            <div className="text-xs text-muted-foreground">Ganas</div>
+            <div className="font-display text-lg font-bold text-success">${Number(order.shipping_fee).toFixed(0)}</div>
+          </div>
+        </div>
         <div className="text-sm text-muted-foreground"><MapPin className="inline h-3.5 w-3.5" /> Recoger: {order.pickup_address}</div>
         <div className="text-sm text-muted-foreground"><MapPin className="inline h-3.5 w-3.5 text-primary" /> Entregar: {order.dropoff_address}</div>
         {order.customer_name && (
@@ -324,6 +336,10 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
         <MapView pins={pins} showRoute height="100%" />
       </div>
 
+      <Button variant="secondary" onClick={() => setChatOpen(true)} className="w-full h-12">
+        <MessageCircle className="mr-2 h-4 w-4" /> Chat con el restaurante
+      </Button>
+
       <div className="grid grid-cols-2 gap-3">
         {order.status === "assigned" && (
           <Button onClick={goInTransit} disabled={busy} className="col-span-2 h-12">
@@ -336,6 +352,15 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
           </Button>
         )}
       </div>
+
+      <OrderChat
+        open={chatOpen}
+        onOpenChange={setChatOpen}
+        orderId={order.id}
+        myRole="courier"
+        peerName={restaurant?.name ?? "Restaurante"}
+        peerPhone={restaurant?.phone}
+      />
 
       <DeliveryProofDialog
         open={proofOpen}
