@@ -3,9 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Plus, Loader2, Package, Truck, CheckCircle2, Clock } from "lucide-react";
+import { Plus, Loader2, Package, Truck, CheckCircle2, Clock, MessageCircle } from "lucide-react";
 import { RestaurantOnboarding } from "./RestaurantOnboarding";
 import { CreateOrderDialog } from "./CreateOrderDialog";
+import { OrderChat } from "@/components/OrderChat";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
@@ -34,6 +35,7 @@ export function RestaurantHome() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [chatOrderId, setChatOrderId] = useState<string | null>(null);
 
   const load = async () => {
     if (!user) return;
@@ -110,6 +112,16 @@ export function RestaurantHome() {
                     </div>
                     <Badge className={m.color}><Icon className="h-3 w-3 mr-1" />{m.label}</Badge>
                   </div>
+                  {o.courier_id && (o.status === "assigned" || o.status === "in_transit") && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="mt-3 w-full"
+                      onClick={() => setChatOrderId(o.id)}
+                    >
+                      <MessageCircle className="h-4 w-4 mr-2" /> Chat con repartidor
+                    </Button>
+                  )}
                 </Card>
               );
             })}
@@ -118,6 +130,15 @@ export function RestaurantHome() {
       </div>
 
       <CreateOrderDialog open={open} onOpenChange={setOpen} restaurant={rest} onCreated={load} />
+      {chatOrderId && (
+        <OrderChat
+          open={!!chatOrderId}
+          onOpenChange={(v) => !v && setChatOrderId(null)}
+          orderId={chatOrderId}
+          myRole="restaurant"
+          peerName="Repartidor"
+        />
+      )}
     </div>
   );
 }

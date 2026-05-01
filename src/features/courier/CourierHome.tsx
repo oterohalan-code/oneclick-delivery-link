@@ -6,10 +6,11 @@ import { useAuth } from "@/lib/auth-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, MapPin, DollarSign, AlertCircle, Truck, CheckCircle2, Wallet, Crown } from "lucide-react";
+import { Loader2, MapPin, DollarSign, AlertCircle, Truck, CheckCircle2, Wallet, Crown, MessageCircle } from "lucide-react";
 import { CourierOnboarding } from "./CourierOnboarding";
 import { DeliveryProofDialog } from "./DeliveryProofDialog";
 import { MapView, haversine } from "@/components/MapView";
+import { OrderChat } from "@/components/OrderChat";
 import { acceptOrder as acceptOrderFn } from "@/server/orders.functions";
 import { useCourierLocationTracker } from "@/hooks/useCourierLocationTracker";
 import { LocationPermissionGate } from "@/components/LocationPermissionGate";
@@ -28,6 +29,7 @@ interface OrderRow {
   dropoff_address: string; dropoff_lat: number | null; dropoff_lng: number | null;
   amount_to_collect: number; external_order_id: string | null; notes: string | null;
   customer_name: string | null; customer_phone: string | null;
+  shipping_fee: number; distance_km: number | null;
   restaurant_id: string; courier_id: string | null; created_at: string;
 }
 
@@ -194,9 +196,14 @@ export function CourierHome() {
                   {o.customer_name && (
                     <div className="text-sm mt-1">👤 <span className="font-medium">{o.customer_name}</span></div>
                   )}
-                  <div className="flex items-center justify-between mt-3">
-                    <div className="text-sm flex items-center gap-1"><DollarSign className="h-4 w-4 text-success" /> ${Number(o.amount_to_collect).toFixed(2)}</div>
-                    <Button size="sm" onClick={() => onAccept(o.id)}>
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t">
+                    <div>
+                      <div className="text-xs text-muted-foreground">Ganas</div>
+                      <div className="font-display text-xl font-bold text-success flex items-center gap-1">
+                        <DollarSign className="h-5 w-5" />{Number(o.shipping_fee).toFixed(0)}
+                      </div>
+                    </div>
+                    <Button size="sm" className="h-11" onClick={() => onAccept(o.id)}>
                       Aceptar
                     </Button>
                   </div>
@@ -232,6 +239,7 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
 }) {
   const [busy, setBusy] = useState(false);
   const [proofOpen, setProofOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
 
   const goInTransit = async () => {
     setBusy(true);
@@ -267,17 +275,44 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
     onChange();
   };
 
-  const pins = [
-    ...(order.pickup_lat && order.pickup_lng ? [{ lat: order.pickup_lat, lng: order.pickup_lng, label: "Recogida" }] : []),
-    ...(order.dropoff_lat && order.dropoff_lng ? [{ lat: order.dropoff_lat, lng: order.dropoff_lng, label: "Entrega" }] : []),
-  ];
+  // Pins según estado: "assigned" = courier→restaurante (recoger), "in_transit" = restaurante→cliente
+  const goingToPickup = order.status === "assigned";
+  const pins = goingToPickup
+    ? [
+        ...(courier.lat != null && courier.lng != null
+          ? [{ lat: courier.lat, lng: courier.lng, label: "Tú" }]
+          : []),
+        ...(order.pickup_lat && order.pickup_lng
+          ? [{ lat: order.pickup_lat, lng: order.pickup_lng, label: "Restaurante" }]
+          : []),
+      ]
+    : [
+        ...(order.pickup_lat && order.pickup_lng
+          ? [{ lat: order.pickup_lat, lng: order.pickup_lng, label: "Recogida" }]
+          : []),
+        ...(order.dropoff_lat && order.dropoff_lng
+          ? [{ lat: order.dropoff_lat, lng: order.dropoff_lng, label: "Entrega" }]
+          : []),
+      ];
 
   return (
     <div className="space-y-4">
-      <Badge className="bg-primary text-primary-foreground">Pedido activo</Badge>
+      <Badge className="bg-primary text-primary-foreground">
+        {goingToPickup ? "En camino al restaurante" : "Pedido activo"}
+      </Badge>
       <Card className="p-4 space-y-2">
-        <div className="font-display text-lg font-bold">{restaurant?.name ?? "Restaurante"}</div>
-        <div className="text-sm">📞 {restaurant?.phone}</div>
+        <div className="flex items-start justify-between gap-2">
+          <div>
+            <div className="font-display text-lg font-bold">{restaurant?.name ?? "Restaurante"}</div>
+            {restaurant?.phone && (
+              <a href={`tel:${restaurant.phone}`} className="text-sm text-primary hover:underline">📞 {restaurant.phone}</a>
+            )}
+          </div>
+          <div className="text-right">
+            <div className="text-xs text-muted-foreground">Ganas</div>
+            <div className="font-display text-lg font-bold text-success">${Number(order.shipping_fee).toFixed(0)}</div>
+          </div>
+        </div>
         <div className="text-sm text-muted-foreground"><MapPin className="inline h-3.5 w-3.5" /> Recoger: {order.pickup_address}</div>
         <div className="text-sm text-muted-foreground"><MapPin className="inline h-3.5 w-3.5 text-primary" /> Entregar: {order.dropoff_address}</div>
         {order.customer_name && (
@@ -301,6 +336,10 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
         <MapView pins={pins} showRoute height="100%" />
       </div>
 
+      <Button variant="secondary" onClick={() => setChatOpen(true)} className="w-full h-12">
+        <MessageCircle className="mr-2 h-4 w-4" /> Chat con el restaurante
+      </Button>
+
       <div className="grid grid-cols-2 gap-3">
         {order.status === "assigned" && (
           <Button onClick={goInTransit} disabled={busy} className="col-span-2 h-12">
@@ -313,6 +352,15 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
           </Button>
         )}
       </div>
+
+      <OrderChat
+        open={chatOpen}
+        onOpenChange={setChatOpen}
+        orderId={order.id}
+        myRole="courier"
+        peerName={restaurant?.name ?? "Restaurante"}
+        peerPhone={restaurant?.phone}
+      />
 
       <DeliveryProofDialog
         open={proofOpen}
