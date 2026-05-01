@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AddressSearch } from "@/components/AddressSearch";
-import { MapView } from "@/components/MapView";
+import { MapView, haversine } from "@/components/MapView";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -18,6 +18,17 @@ const PAYMENT_LABELS: Record<PaymentStatus, string> = {
   all: "Cliente pagará todo",
   paid: "Envío y producto pagados",
 };
+
+function calcShippingFee(km: number): number {
+  if (!Number.isFinite(km) || km <= 0) return 0;
+  if (km <= 3) return 40;
+  if (km <= 5) return 50;
+  if (km <= 7) return 60;
+  if (km <= 9) return 70;
+  if (km <= 10.9) return 80;
+  const extra = Math.ceil(km - 11);
+  return 80 + 10 + extra * 10;
+}
 
 const schema = z.object({
   dropoff_address: z.string().trim().min(5).max(300),
@@ -37,6 +48,13 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
   });
   const [loading, setLoading] = useState(false);
 
+  const distanceKm = useMemo(() => {
+    if (restaurant.lat == null || restaurant.lng == null || form.lat == null || form.lng == null) return null;
+    return haversine({ lat: restaurant.lat, lng: restaurant.lng }, { lat: form.lat, lng: form.lng });
+  }, [restaurant.lat, restaurant.lng, form.lat, form.lng]);
+
+  const shippingFee = useMemo(() => (distanceKm == null ? 0 : calcShippingFee(distanceKm)), [distanceKm]);
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const parsed = schema.safeParse({
@@ -49,9 +67,12 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
     if (form.lat == null || form.lng == null) return toast.error("Selecciona el destino en el mapa");
     setLoading(true);
     const total = Number(form.amount || 0);
-    const amountToCollect = form.payment === "paid" ? 0 : total;
+    const amountToCollect = form.payment === "paid" ? 0 : total + shippingFee;
     const paymentNote = `[Pago: ${PAYMENT_LABELS[form.payment]}]`;
-    const composedNotes = form.notes ? `${paymentNote} ${form.notes}` : paymentNote;
+    const shippingNote = `[Envío: $${shippingFee} · ${distanceKm?.toFixed(2) ?? "?"} km]`;
+    const composedNotes = form.notes
+      ? `${paymentNote} ${shippingNote} ${form.notes}`
+      : `${paymentNote} ${shippingNote}`;
     const { error } = await supabase.from("orders").insert({
       restaurant_id: restaurant.id,
       pickup_address: restaurant.address,
@@ -109,6 +130,26 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
                   <SelectItem value="paid">Envío y producto pagados</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <Label>Distancia (km)</Label>
+              <Input
+                readOnly
+                className="bg-muted"
+                value={distanceKm == null ? "" : distanceKm.toFixed(2)}
+                placeholder="Selecciona destino"
+              />
+            </div>
+            <div>
+              <Label>Total del envío</Label>
+              <Input
+                readOnly
+                className="bg-muted font-medium"
+                value={distanceKm == null ? "" : `$${shippingFee}`}
+                placeholder="—"
+              />
             </div>
           </div>
           <div>
