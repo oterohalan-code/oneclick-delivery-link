@@ -3,8 +3,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle2, XCircle, ExternalLink } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, ExternalLink, AlertTriangle, Clock } from "lucide-react";
 import { toast } from "sonner";
+
+interface StaleOrder {
+  id: string;
+  pickup_address: string;
+  dropoff_address: string;
+  amount_to_collect: number;
+  external_order_id: string | null;
+  created_at: string;
+}
 
 interface Pending {
   id: string; user_id: string; address: string | null; plate: string | null; status: string;
