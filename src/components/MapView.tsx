@@ -103,3 +103,17 @@ export async function searchAddress(q: string): Promise<Array<{ display_name: st
   const data = (await r.json()) as Array<{ display_name: string; lat: string; lon: string }>;
   return data.map((d) => ({ display_name: d.display_name, lat: parseFloat(d.lat), lng: parseFloat(d.lon) }));
 }
+
+// Reverse geocoding: coordinates -> human-readable address
+export async function reverseGeocode(lat: number, lng: number): Promise<string | null> {
+  const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`;
+  try {
+    const r = await fetch(url, { headers: { Accept: "application/json" } });
+    if (!r.ok) return null;
+    const data = (await r.json()) as { display_name?: string };
+    return data.display_name ?? null;
+  } catch {
+    return null;
+  }
+}
+
