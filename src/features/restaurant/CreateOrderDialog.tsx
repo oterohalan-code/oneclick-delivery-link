@@ -82,7 +82,8 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
     const total = Number(form.amount || 0);
     const amountToCollect = form.payment === "paid" ? 0 : total + shippingFee;
     const paymentNote = `[Pago: ${PAYMENT_LABELS[form.payment]}]`;
-    const shippingNote = `[Envío: $${shippingFee} · ${distanceKm?.toFixed(2) ?? "?"} km]`;
+    const durationStr = routeInfo ? ` · ~${Math.round(routeInfo.durationMin)} min` : "";
+    const shippingNote = `[Envío: $${shippingFee} · ${distanceKm?.toFixed(2) ?? "?"} km${durationStr}]`;
     const composedNotes = form.notes
       ? `${paymentNote} ${shippingNote} ${form.notes}`
       : `${paymentNote} ${shippingNote}`;
