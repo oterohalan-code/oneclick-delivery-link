@@ -70,15 +70,21 @@ export function RestaurantHome() {
 
   // Cargar info de los couriers asignados
   useEffect(() => {
+    if (!user?.id) return;
     const ordersWithCourier = orders.filter(
       (o) => o.courier_id && (o.status === "assigned" || o.status === "in_transit") && !courierByOrder[o.id],
     );
     if (!ordersWithCourier.length) return;
+    let cancelled = false;
     (async () => {
       for (const o of ordersWithCourier) {
+        if (cancelled) return;
         try {
-          const res = await getCourierForOrderRpc({ data: { orderId: o.id } });
-          if (res?.ok) {
+          const res = await getCourierForOrderRpc({ data: { orderId: o.id } }).catch((err) => {
+            console.warn("getCourierForOrder request failed", err);
+            return null;
+          });
+          if (!cancelled && res?.ok) {
             setCourierByOrder((prev) => ({
               ...prev,
               [o.id]: { fullName: res.fullName, phone: res.phone, phoneDialCode: res.phoneDialCode },
@@ -89,8 +95,11 @@ export function RestaurantHome() {
         }
       }
     })();
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orders]);
+  }, [orders, user?.id]);
 
   // Realtime updates on this restaurant's orders
   useEffect(() => {
