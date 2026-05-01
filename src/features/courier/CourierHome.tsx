@@ -11,9 +11,10 @@ import { CourierOnboarding } from "./CourierOnboarding";
 import { DeliveryProofDialog } from "./DeliveryProofDialog";
 import { MapView, haversine } from "@/components/MapView";
 import { OrderChat } from "@/components/OrderChat";
-import { acceptOrder as acceptOrderFn } from "@/server/orders.functions";
+import { acceptOrder as acceptOrderFn, setOrderStatus as setOrderStatusFn, sendOrderMessage as sendOrderMessageFn } from "@/server/orders.functions";
 import { useCourierLocationTracker } from "@/hooks/useCourierLocationTracker";
 import { LocationPermissionGate } from "@/components/LocationPermissionGate";
+import { enablePush } from "@/lib/push";
 import { toast } from "sonner";
 
 interface Courier {
@@ -39,7 +40,7 @@ export function CourierHome() {
   const [courier, setCourier] = useState<Courier | null>(null);
   const [feed, setFeed] = useState<OrderRow[]>([]);
   const [active, setActive] = useState<OrderRow | null>(null);
-  const [restaurants, setRestaurants] = useState<Record<string, { name: string; phone: string }>>({});
+  const [restaurants, setRestaurants] = useState<Record<string, { name: string; phone: string; facadeUrl: string | null }>>({});
   const [loading, setLoading] = useState(true);
 
   // Geolocalización cada 3 min cuando el repartidor está activo
@@ -65,9 +66,20 @@ export function CourierHome() {
 
       const ids = Array.from(new Set([...(pend ?? []).map((o: any) => o.restaurant_id), ...(a ? [(a as any).restaurant_id] : [])]));
       if (ids.length) {
-        const { data: rs } = await supabase.from("restaurants").select("id,name,phone").in("id", ids);
-        const map: Record<string, any> = {};
-        (rs ?? []).forEach((r: any) => { map[r.id] = { name: r.name, phone: r.phone }; });
+        const { data: rs } = await supabase.from("restaurants").select("id,name,phone,facade_url").in("id", ids);
+        const map: Record<string, { name: string; phone: string; facadeUrl: string | null }> = {};
+        await Promise.all(
+          (rs ?? []).map(async (r: any) => {
+            let signed: string | null = null;
+            if (r.facade_url) {
+              const { data: s } = await supabase.storage
+                .from("restaurant-photos")
+                .createSignedUrl(r.facade_url, 3600);
+              signed = s?.signedUrl ?? null;
+            }
+            map[r.id] = { name: r.name, phone: r.phone, facadeUrl: signed };
+          }),
+        );
         setRestaurants(map);
       }
     }
@@ -75,6 +87,11 @@ export function CourierHome() {
   };
 
   useEffect(() => { load(); }, [user?.id]);
+
+  // Activar notificaciones push (silenciosamente; si no hay permiso no se rompe nada)
+  useEffect(() => {
+    if (user?.id) enablePush(user.id);
+  }, [user?.id]);
 
   // Realtime: solo si está activo Y tiene saldo/sub (puede recibir pedidos)
   const subActiveRT = courier?.subscription_active && courier?.subscription_expires_at && new Date(courier.subscription_expires_at) > new Date();
