@@ -47,12 +47,10 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
     amount: "", payment: "pending" as PaymentStatus, notes: "",
   });
   const [loading, setLoading] = useState(false);
+  const [routeInfo, setRouteInfo] = useState<{ distanceKm: number; durationMin: number } | null>(null);
+  const [routeLoading, setRouteLoading] = useState(false);
 
-  const distanceKm = useMemo(() => {
-    if (restaurant.lat == null || restaurant.lng == null || form.lat == null || form.lng == null) return null;
-    return haversine({ lat: restaurant.lat, lng: restaurant.lng }, { lat: form.lat, lng: form.lng });
-  }, [restaurant.lat, restaurant.lng, form.lat, form.lng]);
-
+  const distanceKm = routeInfo?.distanceKm ?? null;
   const shippingFee = useMemo(() => (distanceKm == null ? 0 : calcShippingFee(distanceKm)), [distanceKm]);
 
   const submit = async (e: React.FormEvent) => {
