@@ -119,11 +119,6 @@ export function DeliveryProofDialog({ open, onOpenChange, order, courierId, onDe
               </div>
             )}
             {posError && (
-              <div className="mt-2 flex items-start gap-2 text-sm text-destructive">
-                <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" /> {posError}
-              </div>
-            )}
-            {posError && (
               <div className="mt-2 space-y-2">
                 <div className="flex items-start gap-2 text-sm text-destructive">
                   <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" /> {posError}
