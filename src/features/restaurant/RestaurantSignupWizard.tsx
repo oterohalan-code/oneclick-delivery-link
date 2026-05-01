@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { PhoneInput } from "@/components/PhoneInput";
 import { AddressSearch } from "@/components/AddressSearch";
-import { MapView } from "@/components/MapView";
+import { MapView, reverseGeocode } from "@/components/MapView";
 import { DEFAULT_COUNTRY } from "@/lib/countries";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
@@ -58,6 +58,16 @@ export function RestaurantSignupWizard() {
   const [facadeUrl, setFacadeUrl] = useState<string>("");
   const [facadePreview, setFacadePreview] = useState<string>("");
   const [uploading, setUploading] = useState(false);
+  const [geocoding, setGeocoding] = useState(false);
+
+  const handleMapPick = async (la: number, ln: number) => {
+    setLat(la);
+    setLng(ln);
+    setGeocoding(true);
+    const addr = await reverseGeocode(la, ln);
+    setGeocoding(false);
+    if (addr) setAddress(addr);
+  };
 
   const alreadyAuthed = !!user && !!session;
   const effectiveStep = alreadyAuthed ? Math.max(step, 2) : step;
@@ -314,14 +324,13 @@ export function RestaurantSignupWizard() {
                   ? [{ lat, lng, label: name || "Mi local" }]
                   : []
               }
-              onMapClick={(la, ln) => {
-                setLat(la);
-                setLng(ln);
-              }}
+              onMapClick={handleMapPick}
               height="260px"
             />
             <p className="text-xs text-muted-foreground mt-1">
-              Tip: toca el mapa para ajustar la ubicación exacta.
+              {geocoding
+                ? "Obteniendo dirección…"
+                : "Tip: toca el mapa para ajustar la ubicación exacta."}
             </p>
           </div>
 
