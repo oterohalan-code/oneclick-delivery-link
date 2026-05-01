@@ -1,101 +1,64 @@
+# Mostrar el onboarding completo de Repartidor en /auth
 
-## Objetivo
+## Problema
+En `/auth?role=courier` solo aparece un formulario plano (Nombre, Teléfono, Email, Contraseña). Toda la lógica enriquecida (selector de país con bandera 🇲🇽, carga de INE/Licencia/Tarjeta de Circulación con validación IA, pregunta de mochila/equipamiento, barra de progreso) ya existe en `CourierOnboarding.tsx` pero **solo se renderiza después** del login dentro de `/app`. Por eso el usuario no ve nada de lo solicitado.
 
-Reemplazar el onboarding de repartidor por un wizard de 3 pasos, con barra de progreso, **selector de país + teléfono** (México por defecto) y **validación automática con IA (visión)** de documentos al momento de subirlos. Usaremos Lovable AI (`google/gemini-2.5-pro`) — sin API keys del usuario.
+## Solución
+Convertir `/auth` cuando el rol seleccionado es **Repartidor** en un wizard de 4 pasos integrados, reutilizando los componentes ya creados (`PhoneInput`, `CourierOnboarding`, `validateDocument`). El flujo de Restaurante queda igual (formulario simple).
 
-## Cambios en la base de datos
+### Nuevo flujo visual en /auth (rol = courier)
 
-Migración nueva:
-- `couriers`: agregar `circulation_url text`, `has_backpack boolean default false`, `willing_to_get_backpack boolean default false`, `ai_validation jsonb default '{}'`.
-- `profiles`: agregar `country_code text default 'MX'` (ISO-2) y `phone_dial_code text default '+52'`. El campo `phone` ya existe y guardará solo el número nacional.
+```
+[Barra de progreso]  Paso X de 4
 
-Bucket `courier-docs` ya privado con RLS correcto — sin cambios.
+Paso 1 — Datos de acceso
+  • Nombre completo
+  • Teléfono con selector de país (default 🇲🇽 +52)  ← PhoneInput
+  • Email
+  • Contraseña (mín. 8)
+  → Botón "Crear cuenta y continuar"
+     (ejecuta supabase.auth.signUp + guarda profile con country_code/dial)
 
-## Server function: `validate-document`
+Paso 2 — Documentos (IA)
+  • INE Frente / INE Reverso / Licencia / Tarjeta de Circulación
+  • Cada slot: subir foto → validación IA → pill verde/ámbar/rojo
+  • Reintento permitido; tras 2 fallos de nombre → "needs_review"
 
-`src/server/validate-document.functions.ts` (protegida con `requireSupabaseAuth`):
+Paso 3 — Equipamiento
+  • ¿Tienes mochila? Sí/No
+  • Si No: ¿Dispuesto a adquirir/compartimento? Sí/No
 
-- Input: `{ docPath, docType: "ine_front"|"ine_back"|"license"|"circulation", expectedFullName }`
-- Descarga la imagen del bucket con `supabaseAdmin.storage.download()`, la convierte a base64 data URL.
-- Llama Lovable AI Gateway (`google/gemini-2.5-pro`) con **tool calling** forzado para extraer JSON:
-  ```json
-  { "full_name": "...", "expiration_date": "YYYY-MM-DD|null", "document_type": "...", "is_readable": true }
-  ```
-- Lógica:
-  - `expiration_date < hoy` → `{ status: "expired" }`
-  - Fuzzy match (Jaro-Winkler ≥ 0.85, normalizando acentos) entre `full_name` y `expectedFullName` → si falla, `{ status: "name_mismatch" }`
-  - `is_readable=false` → `{ status: "unreadable" }`
-  - OK → `{ status: "valid", extracted }`
-- Persiste en `couriers.ai_validation->{docType}`.
-- Maneja 429/402 con mensajes amigables.
+Paso 4 — Confirmación
+  • Pantalla "¡Registro en proceso! Nuestro sistema y equipo están
+    validando tus datos. Recibirás una notificación push cuando
+    seas activado."
+  • Botón → /app
+```
 
-## Frontend: wizard de 3 pasos
+### Cambios técnicos
 
-Reescribir `src/features/courier/CourierOnboarding.tsx`. Barra `<Progress />` superior fija con “Paso X de 3”.
+1. **`src/routes/auth.tsx`** — Refactor:
+   - Tab "Entrar" sigue igual (login email + password).
+   - Tab "Crear cuenta" muestra selector de rol (Restaurante / Repartidor) como hoy.
+   - Si rol = **restaurant** → formulario actual sin cambios.
+   - Si rol = **courier** → renderizar `<CourierSignupWizard />` (nuevo componente local) en lugar del formulario plano.
 
-### Paso 1 — Datos de Acceso
-- **Nombre completo** (pre-llenado desde `profiles`, editable, zod ≥ 2).
-- **Correo** (editable solo si no hay sesión; en el flujo actual ya está autenticado).
-- **Contraseña** (solo si signup desde cero).
-- **Teléfono con selector de país**:
-  - Componente nuevo `src/components/PhoneInput.tsx`.
-  - Lista de países con bandera (emoji), nombre y dial code (`+52` MX, `+1` US/CA, `+34` ES, `+57` CO, `+54` AR, `+56` CL, `+51` PE, `+58` VE, `+502`–`+507` Centroamérica, `+55` BR, `+44` UK, `+33` FR, `+49` DE, etc. — lista curada de ~30 países, México **default seleccionado**).
-  - UI: `<Select>` shadcn a la izquierda mostrando 🇲🇽 +52, `<Input type="tel">` a la derecha para el número nacional. Validación zod (8–15 dígitos).
-- Guarda en `profiles`: `full_name`, `phone` (solo número), `country_code` (ISO-2), `phone_dial_code`.
+2. **`src/features/courier/CourierSignupWizard.tsx`** — Nuevo:
+   - Paso 1 (acceso + contacto): usa `PhoneInput` (default MX). Al enviar:
+     - `supabase.auth.signUp({ email, password, options.data: { full_name, phone, role: "courier", country_code, phone_dial_code } })`.
+     - Esperar sesión (hay trigger `handle_new_user` que crea profile/courier/role; verificar y, si falta, hacer upsert defensivo de profile con país y dial).
+   - Pasos 2 y 3 (documentos + equipamiento): reutilizar la lógica YA existente de `CourierOnboarding.tsx` extrayéndola en sub-componentes (`<DocumentsStep />` y `<EquipmentStep />`) para no duplicar. `CourierOnboarding` (en /app) seguirá usando los mismos sub-componentes para usuarios que regresan sin terminar.
+   - Paso 4: pantalla de confirmación con CTA → `navigate({ to: "/app" })`.
+   - Barra de progreso `value={(step/4)*100}`.
 
-### Paso 2 — Carga de Documentos
-4 dropzones grandes (`h-32`, mobile-first): **INE Frente**, **INE Reverso**, **Licencia**, **Tarjeta de Circulación**.
+3. **`src/features/courier/CourierOnboarding.tsx`** — Refactorización mínima:
+   - Extraer `DocumentsStep` y `EquipmentStep` a archivos compartidos (`src/features/courier/steps/`) para que ambos (`/auth` wizard y `/app` onboarding) los usen.
 
-Por cada foto:
-1. Sube a `courier-docs/{user_id}/{docType}-{ts}.jpg`.
-2. Estado “Verificando documentos…” con spinner sobre el slot.
-3. Llama `validateDocument({...})`.
-4. Renderiza resultado:
-   - ✅ verde: “{nombre extraído} · vence {fecha}”
-   - ⚠️ rojo + botón **Volver a subir**: “Documento expirado” / “Foto borrosa” / “El nombre no coincide con tu perfil”
-5. No avanza al Paso 3 hasta que los 4 docs estén `valid`. Tras 2 intentos `name_mismatch` se permite continuar marcando ese doc como `needs_review` (revisión manual).
+4. **Manejo de email confirmation**:
+   - Si Supabase requiere confirmación por email, `signUp` no devuelve sesión inmediata → mostrar mensaje "Revisa tu correo para confirmar antes de subir documentos" y bloquear pasos 2-4 hasta que regrese autenticado. (Auto-confirm NO está activo por defecto y no debe activarse sin pedir.)
+   - Si la sesión está disponible inmediatamente, continuar al Paso 2 sin fricción.
 
-### Paso 3 — Equipamiento
-- “¿Tienes mochila de repartidor?” (botones grandes Sí/No).
-- Si **No** → “¿Estás dispuesto a adquirir una o contar con un compartimento para transportar productos?” (Sí/No).
-  - Si responde No al segundo → botón Continuar deshabilitado: “Necesitas equipamiento para repartir.”
-- Guarda `has_backpack`, `willing_to_get_backpack`.
+5. **Sin cambios** en BD, RLS, edge functions, ni en `/app/index.tsx` (sigue mostrando `CourierOnboarding` para usuarios que regresan a completar).
 
-### Pantalla final
-Card centrada con icono ⏳:
-> **¡Registro en proceso!**  
-> Nuestro sistema y equipo están validando tus datos. Recibirás una notificación push cuando seas activado.
-
-Setea `couriers.status = 'pending_validation'`.
-
-## UI / Mobile-first
-- Botones `size="lg"` con `h-14 text-base`.
-- Dropzones grandes con feedback visual (spinner / check / alerta).
-- Una sola columna, padding generoso, navegación Anterior/Siguiente fija abajo.
-
-## Admin panel
-Update menor en `AdminHome.tsx`: por cada doc con `ai_validation`, mostrar pill verde/ámbar/rojo con `extracted.full_name` y `expiration_date` para apoyar la decisión manual.
-
-## CourierHome
-Asegurar que `status === 'pending_validation'` muestra la pantalla “Registro en proceso” y NO el wizard de nuevo (a menos que esté `rejected`).
-
-## Archivos afectados
-
-- **Crear** `supabase/migrations/<timestamp>_courier_onboarding_v2.sql`
-- **Crear** `src/server/validate-document.functions.ts`
-- **Crear** `src/components/PhoneInput.tsx` (selector país + input)
-- **Crear** `src/lib/countries.ts` (lista curada de países)
-- **Reescribir** `src/features/courier/CourierOnboarding.tsx` (wizard 3 pasos)
-- **Editar** `src/features/admin/AdminHome.tsx` (mostrar resultados IA)
-- **Editar** `src/features/courier/CourierHome.tsx` (gating de pantalla final)
-
-## Detalles técnicos
-- Lovable AI: `google/gemini-2.5-pro` con `tools` + `tool_choice` forzado para JSON estructurado vía visión.
-- Fuzzy match nombres: Jaro-Winkler inline (sin nuevas dependencias).
-- Imagen → AI: `supabaseAdmin.storage.from('courier-docs').download(path)` → base64 data URL → `{type:"image_url", image_url:{url:"data:image/jpeg;base64,..."}}`.
-- Errores AI Gateway: 429 → toast “Espera unos segundos”; 402 → toast “Sin créditos de IA”.
-- Países: lista estática local (no API externa), México preseleccionado.
-
-## No incluido
-- Envío real de push al aprobar (infra existe, falta VAPID + worker — futuro).
-- Verificación SMS del teléfono — futuro.
+## Resultado
+En `/auth?role=courier` el usuario verá inmediatamente: barra de progreso, selector de país con bandera de México, y el wizard de 4 pasos exactamente como se especificó. El comportamiento del flujo de Restaurante no se altera.
