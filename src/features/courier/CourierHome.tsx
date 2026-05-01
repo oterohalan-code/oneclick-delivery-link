@@ -64,9 +64,11 @@ export function CourierHome() {
 
   useEffect(() => { load(); }, [user?.id]);
 
-  // Realtime: nuevos pedidos pending y cambios en mi pedido activo
+  // Realtime: solo si está activo Y tiene saldo/sub (puede recibir pedidos)
+  const subActiveRT = courier?.subscription_active && courier?.subscription_expires_at && new Date(courier.subscription_expires_at) > new Date();
+  const canAcceptRT = !!subActiveRT || (Number(courier?.wallet_balance ?? 0) >= 5);
   useEffect(() => {
-    if (!courier || courier.status !== "active") return;
+    if (!courier || courier.status !== "active" || !canAcceptRT) return;
     const ch = supabase.channel(`courier-${courier.id}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders", filter: "status=eq.pending" }, () => {
         toast.info("📦 Nuevo pedido disponible");
@@ -75,7 +77,7 @@ export function CourierHome() {
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders" }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [courier?.id, courier?.status]);
+  }, [courier?.id, courier?.status, canAcceptRT]);
 
   if (loading) return <div className="grid place-items-center py-20"><Loader2 className="h-6 w-6 animate-spin" /></div>;
   if (!courier) return <div className="grid place-items-center py-20"><Loader2 className="h-6 w-6 animate-spin" /></div>;
