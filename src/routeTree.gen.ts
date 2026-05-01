@@ -13,6 +13,10 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as AppWalletRouteImport } from './routes/app.wallet'
+import { Route as AppProfileRouteImport } from './routes/app.profile'
+import { Route as AppHistoryRouteImport } from './routes/app.history'
+import { Route as AppAdminRouteImport } from './routes/app.admin'
 
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
@@ -34,16 +38,44 @@ const AppIndexRoute = AppIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppRoute,
 } as any)
+const AppWalletRoute = AppWalletRouteImport.update({
+  id: '/wallet',
+  path: '/wallet',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppProfileRoute = AppProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppHistoryRoute = AppHistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppAdminRoute = AppAdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
+  '/app/admin': typeof AppAdminRoute
+  '/app/history': typeof AppHistoryRoute
+  '/app/profile': typeof AppProfileRoute
+  '/app/wallet': typeof AppWalletRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/app/admin': typeof AppAdminRoute
+  '/app/history': typeof AppHistoryRoute
+  '/app/profile': typeof AppProfileRoute
+  '/app/wallet': typeof AppWalletRoute
   '/app': typeof AppIndexRoute
 }
 export interface FileRoutesById {
@@ -51,14 +83,42 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRoute
+  '/app/admin': typeof AppAdminRoute
+  '/app/history': typeof AppHistoryRoute
+  '/app/profile': typeof AppProfileRoute
+  '/app/wallet': typeof AppWalletRoute
   '/app/': typeof AppIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/app' | '/auth' | '/app/'
+  fullPaths:
+    | '/'
+    | '/app'
+    | '/auth'
+    | '/app/admin'
+    | '/app/history'
+    | '/app/profile'
+    | '/app/wallet'
+    | '/app/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/app'
-  id: '__root__' | '/' | '/app' | '/auth' | '/app/'
+  to:
+    | '/'
+    | '/auth'
+    | '/app/admin'
+    | '/app/history'
+    | '/app/profile'
+    | '/app/wallet'
+    | '/app'
+  id:
+    | '__root__'
+    | '/'
+    | '/app'
+    | '/auth'
+    | '/app/admin'
+    | '/app/history'
+    | '/app/profile'
+    | '/app/wallet'
+    | '/app/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -97,14 +157,50 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/wallet': {
+      id: '/app/wallet'
+      path: '/wallet'
+      fullPath: '/app/wallet'
+      preLoaderRoute: typeof AppWalletRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/profile': {
+      id: '/app/profile'
+      path: '/profile'
+      fullPath: '/app/profile'
+      preLoaderRoute: typeof AppProfileRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/history': {
+      id: '/app/history'
+      path: '/history'
+      fullPath: '/app/history'
+      preLoaderRoute: typeof AppHistoryRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/app/admin': {
+      id: '/app/admin'
+      path: '/admin'
+      fullPath: '/app/admin'
+      preLoaderRoute: typeof AppAdminRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
+  AppAdminRoute: typeof AppAdminRoute
+  AppHistoryRoute: typeof AppHistoryRoute
+  AppProfileRoute: typeof AppProfileRoute
+  AppWalletRoute: typeof AppWalletRoute
   AppIndexRoute: typeof AppIndexRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
+  AppAdminRoute: AppAdminRoute,
+  AppHistoryRoute: AppHistoryRoute,
+  AppProfileRoute: AppProfileRoute,
+  AppWalletRoute: AppWalletRoute,
   AppIndexRoute: AppIndexRoute,
 }
 
