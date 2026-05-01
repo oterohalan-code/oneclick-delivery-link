@@ -11,7 +11,7 @@ import { CourierOnboarding } from "./CourierOnboarding";
 import { DeliveryProofDialog } from "./DeliveryProofDialog";
 import { MapView, haversine } from "@/components/MapView";
 import { OrderChat } from "@/components/OrderChat";
-import { acceptOrder as acceptOrderFn, setOrderStatus as setOrderStatusFn, sendOrderMessage as sendOrderMessageFn } from "@/server/orders.functions";
+import { acceptOrder as acceptOrderFn, setOrderStatus as setOrderStatusFn } from "@/server/orders.functions";
 import { useCourierLocationTracker } from "@/hooks/useCourierLocationTracker";
 import { LocationPermissionGate } from "@/components/LocationPermissionGate";
 import { enablePush } from "@/lib/push";
