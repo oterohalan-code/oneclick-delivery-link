@@ -7,7 +7,6 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { z } from "zod";
 import { CourierSignupWizard } from "@/features/courier/CourierSignupWizard";
 import { RestaurantSignupWizard } from "@/features/restaurant/RestaurantSignupWizard";
 
@@ -19,13 +18,6 @@ export const Route = createFileRoute("/auth")({
   }),
   component: AuthPage,
   head: () => ({ meta: [{ title: "Entrar — 1-Click" }] }),
-});
-
-const signupSchema = z.object({
-  email: z.string().trim().email("Email inválido").max(255),
-  password: z.string().min(8, "Mínimo 8 caracteres").max(72),
-  fullName: z.string().trim().min(2, "Nombre requerido").max(100),
-  phone: z.string().trim().min(8, "Teléfono inválido").max(20),
 });
 
 function AuthPage() {
