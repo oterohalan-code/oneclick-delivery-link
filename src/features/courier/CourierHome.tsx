@@ -29,6 +29,7 @@ interface OrderRow {
   dropoff_address: string; dropoff_lat: number | null; dropoff_lng: number | null;
   amount_to_collect: number; external_order_id: string | null; notes: string | null;
   customer_name: string | null; customer_phone: string | null;
+  shipping_fee: number; distance_km: number | null;
   restaurant_id: string; courier_id: string | null; created_at: string;
 }
 
