@@ -287,28 +287,11 @@ export function RestaurantSignupWizard() {
                 )}
               </button>
             )}
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Upload className="h-3 w-3" />
+            <p className="text-xs text-muted-foreground">
               Ayuda a los repartidores a reconocer tu local.
             </p>
           </div>
 
-          {/* Categoría */}
-          <div className="space-y-2">
-            <Label>Categoría</Label>
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="h-12">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {RESTAURANT_CATEGORIES.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
 
           {/* Dirección + mapa */}
           <div className="space-y-2">
