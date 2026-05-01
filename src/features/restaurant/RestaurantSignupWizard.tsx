@@ -4,13 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { PhoneInput } from "@/components/PhoneInput";
 import { AddressSearch } from "@/components/AddressSearch";
 import { MapView } from "@/components/MapView";
@@ -24,10 +17,8 @@ import {
   Loader2,
   MailCheck,
   Store,
-  Upload,
 } from "lucide-react";
 import { z } from "zod";
-import { RESTAURANT_CATEGORIES } from "./constants";
 
 const step1Schema = z.object({
   name: z.string().trim().min(2, "Nombre del local requerido").max(120),
@@ -37,7 +28,6 @@ const step1Schema = z.object({
 });
 
 const step2Schema = z.object({
-  category: z.string().min(1, "Selecciona una categoría"),
   address: z.string().trim().min(5, "Dirección requerida"),
   lat: z.number().refine((v) => Number.isFinite(v), "Selecciona la ubicación en el mapa"),
   lng: z.number().refine((v) => Number.isFinite(v), "Selecciona la ubicación en el mapa"),
@@ -62,7 +52,6 @@ export function RestaurantSignupWizard() {
   const [password, setPassword] = useState("");
 
   // Paso 2
-  const [category, setCategory] = useState<string>(RESTAURANT_CATEGORIES[0]);
   const [address, setAddress] = useState("");
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
@@ -140,7 +129,6 @@ export function RestaurantSignupWizard() {
     if (!user) return toast.error("Sesión no encontrada");
 
     const parsed = step2Schema.safeParse({
-      category,
       address,
       lat: lat ?? NaN,
       lng: lng ?? NaN,
@@ -153,7 +141,6 @@ export function RestaurantSignupWizard() {
       user_id: user.id,
       name: name.trim(),
       phone: phone.trim(),
-      category,
       address: address.trim(),
       lat: lat!,
       lng: lng!,
@@ -300,28 +287,11 @@ export function RestaurantSignupWizard() {
                 )}
               </button>
             )}
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Upload className="h-3 w-3" />
+            <p className="text-xs text-muted-foreground">
               Ayuda a los repartidores a reconocer tu local.
             </p>
           </div>
 
-          {/* Categoría */}
-          <div className="space-y-2">
-            <Label>Categoría</Label>
-            <Select value={category} onValueChange={setCategory}>
-              <SelectTrigger className="h-12">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {RESTAURANT_CATEGORIES.map((c) => (
-                  <SelectItem key={c} value={c}>
-                    {c}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
 
           {/* Dirección + mapa */}
           <div className="space-y-2">

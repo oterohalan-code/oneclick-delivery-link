@@ -1,0 +1,1 @@
+ALTER TABLE public.restaurants ALTER COLUMN category DROP NOT NULL;
