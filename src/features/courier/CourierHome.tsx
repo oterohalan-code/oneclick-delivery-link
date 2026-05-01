@@ -77,11 +77,12 @@ export function CourierHome() {
 
   if (courier.status === "pending_validation") {
     return (
-      <Card className="p-6 text-center">
+      <Card className="p-8 text-center">
         <AlertCircle className="h-12 w-12 text-warning mx-auto mb-3" />
-        <h2 className="font-display text-xl font-bold">Cuenta en revisión</h2>
-        <p className="text-sm text-muted-foreground mt-2">Tu documentación está siendo validada por el equipo de 1-Click. Te notificaremos cuando esté lista.</p>
-        <CourierOnboarding existing onDone={load} />
+        <h2 className="font-display text-xl font-bold">¡Registro en proceso!</h2>
+        <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
+          Nuestro sistema y equipo están validando tus datos. Recibirás una notificación push cuando seas activado.
+        </p>
       </Card>
     );
   }
