@@ -44,9 +44,10 @@ export async function enablePush(userId: string): Promise<boolean> {
 
       let sub = await reg.pushManager.getSubscription();
       if (!sub) {
+        const key = urlBase64ToUint8Array(VAPID_PUBLIC);
         sub = await reg.pushManager.subscribe({
           userVisibleOnly: true,
-          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC),
+          applicationServerKey: key.buffer.slice(key.byteOffset, key.byteOffset + key.byteLength) as ArrayBuffer,
         });
       }
 

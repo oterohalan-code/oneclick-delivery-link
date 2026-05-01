@@ -29,8 +29,6 @@ interface Props {
   onRouteInfo?: (info: { distanceKm: number; durationMin: number } | null) => void;
 }
 
-const _haversineUnused = null; // keep file structure stable
-
 const CANCUN: [number, number] = [21.1619, -86.8515];
 
 export function MapView({ pins = [], showRoute, center, zoom = 13, height = "320px", onMapClick, onRouteInfo }: Props) {
