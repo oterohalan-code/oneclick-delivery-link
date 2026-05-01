@@ -13,6 +13,7 @@ interface Courier {
   id: string; status: string; plan: "pps" | "subscription"; wallet_balance: number;
   subscription_active: boolean; subscription_expires_at: string | null;
   lat: number | null; lng: number | null;
+  ine_front_url: string | null; license_url: string | null; circulation_url: string | null;
 }
 
 interface OrderRow {
