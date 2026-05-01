@@ -196,9 +196,14 @@ export function CourierHome() {
                   {o.customer_name && (
                     <div className="text-sm mt-1">👤 <span className="font-medium">{o.customer_name}</span></div>
                   )}
-                  <div className="flex items-center justify-between mt-3">
-                    <div className="text-sm flex items-center gap-1"><DollarSign className="h-4 w-4 text-success" /> ${Number(o.amount_to_collect).toFixed(2)}</div>
-                    <Button size="sm" onClick={() => onAccept(o.id)}>
+                  <div className="flex items-center justify-between mt-3 pt-3 border-t">
+                    <div>
+                      <div className="text-xs text-muted-foreground">Ganas</div>
+                      <div className="font-display text-xl font-bold text-success flex items-center gap-1">
+                        <DollarSign className="h-5 w-5" />{Number(o.shipping_fee).toFixed(0)}
+                      </div>
+                    </div>
+                    <Button size="sm" className="h-11" onClick={() => onAccept(o.id)}>
                       Aceptar
                     </Button>
                   </div>
