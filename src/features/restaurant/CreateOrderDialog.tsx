@@ -31,7 +31,9 @@ function calcShippingFee(km: number): number {
 }
 
 const schema = z.object({
-  dropoff_address: z.string().trim().min(5).max(300),
+  customer_name: z.string().trim().min(2, "Nombre del cliente requerido").max(80),
+  customer_phone: z.string().regex(/^\d{10}$/, "WhatsApp: 10 dígitos"),
+  dropoff_address: z.string().trim().min(5, "Dirección de entrega requerida").max(300),
   total: z.number().min(0).max(100000),
   payment: z.enum(["pending", "all", "paid"]),
   notes: z.string().trim().max(500).optional(),
@@ -43,6 +45,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
   onCreated: () => void;
 }) {
   const [form, setForm] = useState({
+    customer_name: "", customer_phone: "",
     dropoff_address: "", lat: null as number | null, lng: null as number | null,
     amount: "", payment: "pending" as PaymentStatus, notes: "",
   });
@@ -80,6 +83,8 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const parsed = schema.safeParse({
+      customer_name: form.customer_name,
+      customer_phone: form.customer_phone,
       dropoff_address: form.dropoff_address,
       total: Number(form.amount || 0),
       payment: form.payment,
@@ -96,6 +101,8 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
     const composedNotes = form.notes
       ? `${paymentNote} ${shippingNote} ${form.notes}`
       : `${paymentNote} ${shippingNote}`;
+    const dialCode = "+52";
+    const fullPhone = `${dialCode}${form.customer_phone}`;
     const { error } = await supabase.from("orders").insert({
       restaurant_id: restaurant.id,
       pickup_address: restaurant.address,
@@ -104,12 +111,15 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
       dropoff_lat: form.lat, dropoff_lng: form.lng,
       amount_to_collect: amountToCollect,
       notes: composedNotes,
+      customer_name: form.customer_name.trim(),
+      customer_phone: fullPhone,
+      customer_phone_dial_code: dialCode,
       status: "pending",
     });
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Pedido publicado. Avisando a repartidores...");
-    setForm({ dropoff_address: "", lat: null, lng: null, amount: "", payment: "pending", notes: "" });
+    setForm({ customer_name: "", customer_phone: "", dropoff_address: "", lat: null, lng: null, amount: "", payment: "pending", notes: "" });
     onOpenChange(false);
     onCreated();
   };
@@ -119,6 +129,34 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
       <DialogContent className="max-w-lg max-h-[90vh] overflow-auto">
         <DialogHeader><DialogTitle>Solicitar repartidor</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <Label>Nombre del cliente</Label>
+              <Input
+                placeholder="Ej. Juan Pérez"
+                value={form.customer_name}
+                maxLength={80}
+                onChange={(e) => setForm({ ...form, customer_name: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <Label>WhatsApp del cliente</Label>
+              <div className="flex">
+                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-sm text-muted-foreground">+52</span>
+                <Input
+                  className="rounded-l-none"
+                  type="tel"
+                  inputMode="numeric"
+                  placeholder="5512345678"
+                  value={form.customer_phone}
+                  maxLength={10}
+                  onChange={(e) => setForm({ ...form, customer_phone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
+                  required
+                />
+              </div>
+            </div>
+          </div>
           <div>
             <Label>Dirección de entrega</Label>
             <AddressSearch

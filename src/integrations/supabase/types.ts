@@ -101,6 +101,9 @@ export type Database = {
           amount_to_collect: number
           courier_id: string | null
           created_at: string
+          customer_name: string | null
+          customer_phone: string | null
+          customer_phone_dial_code: string
           delivered_at: string | null
           delivered_lat: number | null
           delivered_lng: number | null
@@ -122,6 +125,9 @@ export type Database = {
           amount_to_collect?: number
           courier_id?: string | null
           created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          customer_phone_dial_code?: string
           delivered_at?: string | null
           delivered_lat?: number | null
           delivered_lng?: number | null
@@ -143,6 +149,9 @@ export type Database = {
           amount_to_collect?: number
           courier_id?: string | null
           created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          customer_phone_dial_code?: string
           delivered_at?: string | null
           delivered_lat?: number | null
           delivered_lng?: number | null

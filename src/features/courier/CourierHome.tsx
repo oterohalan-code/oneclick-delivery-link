@@ -27,6 +27,7 @@ interface OrderRow {
   pickup_address: string; pickup_lat: number | null; pickup_lng: number | null;
   dropoff_address: string; dropoff_lat: number | null; dropoff_lng: number | null;
   amount_to_collect: number; external_order_id: string | null; notes: string | null;
+  customer_name: string | null; customer_phone: string | null;
   restaurant_id: string; courier_id: string | null; created_at: string;
 }
 
@@ -190,6 +191,9 @@ export function CourierHome() {
                   </div>
                   <div className="text-sm text-muted-foreground flex gap-1 items-start"><MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" /> {o.pickup_address}</div>
                   <div className="text-sm text-muted-foreground flex gap-1 items-start mt-1"><MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" /> {o.dropoff_address}</div>
+                  {o.customer_name && (
+                    <div className="text-sm mt-1">👤 <span className="font-medium">{o.customer_name}</span></div>
+                  )}
                   <div className="flex items-center justify-between mt-3">
                     <div className="text-sm flex items-center gap-1"><DollarSign className="h-4 w-4 text-success" /> ${Number(o.amount_to_collect).toFixed(2)}</div>
                     <Button size="sm" onClick={() => onAccept(o.id)}>
@@ -276,6 +280,19 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
         <div className="text-sm">📞 {restaurant?.phone}</div>
         <div className="text-sm text-muted-foreground"><MapPin className="inline h-3.5 w-3.5" /> Recoger: {order.pickup_address}</div>
         <div className="text-sm text-muted-foreground"><MapPin className="inline h-3.5 w-3.5 text-primary" /> Entregar: {order.dropoff_address}</div>
+        {order.customer_name && (
+          <div className="text-sm">👤 Cliente: <strong>{order.customer_name}</strong></div>
+        )}
+        {order.customer_phone && (
+          <a
+            href={`https://wa.me/${order.customer_phone.replace(/\D/g, "")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-sm font-medium text-success hover:underline"
+          >
+            📱 WhatsApp cliente: {order.customer_phone}
+          </a>
+        )}
         <div className="text-sm">💵 Cobrar al cliente: <strong>${Number(order.amount_to_collect).toFixed(2)}</strong></div>
         {order.notes && <div className="text-sm bg-muted p-2 rounded">📝 {order.notes}</div>}
       </Card>

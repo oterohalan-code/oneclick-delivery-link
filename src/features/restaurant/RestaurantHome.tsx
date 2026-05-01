@@ -16,6 +16,7 @@ interface Restaurant {
 interface Order {
   id: string; status: string; pickup_address: string; dropoff_address: string;
   amount_to_collect: number; external_order_id: string | null;
+  customer_name: string | null; customer_phone: string | null;
   created_at: string; courier_id: string | null;
 }
 
@@ -102,6 +103,9 @@ export function RestaurantHome() {
                     <div className="min-w-0">
                       <div className="text-xs text-muted-foreground">#{o.external_order_id ?? o.id.slice(0, 6)}</div>
                       <div className="font-medium truncate">{o.dropoff_address}</div>
+                      {o.customer_name && (
+                        <div className="text-xs text-muted-foreground truncate">👤 {o.customer_name}</div>
+                      )}
                       <div className="text-sm text-muted-foreground mt-1">${Number(o.amount_to_collect).toFixed(2)} MXN</div>
                     </div>
                     <Badge className={m.color}><Icon className="h-3 w-3 mr-1" />{m.label}</Badge>
