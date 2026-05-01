@@ -35,6 +35,7 @@ export function RestaurantHome() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [chatOrderId, setChatOrderId] = useState<string | null>(null);
 
   const load = async () => {
     if (!user) return;
