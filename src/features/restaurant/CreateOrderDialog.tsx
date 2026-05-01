@@ -129,6 +129,34 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
       <DialogContent className="max-w-lg max-h-[90vh] overflow-auto">
         <DialogHeader><DialogTitle>Solicitar repartidor</DialogTitle></DialogHeader>
         <form onSubmit={submit} className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <Label>Nombre del cliente</Label>
+              <Input
+                placeholder="Ej. Juan Pérez"
+                value={form.customer_name}
+                maxLength={80}
+                onChange={(e) => setForm({ ...form, customer_name: e.target.value })}
+                required
+              />
+            </div>
+            <div>
+              <Label>WhatsApp del cliente</Label>
+              <div className="flex">
+                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-sm text-muted-foreground">+52</span>
+                <Input
+                  className="rounded-l-none"
+                  type="tel"
+                  inputMode="numeric"
+                  placeholder="5512345678"
+                  value={form.customer_phone}
+                  maxLength={10}
+                  onChange={(e) => setForm({ ...form, customer_phone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
+                  required
+                />
+              </div>
+            </div>
+          </div>
           <div>
             <Label>Dirección de entrega</Label>
             <AddressSearch
