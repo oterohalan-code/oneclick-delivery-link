@@ -4,13 +4,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { PhoneInput } from "@/components/PhoneInput";
 import { AddressSearch } from "@/components/AddressSearch";
 import { MapView } from "@/components/MapView";
@@ -24,10 +17,8 @@ import {
   Loader2,
   MailCheck,
   Store,
-  Upload,
 } from "lucide-react";
 import { z } from "zod";
-import { RESTAURANT_CATEGORIES } from "./constants";
 
 const step1Schema = z.object({
   name: z.string().trim().min(2, "Nombre del local requerido").max(120),
@@ -37,7 +28,6 @@ const step1Schema = z.object({
 });
 
 const step2Schema = z.object({
-  category: z.string().min(1, "Selecciona una categoría"),
   address: z.string().trim().min(5, "Dirección requerida"),
   lat: z.number().refine((v) => Number.isFinite(v), "Selecciona la ubicación en el mapa"),
   lng: z.number().refine((v) => Number.isFinite(v), "Selecciona la ubicación en el mapa"),
@@ -62,7 +52,6 @@ export function RestaurantSignupWizard() {
   const [password, setPassword] = useState("");
 
   // Paso 2
-  const [category, setCategory] = useState<string>(RESTAURANT_CATEGORIES[0]);
   const [address, setAddress] = useState("");
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
