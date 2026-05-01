@@ -191,6 +191,9 @@ export function CourierHome() {
                   </div>
                   <div className="text-sm text-muted-foreground flex gap-1 items-start"><MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" /> {o.pickup_address}</div>
                   <div className="text-sm text-muted-foreground flex gap-1 items-start mt-1"><MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" /> {o.dropoff_address}</div>
+                  {o.customer_name && (
+                    <div className="text-sm mt-1">👤 <span className="font-medium">{o.customer_name}</span></div>
+                  )}
                   <div className="flex items-center justify-between mt-3">
                     <div className="text-sm flex items-center gap-1"><DollarSign className="h-4 w-4 text-success" /> ${Number(o.amount_to_collect).toFixed(2)}</div>
                     <Button size="sm" onClick={() => onAccept(o.id)}>
