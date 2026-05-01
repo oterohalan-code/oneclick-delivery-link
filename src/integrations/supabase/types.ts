@@ -102,6 +102,9 @@ export type Database = {
           courier_id: string | null
           created_at: string
           delivered_at: string | null
+          delivered_lat: number | null
+          delivered_lng: number | null
+          delivery_proof_url: string | null
           dropoff_address: string
           dropoff_lat: number | null
           dropoff_lng: number | null
@@ -120,6 +123,9 @@ export type Database = {
           courier_id?: string | null
           created_at?: string
           delivered_at?: string | null
+          delivered_lat?: number | null
+          delivered_lng?: number | null
+          delivery_proof_url?: string | null
           dropoff_address: string
           dropoff_lat?: number | null
           dropoff_lng?: number | null
@@ -138,6 +144,9 @@ export type Database = {
           courier_id?: string | null
           created_at?: string
           delivered_at?: string | null
+          delivered_lat?: number | null
+          delivered_lng?: number | null
+          delivery_proof_url?: string | null
           dropoff_address?: string
           dropoff_lat?: number | null
           dropoff_lng?: number | null
