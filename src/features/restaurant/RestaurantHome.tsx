@@ -3,9 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Plus, Loader2, Package, Truck, CheckCircle2, Clock } from "lucide-react";
+import { Plus, Loader2, Package, Truck, CheckCircle2, Clock, MessageCircle } from "lucide-react";
 import { RestaurantOnboarding } from "./RestaurantOnboarding";
 import { CreateOrderDialog } from "./CreateOrderDialog";
+import { OrderChat } from "@/components/OrderChat";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 
