@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AddressSearch } from "@/components/AddressSearch";
-import { MapView, haversine } from "@/components/MapView";
+import { MapView } from "@/components/MapView";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
@@ -47,13 +47,26 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
     amount: "", payment: "pending" as PaymentStatus, notes: "",
   });
   const [loading, setLoading] = useState(false);
+  const [routeInfo, setRouteInfo] = useState<{ distanceKm: number; durationMin: number } | null>(null);
+  const [routeLoading, setRouteLoading] = useState(false);
 
-  const distanceKm = useMemo(() => {
-    if (restaurant.lat == null || restaurant.lng == null || form.lat == null || form.lng == null) return null;
-    return haversine({ lat: restaurant.lat, lng: restaurant.lng }, { lat: form.lat, lng: form.lng });
+  const distanceKm = routeInfo?.distanceKm ?? null;
+  const shippingFee = useMemo(() => (distanceKm == null ? 0 : calcShippingFee(distanceKm)), [distanceKm]);
+
+  // Reset route info & mark loading whenever destination changes
+  useEffect(() => {
+    if (restaurant.lat == null || restaurant.lng == null || form.lat == null || form.lng == null) {
+      setRouteInfo(null);
+      setRouteLoading(false);
+      return;
+    }
+    setRouteLoading(true);
   }, [restaurant.lat, restaurant.lng, form.lat, form.lng]);
 
-  const shippingFee = useMemo(() => (distanceKm == null ? 0 : calcShippingFee(distanceKm)), [distanceKm]);
+  const handleRouteInfo = (info: { distanceKm: number; durationMin: number } | null) => {
+    setRouteInfo(info);
+    setRouteLoading(false);
+  };
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -69,7 +82,8 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
     const total = Number(form.amount || 0);
     const amountToCollect = form.payment === "paid" ? 0 : total + shippingFee;
     const paymentNote = `[Pago: ${PAYMENT_LABELS[form.payment]}]`;
-    const shippingNote = `[Envío: $${shippingFee} · ${distanceKm?.toFixed(2) ?? "?"} km]`;
+    const durationStr = routeInfo ? ` · ~${Math.round(routeInfo.durationMin)} min` : "";
+    const shippingNote = `[Envío: $${shippingFee} · ${distanceKm?.toFixed(2) ?? "?"} km${durationStr}]`;
     const composedNotes = form.notes
       ? `${paymentNote} ${shippingNote} ${form.notes}`
       : `${paymentNote} ${shippingNote}`;
@@ -111,6 +125,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
               ]}
               showRoute
               onMapClick={(lat, lng) => setForm({ ...form, lat, lng })}
+              onRouteInfo={handleRouteInfo}
               height="100%"
             />
           </div>
@@ -134,11 +149,11 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <Label>Distancia (km)</Label>
+              <Label>Distancia por ruta (km)</Label>
               <Input
                 readOnly
                 className="bg-muted"
-                value={distanceKm == null ? "" : distanceKm.toFixed(2)}
+                value={routeLoading ? "Calculando ruta…" : distanceKm == null ? "" : `${distanceKm.toFixed(2)}${routeInfo ? ` · ~${Math.round(routeInfo.durationMin)} min` : ""}`}
                 placeholder="Selecciona destino"
               />
             </div>
@@ -147,7 +162,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
               <Input
                 readOnly
                 className="bg-muted font-medium"
-                value={distanceKm == null ? "" : `$${shippingFee}`}
+                value={routeLoading ? "…" : distanceKm == null ? "" : `$${shippingFee}`}
                 placeholder="—"
               />
             </div>
