@@ -53,6 +53,21 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
   const distanceKm = routeInfo?.distanceKm ?? null;
   const shippingFee = useMemo(() => (distanceKm == null ? 0 : calcShippingFee(distanceKm)), [distanceKm]);
 
+  // Reset route info & mark loading whenever destination changes
+  useEffect(() => {
+    if (restaurant.lat == null || restaurant.lng == null || form.lat == null || form.lng == null) {
+      setRouteInfo(null);
+      setRouteLoading(false);
+      return;
+    }
+    setRouteLoading(true);
+  }, [restaurant.lat, restaurant.lng, form.lat, form.lng]);
+
+  const handleRouteInfo = (info: { distanceKm: number; durationMin: number } | null) => {
+    setRouteInfo(info);
+    setRouteLoading(false);
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const parsed = schema.safeParse({
