@@ -53,9 +53,26 @@ export function MapView({ pins = [], showRoute, center, zoom = 13, height = "320
       map.on("click", (e) => onMapClick(e.latlng.lat, e.latlng.lng));
     }
 
+    // Recalc on container resize / visibility changes
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== "undefined" && containerRef.current) {
+      ro = new ResizeObserver(() => {
+        mapRef.current?.invalidateSize();
+      });
+      ro.observe(containerRef.current);
+    }
+
     return () => {
-      map.remove();
+      ro?.disconnect();
+      try {
+        map.off();
+        layerRef.current?.clearLayers();
+        map.remove();
+      } catch {
+        // ignore
+      }
       mapRef.current = null;
+      layerRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
