@@ -115,7 +115,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
       : `${paymentNote} ${shippingNote}`;
     const dialCode = "+52";
     const fullPhone = `${dialCode}${form.customer_phone}`;
-    const { error } = await supabase.from("orders").insert({
+    const { data: inserted, error } = await supabase.from("orders").insert({
       restaurant_id: restaurant.id,
       pickup_address: restaurant.address,
       pickup_lat: restaurant.lat, pickup_lng: restaurant.lng,
@@ -129,10 +129,21 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
       customer_phone: fullPhone,
       customer_phone_dial_code: dialCode,
       status: "pending",
-    });
+    }).select("id").maybeSingle();
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Pedido publicado. Avisando a repartidores...");
+
+    // Notificar a los repartidores elegibles (push)
+    if (inserted?.id) {
+      try {
+        const { notifyCouriersNewOrder } = await import("@/server/orders.functions");
+        await notifyCouriersNewOrder({ data: { orderId: inserted.id } });
+      } catch (e) {
+        console.warn("notify couriers failed", e);
+      }
+    }
+
     setForm({ customer_name: "", customer_phone: "", dropoff_address: "", lat: null, lng: null, amount: "", payment: "pending", notes: "" });
     onOpenChange(false);
     onCreated();

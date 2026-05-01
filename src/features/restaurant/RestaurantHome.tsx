@@ -3,11 +3,13 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Plus, Loader2, Package, Truck, CheckCircle2, Clock, MessageCircle } from "lucide-react";
+import { Plus, Loader2, Package, Truck, CheckCircle2, Clock, MessageCircle, Phone } from "lucide-react";
 import { RestaurantOnboarding } from "./RestaurantOnboarding";
 import { CreateOrderDialog } from "./CreateOrderDialog";
 import { OrderChat } from "@/components/OrderChat";
 import { Badge } from "@/components/ui/badge";
+import { enablePush } from "@/lib/push";
+import { getCourierForOrder } from "@/server/orders.functions";
 import { toast } from "sonner";
 
 interface Restaurant {
@@ -19,6 +21,12 @@ interface Order {
   amount_to_collect: number; external_order_id: string | null;
   customer_name: string | null; customer_phone: string | null;
   created_at: string; courier_id: string | null;
+}
+
+interface CourierInfo {
+  fullName: string;
+  phone: string | null;
+  phoneDialCode: string;
 }
 
 const STATUS_META: Record<string, { label: string; color: string; icon: any }> = {
@@ -36,6 +44,7 @@ export function RestaurantHome() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [chatOrderId, setChatOrderId] = useState<string | null>(null);
+  const [courierByOrder, setCourierByOrder] = useState<Record<string, CourierInfo>>({});
 
   const load = async () => {
     if (!user) return;
@@ -52,6 +61,35 @@ export function RestaurantHome() {
 
   useEffect(() => { load(); }, [user?.id]);
 
+  // Activar notificaciones push
+  useEffect(() => {
+    if (user?.id) enablePush(user.id);
+  }, [user?.id]);
+
+  // Cargar info de los couriers asignados
+  useEffect(() => {
+    const ordersWithCourier = orders.filter(
+      (o) => o.courier_id && (o.status === "assigned" || o.status === "in_transit") && !courierByOrder[o.id],
+    );
+    if (!ordersWithCourier.length) return;
+    (async () => {
+      for (const o of ordersWithCourier) {
+        try {
+          const res = await getCourierForOrder({ data: { orderId: o.id } });
+          if (res?.ok) {
+            setCourierByOrder((prev) => ({
+              ...prev,
+              [o.id]: { fullName: res.fullName, phone: res.phone, phoneDialCode: res.phoneDialCode },
+            }));
+          }
+        } catch (e) {
+          console.warn("getCourierForOrder failed", e);
+        }
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orders]);
+
   // Realtime updates on this restaurant's orders
   useEffect(() => {
     if (!rest?.id) return;
@@ -60,6 +98,9 @@ export function RestaurantHome() {
         (payload: any) => {
           if (payload.eventType === "UPDATE" && payload.new?.status === "assigned" && payload.old?.status === "pending") {
             toast.success("¡Un repartidor aceptó tu pedido!");
+          }
+          if (payload.eventType === "UPDATE" && payload.new?.status === "in_transit") {
+            toast.info("🚚 El repartidor va al cliente");
           }
           if (payload.eventType === "UPDATE" && payload.new?.status === "delivered") {
             toast.success("Pedido entregado ✅");
@@ -70,10 +111,30 @@ export function RestaurantHome() {
     return () => { supabase.removeChannel(ch); };
   }, [rest?.id]);
 
+  // Toast de mensajes de chat entrantes
+  useEffect(() => {
+    if (!user?.id || !rest?.id) return;
+    const ch = supabase.channel(`rest-msgs-${rest.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "order_messages" },
+        (payload: any) => {
+          const m = payload.new;
+          if (!m || m.sender_id === user.id) return;
+          if (chatOrderId === m.order_id) return; // ya está abierto
+          toast.info(`💬 ${(m.content ?? "").slice(0, 80)}`);
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user?.id, rest?.id, chatOrderId]);
+
   if (loading) return <div className="grid place-items-center py-20"><Loader2 className="h-6 w-6 animate-spin" /></div>;
   if (!rest) return <RestaurantOnboarding onDone={load} />;
 
   const active = orders.filter((o) => !["delivered", "cancelled"].includes(o.status));
+  const chatOrder = chatOrderId ? orders.find((o) => o.id === chatOrderId) : null;
+  const chatCourier = chatOrderId ? courierByOrder[chatOrderId] : null;
 
   return (
     <div className="space-y-6">
@@ -99,6 +160,7 @@ export function RestaurantHome() {
             {active.map((o) => {
               const m = STATUS_META[o.status];
               const Icon = m.icon;
+              const c = courierByOrder[o.id];
               return (
                 <Card key={o.id} className="p-4">
                   <div className="flex items-start justify-between gap-2">
@@ -112,15 +174,32 @@ export function RestaurantHome() {
                     </div>
                     <Badge className={m.color}><Icon className="h-3 w-3 mr-1" />{m.label}</Badge>
                   </div>
+
                   {o.courier_id && (o.status === "assigned" || o.status === "in_transit") && (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="mt-3 w-full"
-                      onClick={() => setChatOrderId(o.id)}
-                    >
-                      <MessageCircle className="h-4 w-4 mr-2" /> Chat con repartidor
-                    </Button>
+                    <div className="mt-3 pt-3 border-t space-y-2">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="text-xs text-muted-foreground">Repartidor</div>
+                          <div className="font-medium truncate">🛵 {c?.fullName ?? "Cargando..."}</div>
+                        </div>
+                        {c?.phone && (
+                          <a
+                            href={`tel:${c.phoneDialCode}${c.phone}`}
+                            className="inline-flex items-center gap-1 text-sm text-primary hover:underline shrink-0"
+                          >
+                            <Phone className="h-3.5 w-3.5" /> {c.phoneDialCode} {c.phone}
+                          </a>
+                        )}
+                      </div>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => setChatOrderId(o.id)}
+                      >
+                        <MessageCircle className="h-4 w-4 mr-2" /> Chat con repartidor
+                      </Button>
+                    </div>
                   )}
                 </Card>
               );
@@ -130,13 +209,14 @@ export function RestaurantHome() {
       </div>
 
       <CreateOrderDialog open={open} onOpenChange={setOpen} restaurant={rest} onCreated={load} />
-      {chatOrderId && (
+      {chatOrderId && chatOrder && (
         <OrderChat
           open={!!chatOrderId}
           onOpenChange={(v) => !v && setChatOrderId(null)}
           orderId={chatOrderId}
           myRole="restaurant"
-          peerName="Repartidor"
+          peerName={chatCourier?.fullName ?? "Repartidor"}
+          peerPhone={chatCourier?.phone ? `${chatCourier.phoneDialCode}${chatCourier.phone}` : undefined}
         />
       )}
     </div>

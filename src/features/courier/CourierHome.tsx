@@ -11,9 +11,10 @@ import { CourierOnboarding } from "./CourierOnboarding";
 import { DeliveryProofDialog } from "./DeliveryProofDialog";
 import { MapView, haversine } from "@/components/MapView";
 import { OrderChat } from "@/components/OrderChat";
-import { acceptOrder as acceptOrderFn } from "@/server/orders.functions";
+import { acceptOrder as acceptOrderFn, setOrderStatus as setOrderStatusFn } from "@/server/orders.functions";
 import { useCourierLocationTracker } from "@/hooks/useCourierLocationTracker";
 import { LocationPermissionGate } from "@/components/LocationPermissionGate";
+import { enablePush } from "@/lib/push";
 import { toast } from "sonner";
 
 interface Courier {
@@ -39,7 +40,7 @@ export function CourierHome() {
   const [courier, setCourier] = useState<Courier | null>(null);
   const [feed, setFeed] = useState<OrderRow[]>([]);
   const [active, setActive] = useState<OrderRow | null>(null);
-  const [restaurants, setRestaurants] = useState<Record<string, { name: string; phone: string }>>({});
+  const [restaurants, setRestaurants] = useState<Record<string, { name: string; phone: string; facadeUrl: string | null }>>({});
   const [loading, setLoading] = useState(true);
 
   // Geolocalización cada 3 min cuando el repartidor está activo
@@ -65,9 +66,20 @@ export function CourierHome() {
 
       const ids = Array.from(new Set([...(pend ?? []).map((o: any) => o.restaurant_id), ...(a ? [(a as any).restaurant_id] : [])]));
       if (ids.length) {
-        const { data: rs } = await supabase.from("restaurants").select("id,name,phone").in("id", ids);
-        const map: Record<string, any> = {};
-        (rs ?? []).forEach((r: any) => { map[r.id] = { name: r.name, phone: r.phone }; });
+        const { data: rs } = await supabase.from("restaurants").select("id,name,phone,facade_url").in("id", ids);
+        const map: Record<string, { name: string; phone: string; facadeUrl: string | null }> = {};
+        await Promise.all(
+          (rs ?? []).map(async (r: any) => {
+            let signed: string | null = null;
+            if (r.facade_url) {
+              const { data: s } = await supabase.storage
+                .from("restaurant-photos")
+                .createSignedUrl(r.facade_url, 3600);
+              signed = s?.signedUrl ?? null;
+            }
+            map[r.id] = { name: r.name, phone: r.phone, facadeUrl: signed };
+          }),
+        );
         setRestaurants(map);
       }
     }
@@ -75,6 +87,11 @@ export function CourierHome() {
   };
 
   useEffect(() => { load(); }, [user?.id]);
+
+  // Activar notificaciones push (silenciosamente; si no hay permiso no se rompe nada)
+  useEffect(() => {
+    if (user?.id) enablePush(user.id);
+  }, [user?.id]);
 
   // Realtime: solo si está activo Y tiene saldo/sub (puede recibir pedidos)
   const subActiveRT = courier?.subscription_active && courier?.subscription_expires_at && new Date(courier.subscription_expires_at) > new Date();
@@ -90,6 +107,23 @@ export function CourierHome() {
       .subscribe();
     return () => { supabase.removeChannel(ch); };
   }, [courier?.id, courier?.status, canAcceptRT]);
+
+  // Toast de mensajes de chat entrantes (foreground)
+  useEffect(() => {
+    if (!user?.id) return;
+    const ch = supabase.channel(`courier-msgs-${user.id}`)
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "order_messages" },
+        (payload: any) => {
+          const m = payload.new;
+          if (!m || m.sender_id === user.id) return;
+          toast.info(`💬 ${(m.content ?? "").slice(0, 80)}`);
+        },
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
+  }, [user?.id]);
 
   if (loading) return <div className="grid place-items-center py-20"><Loader2 className="h-6 w-6 animate-spin" /></div>;
   if (!courier) return <div className="grid place-items-center py-20"><Loader2 className="h-6 w-6 animate-spin" /></div>;
@@ -185,10 +219,19 @@ export function CourierHome() {
             <p className="text-sm text-muted-foreground">No hay pedidos por ahora. Te avisaremos al instante.</p>
           ) : (
             <div className="space-y-3">
-              {sorted.map(({ o, dist }) => (
+              {sorted.map(({ o, dist }) => {
+                const r = restaurants[o.restaurant_id];
+                return (
                 <Card key={o.id} className="p-4">
                   <div className="flex items-start justify-between gap-2 mb-2">
-                    <div className="font-semibold">{restaurants[o.restaurant_id]?.name ?? "Restaurante"}</div>
+                    <div className="flex items-center gap-3 min-w-0">
+                      {r?.facadeUrl ? (
+                        <img src={r.facadeUrl} alt={r.name} className="h-12 w-12 rounded-lg object-cover border" loading="lazy" />
+                      ) : (
+                        <div className="h-12 w-12 rounded-lg bg-muted grid place-items-center text-muted-foreground text-lg">🍽️</div>
+                      )}
+                      <div className="font-semibold truncate">{r?.name ?? "Restaurante"}</div>
+                    </div>
                     <Badge variant="secondary">{dist.toFixed(1)} km</Badge>
                   </div>
                   <div className="text-sm text-muted-foreground flex gap-1 items-start"><MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" /> {o.pickup_address}</div>
@@ -208,7 +251,8 @@ export function CourierHome() {
                     </Button>
                   </div>
                 </Card>
-              ))}
+                );
+              })}
             </div>
           )}
         </div>
@@ -235,7 +279,10 @@ export function CourierHome() {
 
 
 function ActiveOrderView({ order, restaurant, courier, onChange }: {
-  order: OrderRow; restaurant?: { name: string; phone: string }; courier: Courier; onChange: () => void;
+  order: OrderRow;
+  restaurant?: { name: string; phone: string; facadeUrl: string | null };
+  courier: Courier;
+  onChange: () => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [proofOpen, setProofOpen] = useState(false);
@@ -243,21 +290,23 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
 
   const goInTransit = async () => {
     setBusy(true);
-    const { error } = await supabase.from("orders").update({ status: "in_transit" }).eq("id", order.id);
+    const res = await setOrderStatusFn({ data: { orderId: order.id, status: "in_transit" } });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (!res?.ok) return toast.error(res?.message ?? "No se pudo actualizar");
     onChange();
   };
 
   const finalizeDelivery = async (proofPath: string, lat: number, lng: number): Promise<void> => {
-    const { error } = await supabase.from("orders").update({
-      status: "delivered",
-      delivered_at: new Date().toISOString(),
-      delivery_proof_url: proofPath,
-      delivered_lat: lat,
-      delivered_lng: lng,
-    }).eq("id", order.id);
-    if (error) { toast.error(error.message); return; }
+    const res = await setOrderStatusFn({
+      data: {
+        orderId: order.id,
+        status: "delivered",
+        proofUrl: proofPath,
+        deliveredLat: lat,
+        deliveredLng: lng,
+      },
+    });
+    if (!res?.ok) { toast.error(res?.message ?? "Error"); return; }
 
     // PPS charge if no active subscription
     const subActive = courier.subscription_active && courier.subscription_expires_at && new Date(courier.subscription_expires_at) > new Date();
@@ -277,6 +326,7 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
 
   // Pins según estado: "assigned" = courier→restaurante (recoger), "in_transit" = restaurante→cliente
   const goingToPickup = order.status === "assigned";
+  const showMap = order.status === "assigned" || order.status === "in_transit";
   const pins = goingToPickup
     ? [
         ...(courier.lat != null && courier.lng != null
@@ -302,13 +352,20 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
       </Badge>
       <Card className="p-4 space-y-2">
         <div className="flex items-start justify-between gap-2">
-          <div>
-            <div className="font-display text-lg font-bold">{restaurant?.name ?? "Restaurante"}</div>
-            {restaurant?.phone && (
-              <a href={`tel:${restaurant.phone}`} className="text-sm text-primary hover:underline">📞 {restaurant.phone}</a>
+          <div className="flex items-center gap-3 min-w-0">
+            {restaurant?.facadeUrl ? (
+              <img src={restaurant.facadeUrl} alt={restaurant.name} className="h-14 w-14 rounded-lg object-cover border" />
+            ) : (
+              <div className="h-14 w-14 rounded-lg bg-muted grid place-items-center text-2xl">🍽️</div>
             )}
+            <div className="min-w-0">
+              <div className="font-display text-lg font-bold truncate">{restaurant?.name ?? "Restaurante"}</div>
+              {restaurant?.phone && (
+                <a href={`tel:${restaurant.phone}`} className="text-sm text-primary hover:underline">📞 {restaurant.phone}</a>
+              )}
+            </div>
           </div>
-          <div className="text-right">
+          <div className="text-right shrink-0">
             <div className="text-xs text-muted-foreground">Ganas</div>
             <div className="font-display text-lg font-bold text-success">${Number(order.shipping_fee).toFixed(0)}</div>
           </div>
@@ -332,9 +389,11 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
         {order.notes && <div className="text-sm bg-muted p-2 rounded">📝 {order.notes}</div>}
       </Card>
 
-      <div className="h-72">
-        <MapView pins={pins} showRoute height="100%" />
-      </div>
+      {showMap && pins.length >= 1 && (
+        <div className="h-72">
+          <MapView key={`map-${order.id}-${order.status}`} pins={pins} showRoute height="100%" />
+        </div>
+      )}
 
       <Button variant="secondary" onClick={() => setChatOpen(true)} className="w-full h-12">
         <MessageCircle className="mr-2 h-4 w-4" /> Chat con el restaurante

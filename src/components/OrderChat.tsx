@@ -95,15 +95,21 @@ export function OrderChat({
     if (!content || !user) return;
     if (content.length > 1000) return toast.error("Mensaje muy largo");
     setSending(true);
-    const { error } = await supabase.from("order_messages").insert({
-      order_id: orderId,
-      sender_id: user.id,
-      sender_role: myRole,
-      content,
-    });
-    setSending(false);
-    if (error) return toast.error(error.message);
-    setText("");
+    try {
+      const { sendOrderMessage } = await import("@/server/orders.functions");
+      const res = await sendOrderMessage({
+        data: { orderId, content, senderRole: myRole },
+      });
+      if (!res?.ok) {
+        toast.error(res?.message ?? "No se pudo enviar");
+      } else {
+        setText("");
+      }
+    } catch (e: unknown) {
+      toast.error(e instanceof Error ? e.message : "Error al enviar");
+    } finally {
+      setSending(false);
+    }
   };
 
   return (
