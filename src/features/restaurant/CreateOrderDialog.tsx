@@ -149,11 +149,11 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <Label>Distancia (km)</Label>
+              <Label>Distancia por ruta (km)</Label>
               <Input
                 readOnly
                 className="bg-muted"
-                value={distanceKm == null ? "" : distanceKm.toFixed(2)}
+                value={routeLoading ? "Calculando ruta…" : distanceKm == null ? "" : `${distanceKm.toFixed(2)}${routeInfo ? ` · ~${Math.round(routeInfo.durationMin)} min` : ""}`}
                 placeholder="Selecciona destino"
               />
             </div>
@@ -162,7 +162,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
               <Input
                 readOnly
                 className="bg-muted font-medium"
-                value={distanceKm == null ? "" : `$${shippingFee}`}
+                value={routeLoading ? "…" : distanceKm == null ? "" : `$${shippingFee}`}
                 placeholder="—"
               />
             </div>
