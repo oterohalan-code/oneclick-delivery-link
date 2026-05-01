@@ -61,24 +61,7 @@ function AuthPage() {
     toast.success("Te enviamos un correo para restablecer tu contraseña.");
   };
 
-  const onSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const parse = signupSchema.safeParse(form);
-    if (!parse.success) return toast.error(parse.error.issues[0].message);
-    setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email: form.email.trim(),
-      password: form.password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/app`,
-        data: { full_name: form.fullName.trim(), phone: form.phone.trim(), role },
-      },
-    });
-    setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success("Cuenta creada. ¡Vamos!");
-    navigate({ to: "/app" });
-  };
+
 
   return (
     <div className="min-h-screen bg-brand text-brand-foreground flex flex-col">
