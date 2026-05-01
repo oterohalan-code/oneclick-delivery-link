@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { PhoneInput } from "@/components/PhoneInput";
 import { AddressSearch } from "@/components/AddressSearch";
-import { MapView } from "@/components/MapView";
+import { MapView, reverseGeocode } from "@/components/MapView";
 import { DEFAULT_COUNTRY } from "@/lib/countries";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
