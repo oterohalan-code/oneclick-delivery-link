@@ -151,3 +151,33 @@ export async function reverseGeocode(lat: number, lng: number): Promise<string |
   }
 }
 
+// Driving route via OSRM public server
+export async function fetchRoute(
+  a: { lat: number; lng: number },
+  b: { lat: number; lng: number },
+  signal?: AbortSignal,
+): Promise<{ coords: [number, number][]; distanceKm: number; durationMin: number } | null> {
+  const url = `https://router.project-osrm.org/route/v1/driving/${a.lng},${a.lat};${b.lng},${b.lat}?overview=full&geometries=geojson`;
+  try {
+    const r = await fetch(url, { signal });
+    if (!r.ok) return null;
+    const data = (await r.json()) as {
+      routes?: Array<{
+        distance: number;
+        duration: number;
+        geometry: { coordinates: [number, number][] };
+      }>;
+    };
+    const route = data.routes?.[0];
+    if (!route) return null;
+    const coords = route.geometry.coordinates.map(([lng, lat]) => [lat, lng] as [number, number]);
+    return {
+      coords,
+      distanceKm: route.distance / 1000,
+      durationMin: route.duration / 60,
+    };
+  } catch {
+    return null;
+  }
+}
+
