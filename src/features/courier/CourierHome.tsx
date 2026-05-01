@@ -239,6 +239,7 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
 }) {
   const [busy, setBusy] = useState(false);
   const [proofOpen, setProofOpen] = useState(false);
+  const [chatOpen, setChatOpen] = useState(false);
 
   const goInTransit = async () => {
     setBusy(true);
