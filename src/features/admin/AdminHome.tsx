@@ -71,7 +71,15 @@ export function AdminHome() {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    loadStale();
+    const id = setInterval(loadStale, 60_000);
+    const ch = supabase.channel("admin-stale-orders")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => loadStale())
+      .subscribe();
+    return () => { clearInterval(id); supabase.removeChannel(ch); };
+  }, []);
 
   const decide = async (id: string, approve: boolean) => {
     let reason: string | null = null;
