@@ -82,17 +82,7 @@ export function CourierHome() {
   if (loading) return <div className="grid place-items-center py-20"><Loader2 className="h-6 w-6 animate-spin" /></div>;
   if (!courier) return <div className="grid place-items-center py-20"><Loader2 className="h-6 w-6 animate-spin" /></div>;
 
-  if (courier.status === "pending_validation") {
-    return (
-      <Card className="p-8 text-center">
-        <AlertCircle className="h-12 w-12 text-warning mx-auto mb-3" />
-        <h2 className="font-display text-xl font-bold">¡Registro en proceso!</h2>
-        <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
-          Nuestro sistema y equipo están validando tus datos. Recibirás una notificación push cuando seas activado.
-        </p>
-      </Card>
-    );
-  }
+  // 1) Si fue rechazado, dejarlo volver a subir documentos
   if (courier.status === "rejected") {
     return (
       <Card className="p-6 text-center">
@@ -103,9 +93,23 @@ export function CourierHome() {
       </Card>
     );
   }
-  // Si no ha completado onboarding (le faltan documentos clave)
-  if (!courier.ine_front_url || !courier.license_url || !courier.circulation_url) {
+
+  // 2) Si le faltan documentos clave, mostrar onboarding (independiente del status)
+  if (!courier.ine_front_url || !courier.ine_back_url || !courier.license_url || !courier.circulation_url) {
     return <CourierOnboarding existing={false} onDone={load} />;
+  }
+
+  // 3) Ya subió todo pero quedó en revisión manual
+  if (courier.status === "pending_validation") {
+    return (
+      <Card className="p-8 text-center">
+        <AlertCircle className="h-12 w-12 text-warning mx-auto mb-3" />
+        <h2 className="font-display text-xl font-bold">¡Registro en proceso!</h2>
+        <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
+          Algunos de tus documentos necesitan revisión manual. Recibirás una notificación push cuando seas activado.
+        </p>
+      </Card>
+    );
   }
 
   const subActive = courier.subscription_active && courier.subscription_expires_at && new Date(courier.subscription_expires_at) > new Date();
