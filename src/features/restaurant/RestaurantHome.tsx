@@ -16,6 +16,7 @@ interface Restaurant {
 interface Order {
   id: string; status: string; pickup_address: string; dropoff_address: string;
   amount_to_collect: number; external_order_id: string | null;
+  customer_name: string | null; customer_phone: string | null;
   created_at: string; courier_id: string | null;
 }
 
