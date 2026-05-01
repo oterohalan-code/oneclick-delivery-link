@@ -5,10 +5,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, Crown, ArrowDownCircle, ArrowUpCircle, AlertCircle } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Loader2, Plus, Crown, ArrowDownCircle, ArrowUpCircle, AlertCircle, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
+import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
+import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
 
 export const Route = createFileRoute("/app/wallet")({
+  validateSearch: (search: Record<string, unknown>): { checkout?: string; session_id?: string } => ({
+    checkout: typeof search.checkout === "string" ? search.checkout : undefined,
+    session_id: typeof search.session_id === "string" ? search.session_id : undefined,
+  }),
   component: WalletPage,
 });
 
@@ -19,14 +26,21 @@ interface Courier {
 
 interface Tx { id: string; type: string; amount: number; balance_after: number | null; description: string | null; created_at: string; }
 
-const TOPUPS = [50, 100, 200, 500];
+const TOPUPS: Array<{ amount: number; priceId: string }> = [
+  { amount: 50, priceId: "wallet_topup_50_price" },
+  { amount: 100, priceId: "wallet_topup_100_price" },
+  { amount: 200, priceId: "wallet_topup_200_price" },
+  { amount: 500, priceId: "wallet_topup_500_price" },
+];
+const SUB_PRICE_ID = "courier_subscription_monthly_price";
 const SUB_PRICE = 249;
 
 function WalletPage() {
   const { user, role } = useAuth();
+  const search = Route.useSearch();
   const [courier, setCourier] = useState<Courier | null>(null);
   const [txs, setTxs] = useState<Tx[]>([]);
-  const [busy, setBusy] = useState(false);
+  const [checkout, setCheckout] = useState<{ priceId: string; purpose: "wallet_topup" | "subscription" } | null>(null);
 
   const load = async () => {
     if (!user) return;
@@ -41,59 +55,42 @@ function WalletPage() {
 
   useEffect(() => { load(); }, [user?.id]);
 
+  // Show success toast when returning from checkout
+  useEffect(() => {
+    if (search.checkout === "success" && search.session_id) {
+      toast.success("¡Pago confirmado! Procesando tu compra…");
+      // Poll briefly for webhook to land
+      let tries = 0;
+      const iv = setInterval(async () => {
+        tries++;
+        await load();
+        if (tries >= 6) clearInterval(iv);
+      }, 1500);
+      return () => clearInterval(iv);
+    }
+  }, [search.checkout, search.session_id]);
+
   if (role !== "courier") return <Card className="p-6">Solo disponible para repartidores.</Card>;
   if (!courier) return <div className="grid place-items-center py-20"><Loader2 className="h-6 w-6 animate-spin" /></div>;
 
   const subActive = courier.subscription_active && courier.subscription_expires_at && new Date(courier.subscription_expires_at) > new Date();
-
-  const topUp = async (amount: number) => {
-    setBusy(true);
-    const newBal = Number(courier.wallet_balance) + amount;
-    const { error: e1 } = await supabase.from("couriers").update({ wallet_balance: newBal }).eq("id", courier.id);
-    const { error: e2 } = await supabase.from("wallet_transactions").insert({
-      courier_id: courier.id, type: "topup", amount, balance_after: newBal, description: `Recarga $${amount}`,
-    });
-    setBusy(false);
-    if (e1 || e2) return toast.error("Error al recargar");
-    toast.success(`Recargaste $${amount}`);
-    load();
-  };
-
-  const activateSub = async () => {
-    setBusy(true);
-    const expires = new Date();
-    expires.setMonth(expires.getMonth() + 1);
-    const { error: e1 } = await supabase.from("couriers").update({
-      plan: "subscription", subscription_active: true, subscription_expires_at: expires.toISOString(),
-    }).eq("id", courier.id);
-    const { error: e2 } = await supabase.from("subscriptions").insert({
-      courier_id: courier.id, amount: SUB_PRICE, expires_at: expires.toISOString(),
-    });
-    await supabase.from("wallet_transactions").insert({
-      courier_id: courier.id, type: "subscription_charge", amount: -SUB_PRICE, balance_after: Number(courier.wallet_balance),
-      description: "Activación de suscripción mensual",
-    });
-    setBusy(false);
-    if (e1 || e2) return toast.error("Error al activar");
-    toast.success("¡Suscripción activa por 30 días!");
-    load();
-  };
-
-  const switchPlan = async (next: "pps" | "subscription") => {
-    if (next === "subscription") return activateSub();
-    // a PPS: la suscripción se mantiene vigente; solo cambia el plan preferido
-    setBusy(true);
-    const { error } = await supabase.from("couriers").update({ plan: "pps" }).eq("id", courier.id);
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success(subActive ? "Cambiaste a PPS. Tu suscripción sigue activa hasta el vencimiento." : "Cambiaste a PPS.");
-    load();
-  };
-
   const lowFunds = !subActive && Number(courier.wallet_balance) < 5;
 
   return (
     <div className="space-y-5">
+      <PaymentTestModeBanner />
+
+      {search.checkout === "success" && (
+        <Card className="p-4 bg-success/10 border-success">
+          <div className="flex gap-2">
+            <CheckCircle2 className="h-5 w-5 text-success shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <strong>Pago recibido.</strong> Tu saldo / suscripción se acreditará en unos segundos.
+            </div>
+          </div>
+        </Card>
+      )}
+
       {lowFunds && (
         <Card className="p-4 bg-warning/10 border-warning">
           <div className="flex gap-2">
@@ -104,6 +101,7 @@ function WalletPage() {
           </div>
         </Card>
       )}
+
       <Card className="p-6 bg-gradient-to-br from-brand to-sidebar-accent text-brand-foreground border-0">
         <p className="text-xs opacity-70 uppercase tracking-wider">Saldo disponible</p>
         <p className="font-display text-4xl font-bold mt-1">${Number(courier.wallet_balance).toFixed(2)}</p>
@@ -120,27 +118,37 @@ function WalletPage() {
       <div>
         <h3 className="font-display text-lg font-semibold mb-3">Recargar monedero</h3>
         <div className="grid grid-cols-4 gap-2">
-          {TOPUPS.map((a) => (
-            <Button key={a} variant="secondary" disabled={busy} onClick={() => topUp(a)}>
-              <Plus className="h-3 w-3 mr-1" />${a}
+          {TOPUPS.map((t) => (
+            <Button
+              key={t.amount}
+              variant="secondary"
+              onClick={() => setCheckout({ priceId: t.priceId, purpose: "wallet_topup" })}
+            >
+              <Plus className="h-3 w-3 mr-1" />${t.amount}
             </Button>
           ))}
         </div>
-        <p className="text-xs text-muted-foreground mt-2">* Recargas simuladas en este MVP.</p>
+        <p className="text-xs text-muted-foreground mt-2">Pago seguro con tarjeta vía Stripe.</p>
       </div>
 
       <div>
         <h3 className="font-display text-lg font-semibold mb-3">Plan</h3>
         <div className="grid grid-cols-2 gap-2">
-          <button onClick={() => switchPlan("pps")} disabled={busy}
-            className={`rounded-xl p-4 border-2 text-left ${courier.plan === "pps" ? "border-primary bg-primary/5" : "border-border"}`}>
+          <button
+            disabled
+            className={`rounded-xl p-4 border-2 text-left ${courier.plan === "pps" ? "border-primary bg-primary/5" : "border-border opacity-70"}`}
+          >
             <div className="font-semibold">PPS</div>
             <div className="text-xs text-muted-foreground">$5 por entrega</div>
           </button>
-          <button onClick={() => switchPlan("subscription")} disabled={busy}
-            className={`rounded-xl p-4 border-2 text-left ${subActive ? "border-primary bg-primary/5" : "border-border"}`}>
+          <button
+            onClick={() => setCheckout({ priceId: SUB_PRICE_ID, purpose: "subscription" })}
+            disabled={!!subActive}
+            className={`rounded-xl p-4 border-2 text-left ${subActive ? "border-primary bg-primary/5" : "border-border"}`}
+          >
             <div className="font-semibold">Suscripción</div>
             <div className="text-xs text-muted-foreground">${SUB_PRICE}/mes ilimitado</div>
+            {subActive && <div className="text-xs text-success mt-1">Activa</div>}
           </button>
         </div>
       </div>
@@ -166,6 +174,24 @@ function WalletPage() {
           </div>
         )}
       </div>
+
+      <Dialog open={!!checkout} onOpenChange={(v) => !v && setCheckout(null)}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-auto p-0">
+          <DialogHeader className="px-6 pt-6">
+            <DialogTitle>
+              {checkout?.purpose === "subscription" ? "Activar suscripción mensual" : "Recargar monedero"}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="p-2">
+            {checkout && (
+              <StripeEmbeddedCheckout
+                priceId={checkout.priceId}
+                purpose={checkout.purpose}
+              />
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
