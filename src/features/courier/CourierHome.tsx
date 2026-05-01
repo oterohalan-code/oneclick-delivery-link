@@ -97,8 +97,8 @@ export function CourierHome() {
       </Card>
     );
   }
-  // Si no ha completado onboarding (no tiene domicilio)
-  if (!courier.lat || !courier.lng) {
+  // Si no ha completado onboarding (le faltan documentos clave)
+  if (!courier.ine_front_url || !courier.license_url || !courier.circulation_url) {
     return <CourierOnboarding existing={false} onDone={load} />;
   }
 
@@ -107,10 +107,15 @@ export function CourierHome() {
 
   if (active) return <ActiveOrderView order={active} restaurant={restaurants[active.restaurant_id]} courier={courier} onChange={load} />;
 
-  // Sort feed by distance from courier
+  // Sort feed by distance from courier (si tiene ubicación)
   const sorted = feed
     .filter((o) => o.pickup_lat != null && o.pickup_lng != null)
-    .map((o) => ({ o, dist: haversine({ lat: courier.lat!, lng: courier.lng! }, { lat: o.pickup_lat!, lng: o.pickup_lng! }) }))
+    .map((o) => ({
+      o,
+      dist: courier.lat != null && courier.lng != null
+        ? haversine({ lat: courier.lat, lng: courier.lng }, { lat: o.pickup_lat!, lng: o.pickup_lng! })
+        : 0,
+    }))
     .sort((a, b) => a.dist - b.dist);
 
   return (
