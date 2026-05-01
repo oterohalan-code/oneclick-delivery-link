@@ -262,7 +262,10 @@ export function CourierHome() {
 
 
 function ActiveOrderView({ order, restaurant, courier, onChange }: {
-  order: OrderRow; restaurant?: { name: string; phone: string }; courier: Courier; onChange: () => void;
+  order: OrderRow;
+  restaurant?: { name: string; phone: string; facadeUrl: string | null };
+  courier: Courier;
+  onChange: () => void;
 }) {
   const [busy, setBusy] = useState(false);
   const [proofOpen, setProofOpen] = useState(false);
@@ -270,21 +273,23 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
 
   const goInTransit = async () => {
     setBusy(true);
-    const { error } = await supabase.from("orders").update({ status: "in_transit" }).eq("id", order.id);
+    const res = await setOrderStatusFn({ data: { orderId: order.id, status: "in_transit" } });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (!res?.ok) return toast.error(res?.message ?? "No se pudo actualizar");
     onChange();
   };
 
   const finalizeDelivery = async (proofPath: string, lat: number, lng: number): Promise<void> => {
-    const { error } = await supabase.from("orders").update({
-      status: "delivered",
-      delivered_at: new Date().toISOString(),
-      delivery_proof_url: proofPath,
-      delivered_lat: lat,
-      delivered_lng: lng,
-    }).eq("id", order.id);
-    if (error) { toast.error(error.message); return; }
+    const res = await setOrderStatusFn({
+      data: {
+        orderId: order.id,
+        status: "delivered",
+        proofUrl: proofPath,
+        deliveredLat: lat,
+        deliveredLng: lng,
+      },
+    });
+    if (!res?.ok) { toast.error(res?.message ?? "Error"); return; }
 
     // PPS charge if no active subscription
     const subActive = courier.subscription_active && courier.subscription_expires_at && new Date(courier.subscription_expires_at) > new Date();
@@ -304,6 +309,7 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
 
   // Pins según estado: "assigned" = courier→restaurante (recoger), "in_transit" = restaurante→cliente
   const goingToPickup = order.status === "assigned";
+  const showMap = order.status === "assigned" || order.status === "in_transit";
   const pins = goingToPickup
     ? [
         ...(courier.lat != null && courier.lng != null
@@ -329,13 +335,20 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
       </Badge>
       <Card className="p-4 space-y-2">
         <div className="flex items-start justify-between gap-2">
-          <div>
-            <div className="font-display text-lg font-bold">{restaurant?.name ?? "Restaurante"}</div>
-            {restaurant?.phone && (
-              <a href={`tel:${restaurant.phone}`} className="text-sm text-primary hover:underline">📞 {restaurant.phone}</a>
+          <div className="flex items-center gap-3 min-w-0">
+            {restaurant?.facadeUrl ? (
+              <img src={restaurant.facadeUrl} alt={restaurant.name} className="h-14 w-14 rounded-lg object-cover border" />
+            ) : (
+              <div className="h-14 w-14 rounded-lg bg-muted grid place-items-center text-2xl">🍽️</div>
             )}
+            <div className="min-w-0">
+              <div className="font-display text-lg font-bold truncate">{restaurant?.name ?? "Restaurante"}</div>
+              {restaurant?.phone && (
+                <a href={`tel:${restaurant.phone}`} className="text-sm text-primary hover:underline">📞 {restaurant.phone}</a>
+              )}
+            </div>
           </div>
-          <div className="text-right">
+          <div className="text-right shrink-0">
             <div className="text-xs text-muted-foreground">Ganas</div>
             <div className="font-display text-lg font-bold text-success">${Number(order.shipping_fee).toFixed(0)}</div>
           </div>
@@ -359,9 +372,11 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
         {order.notes && <div className="text-sm bg-muted p-2 rounded">📝 {order.notes}</div>}
       </Card>
 
-      <div className="h-72">
-        <MapView pins={pins} showRoute height="100%" />
-      </div>
+      {showMap && pins.length >= 1 && (
+        <div className="h-72">
+          <MapView key={`map-${order.id}-${order.status}`} pins={pins} showRoute height="100%" />
+        </div>
+      )}
 
       <Button variant="secondary" onClick={() => setChatOpen(true)} className="w-full h-12">
         <MessageCircle className="mr-2 h-4 w-4" /> Chat con el restaurante
