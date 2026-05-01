@@ -48,6 +48,18 @@ function AuthPage() {
     navigate({ to: "/app" });
   };
 
+  const onForgotPassword = async () => {
+    const email = form.email.trim();
+    if (!email) return toast.error("Escribe tu email arriba para enviarte el enlace.");
+    setLoading(true);
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/auth/reset`,
+    });
+    setLoading(false);
+    if (error) return toast.error(error.message);
+    toast.success("Te enviamos un correo para restablecer tu contraseña.");
+  };
+
   const onSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     const parse = signupSchema.safeParse(form);
@@ -98,6 +110,14 @@ function AuthPage() {
                     onChange={(e) => setForm({ ...form, password: e.target.value })} />
                 </div>
                 <Button type="submit" disabled={loading} className="w-full mt-2">Entrar</Button>
+                <button
+                  type="button"
+                  onClick={onForgotPassword}
+                  disabled={loading}
+                  className="text-xs text-primary hover:underline block mx-auto mt-1"
+                >
+                  ¿Olvidaste tu contraseña?
+                </button>
               </form>
             </TabsContent>
 
