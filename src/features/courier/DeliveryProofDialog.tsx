@@ -28,6 +28,29 @@ export function DeliveryProofDialog({ open, onOpenChange, order, courierId, onDe
   const [photoPreview, setPhotoPreview] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
+  const fetchPosition = () => {
+    if (!navigator.geolocation) {
+      setPosError("Tu dispositivo no soporta geolocalización.");
+      return;
+    }
+    setPosError(null);
+    navigator.geolocation.getCurrentPosition(
+      (p) => setPos({ lat: p.coords.latitude, lng: p.coords.longitude }),
+      (err) => {
+        if (err.code === err.PERMISSION_DENIED) {
+          setPosError(
+            "Activa la ubicación: tócalo en el candado de la barra de direcciones → Permisos → Ubicación → Permitir, y reintenta.",
+          );
+        } else if (err.code === err.TIMEOUT) {
+          setPosError("La señal GPS tardó demasiado. Reintenta en un lugar abierto.");
+        } else {
+          setPosError("No se pudo obtener tu ubicación. Reintenta.");
+        }
+      },
+      { enableHighAccuracy: true, maximumAge: 0, timeout: 20_000 },
+    );
+  };
+
   // Re-fetch GPS each time the dialog opens
   useEffect(() => {
     if (!open) {
@@ -37,15 +60,8 @@ export function DeliveryProofDialog({ open, onOpenChange, order, courierId, onDe
       setPhotoPreview(null);
       return;
     }
-    if (!navigator.geolocation) {
-      setPosError("Tu dispositivo no soporta geolocalización.");
-      return;
-    }
-    navigator.geolocation.getCurrentPosition(
-      (p) => setPos({ lat: p.coords.latitude, lng: p.coords.longitude }),
-      (err) => setPosError(err.code === err.PERMISSION_DENIED ? "Activa la ubicación para finalizar la entrega." : "No se pudo obtener tu ubicación."),
-      { enableHighAccuracy: true, maximumAge: 0, timeout: 20_000 },
-    );
+    fetchPosition();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
   const distanceM =
@@ -105,6 +121,16 @@ export function DeliveryProofDialog({ open, onOpenChange, order, courierId, onDe
             {posError && (
               <div className="mt-2 flex items-start gap-2 text-sm text-destructive">
                 <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" /> {posError}
+              </div>
+            )}
+            {posError && (
+              <div className="mt-2 space-y-2">
+                <div className="flex items-start gap-2 text-sm text-destructive">
+                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" /> {posError}
+                </div>
+                <Button size="sm" variant="secondary" onClick={fetchPosition} className="w-full">
+                  Reintentar ubicación
+                </Button>
               </div>
             )}
             {distanceM != null && (
