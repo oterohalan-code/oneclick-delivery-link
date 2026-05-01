@@ -201,18 +201,6 @@ export function CourierHome() {
   }
 }
 
-async function acceptOrder(orderId: string, courierId: string, reload: () => void) {
-  const { data, error } = await supabase
-    .from("orders")
-    .update({ courier_id: courierId, status: "assigned", accepted_at: new Date().toISOString() })
-    .eq("id", orderId)
-    .eq("status", "pending")
-    .select().maybeSingle();
-  if (error) return toast.error(error.message);
-  if (!data) return toast.error("Otro repartidor ya tomó el pedido");
-  toast.success("¡Pedido aceptado!");
-  reload();
-}
 
 function ActiveOrderView({ order, restaurant, courier, onChange }: {
   order: OrderRow; restaurant?: { name: string; phone: string }; courier: Courier; onChange: () => void;
