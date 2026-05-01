@@ -382,6 +382,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      restaurant_owns_order_for_courier: {
+        Args: { _courier_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "restaurant" | "courier" | "admin"
