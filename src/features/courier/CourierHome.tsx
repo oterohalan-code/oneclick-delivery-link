@@ -239,7 +239,7 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
     onChange();
   };
 
-  const finalizeDelivery = async (proofPath: string, lat: number, lng: number) => {
+  const finalizeDelivery = async (proofPath: string, lat: number, lng: number): Promise<void> => {
     const { error } = await supabase.from("orders").update({
       status: "delivered",
       delivered_at: new Date().toISOString(),
