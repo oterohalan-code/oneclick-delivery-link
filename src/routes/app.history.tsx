@@ -18,6 +18,7 @@ const STATUS_LABELS: Record<string, string> = {
 function HistoryPage() {
   const { user, role } = useAuth();
   const [orders, setOrders] = useState<any[]>([]);
+  const [proofs, setProofs] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({ count: 0, total: 0 });
 
