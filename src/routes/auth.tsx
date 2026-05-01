@@ -7,8 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { z } from "zod";
 import { CourierSignupWizard } from "@/features/courier/CourierSignupWizard";
+import { RestaurantSignupWizard } from "@/features/restaurant/RestaurantSignupWizard";
 
 type RoleParam = "restaurant" | "courier";
 
@@ -18,13 +18,6 @@ export const Route = createFileRoute("/auth")({
   }),
   component: AuthPage,
   head: () => ({ meta: [{ title: "Entrar — 1-Click" }] }),
-});
-
-const signupSchema = z.object({
-  email: z.string().trim().email("Email inválido").max(255),
-  password: z.string().min(8, "Mínimo 8 caracteres").max(72),
-  fullName: z.string().trim().min(2, "Nombre requerido").max(100),
-  phone: z.string().trim().min(8, "Teléfono inválido").max(20),
 });
 
 function AuthPage() {
@@ -60,24 +53,7 @@ function AuthPage() {
     toast.success("Te enviamos un correo para restablecer tu contraseña.");
   };
 
-  const onSignup = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const parse = signupSchema.safeParse(form);
-    if (!parse.success) return toast.error(parse.error.issues[0].message);
-    setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email: form.email.trim(),
-      password: form.password,
-      options: {
-        emailRedirectTo: `${window.location.origin}/app`,
-        data: { full_name: form.fullName.trim(), phone: form.phone.trim(), role },
-      },
-    });
-    setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success("Cuenta creada. ¡Vamos!");
-    navigate({ to: "/app" });
-  };
+
 
   return (
     <div className="min-h-screen bg-brand text-brand-foreground flex flex-col">
@@ -136,33 +112,7 @@ function AuthPage() {
                 </div>
               </div>
 
-              {role === "courier" ? (
-                <CourierSignupWizard />
-              ) : (
-                <form onSubmit={onSignup} className="space-y-3">
-                  <div>
-                    <Label htmlFor="sn">Nombre del local</Label>
-                    <Input id="sn" required value={form.fullName}
-                      onChange={(e) => setForm({ ...form, fullName: e.target.value })} />
-                  </div>
-                  <div>
-                    <Label htmlFor="sp">Teléfono</Label>
-                    <Input id="sp" required value={form.phone}
-                      onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-                  </div>
-                  <div>
-                    <Label htmlFor="se">Email</Label>
-                    <Input id="se" type="email" required value={form.email}
-                      onChange={(e) => setForm({ ...form, email: e.target.value })} />
-                  </div>
-                  <div>
-                    <Label htmlFor="spw">Contraseña (mín. 8)</Label>
-                    <Input id="spw" type="password" required value={form.password}
-                      onChange={(e) => setForm({ ...form, password: e.target.value })} />
-                  </div>
-                  <Button type="submit" disabled={loading} className="w-full mt-2">Crear cuenta</Button>
-                </form>
-              )}
+              {role === "courier" ? <CourierSignupWizard /> : <RestaurantSignupWizard />}
             </TabsContent>
           </Tabs>
         </div>

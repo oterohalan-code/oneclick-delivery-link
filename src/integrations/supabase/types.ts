@@ -238,6 +238,7 @@ export type Database = {
           address: string
           category: string
           created_at: string
+          facade_url: string | null
           id: string
           lat: number | null
           lng: number | null
@@ -250,6 +251,7 @@ export type Database = {
           address: string
           category: string
           created_at?: string
+          facade_url?: string | null
           id?: string
           lat?: number | null
           lng?: number | null
@@ -262,6 +264,7 @@ export type Database = {
           address?: string
           category?: string
           created_at?: string
+          facade_url?: string | null
           id?: string
           lat?: number | null
           lng?: number | null

@@ -1,50 +1,66 @@
-# Plan
+## Objetivo
+Reemplazar el formulario actual de signup de Restaurante (que pide solo nombre, teléfono, email, contraseña en `/auth`) por un wizard guiado tipo el de Repartidor, que recoja:
 
-## 1. Diagnóstico del usuario que "no puede entrar"
+1. Nombre del local
+2. Foto de la fachada
+3. Dirección con autocompletado + mapa de confirmación
+4. Email
+5. Teléfono (con `PhoneInput`)
+6. Contraseña
 
-Revisé la base de datos y los logs de autenticación:
+Y que al finalizar deje al restaurante listo para operar (sin tener que pasar después por `RestaurantOnboarding`).
 
-- El usuario **sí existe**: `hadjysilman98@gmail.com`, creado el 1 may 18:41, rol `courier`, email ya confirmado, perfil y registro de `couriers` creados correctamente por el trigger.
-- En los logs de auth se ven **2 intentos de login seguidos** (19:18:32 y 19:18:37) ambos con `invalid_credentials`. Los passwords usados fueron diferentes entre sí (`Tacosdeasda.666` vs `Tacosdeasda666`), lo que confirma que **la contraseña tipeada no coincide con la registrada**. La cuenta está sana; es un problema de password, no del sistema.
+## Cambios técnicos
 
-**Acción:** Añadir en la pantalla `/auth` un enlace "¿Olvidaste tu contraseña?" que dispare `supabase.auth.resetPasswordForEmail()` y una nueva ruta `/auth/reset` donde el usuario pueda definir una nueva contraseña al volver desde el correo (`updateUser({ password })`). Así este usuario (y futuros) puede recuperarse sin intervención manual.
+### 1. Base de datos (migración)
+- Añadir a `public.restaurants`:
+  - `facade_url text` (nullable; foto de la fachada)
+- Crear bucket de Storage `restaurant-photos` (privado) con políticas RLS:
+  - INSERT/UPDATE/SELECT permitidos al dueño (`auth.uid()` coincide con la carpeta `{user_id}/...`)
+  - SELECT también para admins y para repartidores activos (para mostrar la fachada al recoger pedidos)
 
-Opcionalmente, si prefieres, puedo resetear su contraseña directamente vía admin a un valor temporal — dímelo en el chat y lo hago.
+### 2. Nuevo componente `RestaurantSignupWizard.tsx`
+Ubicación: `src/features/restaurant/RestaurantSignupWizard.tsx`. Imitando el patrón de `CourierSignupWizard`:
 
-## 2. Flujo de permisos de ubicación con reintento
+- **Paso 1 — Datos de acceso** (`Progress` 1/2):
+  - Nombre del local
+  - Teléfono con `PhoneInput` (guardamos `country_code` y `phone_dial_code` en `profiles`)
+  - Email
+  - Contraseña (mín. 8, validada con zod)
+  - Botón "Crear cuenta y continuar" → `supabase.auth.signUp` con `data: { full_name, phone, role: "restaurant" }`. Si la sesión queda activa, pasa al paso 2; si requiere confirmación de email, se muestra pantalla `MailCheck` igual que en courier.
 
-Hoy `useCourierLocationTracker` solo lee el estado del permiso y muestra un banner si está `denied`, pero **nunca vuelve a pedirlo** y no explica por qué hace falta. Si el navegador lo bloquea, el repartidor se queda atorado.
+- **Paso 2 — Local y ubicación** (`Progress` 2/2), solo visible con sesión:
+  - Subir foto de fachada: input `<input type="file" accept="image/*" capture="environment">` con preview. Sube a `restaurant-photos/{user_id}/facade-{timestamp}.jpg` y guarda `facade_url`.
+  - Categoría (`Select`, reusando `CATEGORIES` de `RestaurantOnboarding`)
+  - `AddressSearch` (autocompletado Nominatim ya existente)
+  - `MapView` debajo, mostrando un pin en `{lat,lng}` cuando se elige una dirección o se toca el mapa para ajustar
+  - Validación con zod (nombre ≥2, dirección ≥5, lat/lng definidos, facade_url definido)
+  - Botón "Finalizar registro" → INSERT en `public.restaurants` con `{ user_id, name, phone, category, address, lat, lng, facade_url }`. Toast de éxito y `navigate({ to: "/app" })`.
 
-Cambios:
+### 3. Integración en `src/routes/auth.tsx`
+- En el `TabsContent value="signup"` del rol `restaurant`, reemplazar el `<form onSubmit={onSignup}>` actual por `<RestaurantSignupWizard />`.
+- Eliminar `onSignup` y los inputs ahora obsoletos del path de restaurante (login y courier wizard intactos).
 
-### a) Nuevo componente `LocationPermissionGate.tsx` (reutilizable)
-- Banner/Card visible cuando `permission` es `denied`, `prompt` o `unsupported`.
-- Texto claro: "Necesitamos tu ubicación para mostrarte pedidos cercanos, asignarte rutas y verificar que estás en el punto de entrega al finalizar."
-- Botón **"Activar ubicación"** que llama a `navigator.geolocation.getCurrentPosition` **dentro del gesto del usuario** (requisito del navegador para re-prompt).
-- Manejo explícito de los 3 errores: `PERMISSION_DENIED` (instrucción para activarlo manualmente en ajustes del navegador, con detalle por sistema), `POSITION_UNAVAILABLE`, `TIMEOUT` — con botón "Reintentar".
-- Si el estado ya es `granted`, no renderiza nada.
+### 4. Reutilización
+- Se reutilizan: `PhoneInput`, `AddressSearch`, `MapView`, `CATEGORIES` (extraer a `src/features/restaurant/constants.ts` para compartir entre wizard y `RestaurantOnboarding`).
+- `RestaurantOnboarding` queda como fallback para restaurantes existentes que aún no tienen registro en `restaurants` (por ejemplo, cuentas creadas antes de este cambio); se actualiza para incluir el campo opcional de fachada.
 
-### b) Actualizar `useCourierLocationTracker.ts`
-- Exponer también `requestPermission()` para que la UI pueda invocarlo bajo gesto.
-- Cuando `permissions.query` reporta `denied`, dejar de hacer `watchPosition` (hoy no inicia, está bien) y mantener el estado reactivo a cambios (`onchange`) para reanudar el tracking automáticamente cuando el usuario lo activa desde ajustes del navegador.
+### 5. Ajustes menores
+- `RestaurantHome` ya muestra `RestaurantOnboarding` cuando no existe restaurante; con el nuevo wizard ese caso será raro, pero se mantiene por compatibilidad.
 
-### c) Integrarlo en dos puntos críticos
-- **`CourierHome.tsx`**: reemplazar el banner actual por `<LocationPermissionGate>` — siempre visible mientras el permiso no esté concedido (no solo en `denied`).
-- **`DeliveryProofDialog.tsx`**: si al abrir el diálogo no hay permiso, mostrar el mismo gate antes del paso de la foto, ya que sin GPS no se puede validar la cercanía de 50 m.
+## Diagrama del flujo
 
-## 3. Detalles técnicos
+```text
+/auth (tab Crear cuenta, rol Restaurante)
+  └─ RestaurantSignupWizard
+       Paso 1: nombre · tel · email · password  ─► supabase.auth.signUp
+                                                     │
+                                  (sesión activa) ◄──┴──► (confirmar email → MailCheck)
+       Paso 2: foto fachada · categoría · dirección + mapa
+              └─► upload a Storage + INSERT restaurants → /app
+```
 
-- Usar `navigator.permissions.query({ name: "geolocation" })` para detectar el estado actual sin disparar el prompt.
-- El re-prompt **solo funciona si el estado es `prompt`**. Si es `denied`, el navegador no vuelve a preguntar — por eso el componente debe mostrar instrucciones específicas ("Haz clic en el candado de la barra de direcciones → Permisos del sitio → Ubicación → Permitir") y un botón "Ya lo activé, reintentar" que vuelva a llamar `getCurrentPosition`.
-- Toda la lógica de geolocalización ya está envuelta en try/catch; solo añadimos UX clara.
-
-## Archivos afectados
-
-- **Nuevo**: `src/components/LocationPermissionGate.tsx`
-- **Nuevo**: `src/routes/auth.reset.tsx` (pantalla "definir nueva contraseña")
-- **Editado**: `src/hooks/useCourierLocationTracker.ts` (exponer `requestPermission`)
-- **Editado**: `src/features/courier/CourierHome.tsx` (usar el gate)
-- **Editado**: `src/features/courier/DeliveryProofDialog.tsx` (gate antes de la foto)
-- **Editado**: `src/routes/auth.tsx` (link "¿Olvidaste tu contraseña?")
-
-¿Apruebas así, o quieres que también te resetee la contraseña del usuario `hadjysilman98@gmail.com` a una temporal mientras tanto?
+## Notas
+- No se introduce Web Push (acordado).
+- La foto de fachada se almacena privada; se servirá vía signed URL cuando un repartidor la necesite (fuera de alcance de esta tarea).
+- Validación con zod tanto en paso 1 como en paso 2; mensajes en español vía `sonner`.
