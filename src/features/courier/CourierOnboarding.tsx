@@ -214,30 +214,51 @@ export function CourierOnboarding({ existing, onDone }: Props) {
   const equipmentOk =
     hasBackpack === true || (hasBackpack === false && willing === true);
 
+  // Si TODOS los documentos están "valid" (no needs_review), activación automática
+  const allFullyValid = useMemo(
+    () => DOCS.every((d) => docs[d.key].status === "valid"),
+    [docs],
+  );
+  const [autoActivated, setAutoActivated] = useState(false);
+
   const submit = async () => {
     if (!user) return;
     if (!allDocsReady) return toast.error("Faltan documentos por validar.");
     if (!equipmentOk) return toast.error("Necesitas equipamiento para repartir.");
     setSubmitting(true);
+    const newStatus: "active" | "pending_validation" = allFullyValid ? "active" : "pending_validation";
     const { error } = await supabase.from("couriers").update({
       has_backpack: hasBackpack ?? false,
       willing_to_get_backpack: willing ?? false,
-      status: "pending_validation",
+      status: newStatus,
       rejection_reason: null,
     }).eq("user_id", user.id);
     setSubmitting(false);
     if (error) return toast.error(error.message);
+    setAutoActivated(newStatus === "active");
     setDone(true);
   };
 
   // ===== Render =====
   if (done) {
+    if (autoActivated) {
+      return (
+        <Card className="p-8 mt-4 text-center">
+          <Check className="h-14 w-14 mx-auto text-success" />
+          <h2 className="font-display text-2xl font-bold mt-4">¡Bienvenido a bordo! 🎉</h2>
+          <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
+            Tus documentos fueron validados automáticamente por IA. Ya puedes empezar a recibir pedidos.
+          </p>
+          <Button className="mt-6 h-12 px-8" onClick={onDone}>Empezar a repartir</Button>
+        </Card>
+      );
+    }
     return (
       <Card className="p-8 mt-4 text-center">
         <Hourglass className="h-14 w-14 mx-auto text-primary animate-pulse" />
         <h2 className="font-display text-2xl font-bold mt-4">¡Registro en proceso!</h2>
         <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
-          Nuestro sistema y equipo están validando tus datos. Recibirás una notificación push cuando seas activado.
+          Algunos documentos requieren revisión manual. Recibirás una notificación push cuando seas activado.
         </p>
         <Button className="mt-6 h-12 px-8" onClick={onDone}>Entendido</Button>
       </Card>

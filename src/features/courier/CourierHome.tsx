@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, MapPin, DollarSign, AlertCircle, Truck, CheckCircle2 } from "lucide-react";
+import { Loader2, MapPin, DollarSign, AlertCircle, Truck, CheckCircle2, Wallet, Crown } from "lucide-react";
 import { CourierOnboarding } from "./CourierOnboarding";
 import { MapView, haversine } from "@/components/MapView";
+import { acceptOrder as acceptOrderFn } from "@/server/orders.functions";
 import { toast } from "sonner";
 
 interface Courier {
@@ -25,7 +28,8 @@ interface OrderRow {
 }
 
 export function CourierHome() {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
+  const acceptOrderRpc = useServerFn(acceptOrderFn);
   const [courier, setCourier] = useState<Courier | null>(null);
   const [feed, setFeed] = useState<OrderRow[]>([]);
   const [active, setActive] = useState<OrderRow | null>(null);
@@ -60,9 +64,11 @@ export function CourierHome() {
 
   useEffect(() => { load(); }, [user?.id]);
 
-  // Realtime: nuevos pedidos pending y cambios en mi pedido activo
+  // Realtime: solo si está activo Y tiene saldo/sub (puede recibir pedidos)
+  const subActiveRT = courier?.subscription_active && courier?.subscription_expires_at && new Date(courier.subscription_expires_at) > new Date();
+  const canAcceptRT = !!subActiveRT || (Number(courier?.wallet_balance ?? 0) >= 5);
   useEffect(() => {
-    if (!courier || courier.status !== "active") return;
+    if (!courier || courier.status !== "active" || !canAcceptRT) return;
     const ch = supabase.channel(`courier-${courier.id}`)
       .on("postgres_changes", { event: "INSERT", schema: "public", table: "orders", filter: "status=eq.pending" }, () => {
         toast.info("📦 Nuevo pedido disponible");
@@ -71,7 +77,7 @@ export function CourierHome() {
       .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders" }, () => load())
       .subscribe();
     return () => { supabase.removeChannel(ch); };
-  }, [courier?.id, courier?.status]);
+  }, [courier?.id, courier?.status, canAcceptRT]);
 
   if (loading) return <div className="grid place-items-center py-20"><Loader2 className="h-6 w-6 animate-spin" /></div>;
   if (!courier) return <div className="grid place-items-center py-20"><Loader2 className="h-6 w-6 animate-spin" /></div>;
@@ -130,58 +136,71 @@ export function CourierHome() {
         </Badge>
       </Card>
 
-      {!canAccept && (
-        <Card className="p-4 bg-warning/10 border-warning">
-          <div className="flex gap-2">
-            <AlertCircle className="h-5 w-5 text-warning shrink-0" />
-            <div className="text-sm">
-              <strong>Saldo insuficiente.</strong> Recarga al menos $5 MXN o activa la suscripción para aceptar pedidos.
-            </div>
+      {!canAccept ? (
+        <Card className="p-6 bg-warning/10 border-warning text-center space-y-3">
+          <AlertCircle className="h-10 w-10 text-warning mx-auto" />
+          <div>
+            <h3 className="font-display text-lg font-bold">No puedes recibir pedidos</h3>
+            <p className="text-sm text-muted-foreground mt-1 max-w-xs mx-auto">
+              Necesitas <strong>$5 MXN</strong> de saldo o una <strong>suscripción activa</strong> para empezar a repartir.
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <Button asChild variant="secondary" className="h-12">
+              <Link to="/app/wallet"><Wallet className="mr-1 h-4 w-4" /> Recargar</Link>
+            </Button>
+            <Button asChild className="h-12">
+              <Link to="/app/wallet"><Crown className="mr-1 h-4 w-4" /> Suscribirme</Link>
+            </Button>
           </div>
         </Card>
+      ) : (
+        <div>
+          <h3 className="font-display text-lg font-semibold mb-3">Pedidos disponibles ({sorted.length})</h3>
+          {sorted.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No hay pedidos por ahora. Te avisaremos al instante.</p>
+          ) : (
+            <div className="space-y-3">
+              {sorted.map(({ o, dist }) => (
+                <Card key={o.id} className="p-4">
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <div className="font-semibold">{restaurants[o.restaurant_id]?.name ?? "Restaurante"}</div>
+                    <Badge variant="secondary">{dist.toFixed(1)} km</Badge>
+                  </div>
+                  <div className="text-sm text-muted-foreground flex gap-1 items-start"><MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" /> {o.pickup_address}</div>
+                  <div className="text-sm text-muted-foreground flex gap-1 items-start mt-1"><MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" /> {o.dropoff_address}</div>
+                  <div className="flex items-center justify-between mt-3">
+                    <div className="text-sm flex items-center gap-1"><DollarSign className="h-4 w-4 text-success" /> ${Number(o.amount_to_collect).toFixed(2)}</div>
+                    <Button size="sm" onClick={() => onAccept(o.id)}>
+                      Aceptar
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
       )}
-
-      <div>
-        <h3 className="font-display text-lg font-semibold mb-3">Pedidos disponibles ({sorted.length})</h3>
-        {sorted.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No hay pedidos por ahora. Te avisaremos al instante.</p>
-        ) : (
-          <div className="space-y-3">
-            {sorted.map(({ o, dist }) => (
-              <Card key={o.id} className="p-4">
-                <div className="flex items-start justify-between gap-2 mb-2">
-                  <div className="font-semibold">{restaurants[o.restaurant_id]?.name ?? "Restaurante"}</div>
-                  <Badge variant="secondary">{dist.toFixed(1)} km</Badge>
-                </div>
-                <div className="text-sm text-muted-foreground flex gap-1 items-start"><MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0" /> {o.pickup_address}</div>
-                <div className="text-sm text-muted-foreground flex gap-1 items-start mt-1"><MapPin className="h-3.5 w-3.5 mt-0.5 shrink-0 text-primary" /> {o.dropoff_address}</div>
-                <div className="flex items-center justify-between mt-3">
-                  <div className="text-sm flex items-center gap-1"><DollarSign className="h-4 w-4 text-success" /> ${Number(o.amount_to_collect).toFixed(2)}</div>
-                  <Button size="sm" disabled={!canAccept} onClick={() => acceptOrder(o.id, courier.id, load)}>
-                    Aceptar
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </div>
-        )}
-      </div>
     </div>
   );
+
+  function onAccept(orderId: string) {
+    const token = session?.access_token;
+    if (!token) { toast.error("Sesión expirada."); return; }
+    acceptOrderRpc({
+      headers: { Authorization: `Bearer ${token}` },
+      data: { orderId },
+    }).then((res: any) => {
+      if (!res?.ok) return toast.error(res?.message ?? "No se pudo aceptar el pedido.");
+      toast.success("¡Pedido aceptado!");
+      load();
+    }).catch(async (e: any) => {
+      const msg = e instanceof Response ? await e.text().catch(() => "Error") : (e?.message ?? "Error");
+      toast.error(msg);
+    });
+  }
 }
 
-async function acceptOrder(orderId: string, courierId: string, reload: () => void) {
-  const { data, error } = await supabase
-    .from("orders")
-    .update({ courier_id: courierId, status: "assigned", accepted_at: new Date().toISOString() })
-    .eq("id", orderId)
-    .eq("status", "pending")
-    .select().maybeSingle();
-  if (error) return toast.error(error.message);
-  if (!data) return toast.error("Otro repartidor ya tomó el pedido");
-  toast.success("¡Pedido aceptado!");
-  reload();
-}
 
 function ActiveOrderView({ order, restaurant, courier, onChange }: {
   order: OrderRow; restaurant?: { name: string; phone: string }; courier: Courier; onChange: () => void;
