@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
 import { CourierSignupWizard } from "@/features/courier/CourierSignupWizard";
+import { RestaurantSignupWizard } from "@/features/restaurant/RestaurantSignupWizard";
 
 type RoleParam = "restaurant" | "courier";
 
@@ -136,33 +137,7 @@ function AuthPage() {
                 </div>
               </div>
 
-              {role === "courier" ? (
-                <CourierSignupWizard />
-              ) : (
-                <form onSubmit={onSignup} className="space-y-3">
-                  <div>
-                    <Label htmlFor="sn">Nombre del local</Label>
-                    <Input id="sn" required value={form.fullName}
-                      onChange={(e) => setForm({ ...form, fullName: e.target.value })} />
-                  </div>
-                  <div>
-                    <Label htmlFor="sp">Teléfono</Label>
-                    <Input id="sp" required value={form.phone}
-                      onChange={(e) => setForm({ ...form, phone: e.target.value })} />
-                  </div>
-                  <div>
-                    <Label htmlFor="se">Email</Label>
-                    <Input id="se" type="email" required value={form.email}
-                      onChange={(e) => setForm({ ...form, email: e.target.value })} />
-                  </div>
-                  <div>
-                    <Label htmlFor="spw">Contraseña (mín. 8)</Label>
-                    <Input id="spw" type="password" required value={form.password}
-                      onChange={(e) => setForm({ ...form, password: e.target.value })} />
-                  </div>
-                  <Button type="submit" disabled={loading} className="w-full mt-2">Crear cuenta</Button>
-                </form>
-              )}
+              {role === "courier" ? <CourierSignupWizard /> : <RestaurantSignupWizard />}
             </TabsContent>
           </Tabs>
         </div>
