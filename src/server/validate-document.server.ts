@@ -245,6 +245,7 @@ export async function persistValidation(userId: string, docType: DocType, result
     .eq("user_id", userId)
     .maybeSingle();
   if (!courier) return;
-  const next = { ...((courier.ai_validation as Record<string, unknown>) ?? {}), [docType]: { ...result, validated_at: new Date().toISOString() } };
-  await supabaseAdmin.from("couriers").update({ ai_validation: next }).eq("id", courier.id);
+  const prev = (courier.ai_validation as Record<string, unknown> | null) ?? {};
+  const next = { ...prev, [docType]: { ...result, validated_at: new Date().toISOString() } };
+  await supabaseAdmin.from("couriers").update({ ai_validation: next as never }).eq("id", courier.id);
 }
