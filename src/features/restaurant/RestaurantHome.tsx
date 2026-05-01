@@ -112,6 +112,16 @@ export function RestaurantHome() {
                     </div>
                     <Badge className={m.color}><Icon className="h-3 w-3 mr-1" />{m.label}</Badge>
                   </div>
+                  {o.courier_id && (o.status === "assigned" || o.status === "in_transit") && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="mt-3 w-full"
+                      onClick={() => setChatOrderId(o.id)}
+                    >
+                      <MessageCircle className="h-4 w-4 mr-2" /> Chat con repartidor
+                    </Button>
+                  )}
                 </Card>
               );
             })}
@@ -120,6 +130,15 @@ export function RestaurantHome() {
       </div>
 
       <CreateOrderDialog open={open} onOpenChange={setOpen} restaurant={rest} onCreated={load} />
+      {chatOrderId && (
+        <OrderChat
+          open={!!chatOrderId}
+          onOpenChange={(v) => !v && setChatOrderId(null)}
+          orderId={chatOrderId}
+          myRole="restaurant"
+          peerName="Repartidor"
+        />
+      )}
     </div>
   );
 }
