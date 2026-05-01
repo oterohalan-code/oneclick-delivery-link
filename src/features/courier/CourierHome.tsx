@@ -280,6 +280,19 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
         <div className="text-sm">📞 {restaurant?.phone}</div>
         <div className="text-sm text-muted-foreground"><MapPin className="inline h-3.5 w-3.5" /> Recoger: {order.pickup_address}</div>
         <div className="text-sm text-muted-foreground"><MapPin className="inline h-3.5 w-3.5 text-primary" /> Entregar: {order.dropoff_address}</div>
+        {order.customer_name && (
+          <div className="text-sm">👤 Cliente: <strong>{order.customer_name}</strong></div>
+        )}
+        {order.customer_phone && (
+          <a
+            href={`https://wa.me/${order.customer_phone.replace(/\D/g, "")}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-sm font-medium text-success hover:underline"
+          >
+            📱 WhatsApp cliente: {order.customer_phone}
+          </a>
+        )}
         <div className="text-sm">💵 Cobrar al cliente: <strong>${Number(order.amount_to_collect).toFixed(2)}</strong></div>
         {order.notes && <div className="text-sm bg-muted p-2 rounded">📝 {order.notes}</div>}
       </Card>
