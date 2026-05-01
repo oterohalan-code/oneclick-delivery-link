@@ -229,30 +229,39 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
   order: OrderRow; restaurant?: { name: string; phone: string }; courier: Courier; onChange: () => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const [proofOpen, setProofOpen] = useState(false);
 
-  const setStatus = async (next: "in_transit" | "delivered") => {
+  const goInTransit = async () => {
     setBusy(true);
-    const updates: any = { status: next };
-    if (next === "delivered") updates.delivered_at = new Date().toISOString();
-    const { error } = await supabase.from("orders").update(updates).eq("id", order.id);
-    if (error) { setBusy(false); return toast.error(error.message); }
-
-    if (next === "delivered") {
-      // PPS charge if no active subscription
-      const subActive = courier.subscription_active && courier.subscription_expires_at && new Date(courier.subscription_expires_at) > new Date();
-      if (!subActive) {
-        const newBal = Number(courier.wallet_balance) - 5;
-        await supabase.from("couriers").update({ wallet_balance: newBal }).eq("id", courier.id);
-        await supabase.from("wallet_transactions").insert({
-          courier_id: courier.id, type: "order_fee", amount: -5, balance_after: newBal,
-          order_id: order.id, description: "Comisión por entrega",
-        });
-        toast.success(`Entregado. Se descontaron $5 (saldo: $${newBal.toFixed(2)})`);
-      } else {
-        toast.success("Pedido entregado ✅");
-      }
-    }
+    const { error } = await supabase.from("orders").update({ status: "in_transit" }).eq("id", order.id);
     setBusy(false);
+    if (error) return toast.error(error.message);
+    onChange();
+  };
+
+  const finalizeDelivery = async (proofPath: string, lat: number, lng: number) => {
+    const { error } = await supabase.from("orders").update({
+      status: "delivered",
+      delivered_at: new Date().toISOString(),
+      delivery_proof_url: proofPath,
+      delivered_lat: lat,
+      delivered_lng: lng,
+    }).eq("id", order.id);
+    if (error) return toast.error(error.message);
+
+    // PPS charge if no active subscription
+    const subActive = courier.subscription_active && courier.subscription_expires_at && new Date(courier.subscription_expires_at) > new Date();
+    if (!subActive) {
+      const newBal = Number(courier.wallet_balance) - 5;
+      await supabase.from("couriers").update({ wallet_balance: newBal }).eq("id", courier.id);
+      await supabase.from("wallet_transactions").insert({
+        courier_id: courier.id, type: "order_fee", amount: -5, balance_after: newBal,
+        order_id: order.id, description: "Comisión por entrega",
+      });
+      toast.success(`Entregado. Se descontaron $5 (saldo: $${newBal.toFixed(2)})`);
+    } else {
+      toast.success("Pedido entregado ✅");
+    }
     onChange();
   };
 
@@ -279,16 +288,24 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
 
       <div className="grid grid-cols-2 gap-3">
         {order.status === "assigned" && (
-          <Button onClick={() => setStatus("in_transit")} disabled={busy} className="col-span-2">
+          <Button onClick={goInTransit} disabled={busy} className="col-span-2 h-12">
             <Truck className="mr-2 h-4 w-4" /> En camino
           </Button>
         )}
         {order.status === "in_transit" && (
-          <Button onClick={() => setStatus("delivered")} disabled={busy} className="col-span-2">
-            <CheckCircle2 className="mr-2 h-4 w-4" /> Marcar entregado
+          <Button onClick={() => setProofOpen(true)} className="col-span-2 h-12">
+            <CheckCircle2 className="mr-2 h-4 w-4" /> Finalizar entrega
           </Button>
         )}
       </div>
+
+      <DeliveryProofDialog
+        open={proofOpen}
+        onOpenChange={setProofOpen}
+        order={order}
+        courierId={courier.id}
+        onDelivered={finalizeDelivery}
+      />
     </div>
   );
 }
