@@ -33,7 +33,7 @@ export function OrderChat({
   peerName: string;
   peerPhone?: string | null;
 }) {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [text, setText] = useState("");
   const [loading, setLoading] = useState(false);
@@ -96,10 +96,13 @@ export function OrderChat({
   const send = async () => {
     const content = text.trim();
     if (!content || !user) return;
+    const token = session?.access_token;
+    if (!token) return toast.error("Sesión expirada.");
     if (content.length > 1000) return toast.error("Mensaje muy largo");
     setSending(true);
     try {
       const res = await sendOrderMessageRpc({
+        headers: { Authorization: `Bearer ${token}` },
         data: { orderId, content, senderRole: myRole },
       });
       if (!res?.ok) {
