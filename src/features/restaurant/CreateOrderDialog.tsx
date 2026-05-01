@@ -124,6 +124,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
               ]}
               showRoute
               onMapClick={(lat, lng) => setForm({ ...form, lat, lng })}
+              onRouteInfo={handleRouteInfo}
               height="100%"
             />
           </div>
