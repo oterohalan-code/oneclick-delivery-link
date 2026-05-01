@@ -83,6 +83,8 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     const parsed = schema.safeParse({
+      customer_name: form.customer_name,
+      customer_phone: form.customer_phone,
       dropoff_address: form.dropoff_address,
       total: Number(form.amount || 0),
       payment: form.payment,
@@ -99,6 +101,8 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
     const composedNotes = form.notes
       ? `${paymentNote} ${shippingNote} ${form.notes}`
       : `${paymentNote} ${shippingNote}`;
+    const dialCode = "+52";
+    const fullPhone = `${dialCode}${form.customer_phone}`;
     const { error } = await supabase.from("orders").insert({
       restaurant_id: restaurant.id,
       pickup_address: restaurant.address,
@@ -107,12 +111,15 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
       dropoff_lat: form.lat, dropoff_lng: form.lng,
       amount_to_collect: amountToCollect,
       notes: composedNotes,
+      customer_name: form.customer_name.trim(),
+      customer_phone: fullPhone,
+      customer_phone_dial_code: dialCode,
       status: "pending",
     });
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Pedido publicado. Avisando a repartidores...");
-    setForm({ dropoff_address: "", lat: null, lng: null, amount: "", payment: "pending", notes: "" });
+    setForm({ customer_name: "", customer_phone: "", dropoff_address: "", lat: null, lng: null, amount: "", payment: "pending", notes: "" });
     onOpenChange(false);
     onCreated();
   };
