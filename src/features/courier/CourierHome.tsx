@@ -13,6 +13,7 @@ interface Courier {
   id: string; status: string; plan: "pps" | "subscription"; wallet_balance: number;
   subscription_active: boolean; subscription_expires_at: string | null;
   lat: number | null; lng: number | null;
+  ine_front_url: string | null; license_url: string | null; circulation_url: string | null;
 }
 
 interface OrderRow {
@@ -77,11 +78,12 @@ export function CourierHome() {
 
   if (courier.status === "pending_validation") {
     return (
-      <Card className="p-6 text-center">
+      <Card className="p-8 text-center">
         <AlertCircle className="h-12 w-12 text-warning mx-auto mb-3" />
-        <h2 className="font-display text-xl font-bold">Cuenta en revisión</h2>
-        <p className="text-sm text-muted-foreground mt-2">Tu documentación está siendo validada por el equipo de 1-Click. Te notificaremos cuando esté lista.</p>
-        <CourierOnboarding existing onDone={load} />
+        <h2 className="font-display text-xl font-bold">¡Registro en proceso!</h2>
+        <p className="text-sm text-muted-foreground mt-2 max-w-sm mx-auto">
+          Nuestro sistema y equipo están validando tus datos. Recibirás una notificación push cuando seas activado.
+        </p>
       </Card>
     );
   }
@@ -95,8 +97,8 @@ export function CourierHome() {
       </Card>
     );
   }
-  // Si no ha completado onboarding (no tiene domicilio)
-  if (!courier.lat || !courier.lng) {
+  // Si no ha completado onboarding (le faltan documentos clave)
+  if (!courier.ine_front_url || !courier.license_url || !courier.circulation_url) {
     return <CourierOnboarding existing={false} onDone={load} />;
   }
 
@@ -105,10 +107,15 @@ export function CourierHome() {
 
   if (active) return <ActiveOrderView order={active} restaurant={restaurants[active.restaurant_id]} courier={courier} onChange={load} />;
 
-  // Sort feed by distance from courier
+  // Sort feed by distance from courier (si tiene ubicación)
   const sorted = feed
     .filter((o) => o.pickup_lat != null && o.pickup_lng != null)
-    .map((o) => ({ o, dist: haversine({ lat: courier.lat!, lng: courier.lng! }, { lat: o.pickup_lat!, lng: o.pickup_lng! }) }))
+    .map((o) => ({
+      o,
+      dist: courier.lat != null && courier.lng != null
+        ? haversine({ lat: courier.lat, lng: courier.lng }, { lat: o.pickup_lat!, lng: o.pickup_lng! })
+        : 0,
+    }))
     .sort((a, b) => a.dist - b.dist);
 
   return (

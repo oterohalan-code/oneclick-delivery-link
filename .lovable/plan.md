@@ -1,121 +1,101 @@
-# Plan: 1-Click PWA
 
-App mobile-first para conectar restaurantes con repartidores en Cancún. Tema verde vibrante + negro, estilo logística rápida. Pagos simulados en MVP, realtime con Supabase + Web Push, mapas con Leaflet/OSM, y panel admin in-app para validar repartidores.
+## Objetivo
 
-## 1. Autenticación y roles
+Reemplazar el onboarding de repartidor por un wizard de 3 pasos, con barra de progreso, **selector de país + teléfono** (México por defecto) y **validación automática con IA (visión)** de documentos al momento de subirlos. Usaremos Lovable AI (`google/gemini-2.5-pro`) — sin API keys del usuario.
 
-- Login/Register con email + contraseña (Lovable Cloud / Supabase Auth) y selector de rol: **Restaurante** o **Repartidor**.
-- Tabla `user_roles` separada (enum: `restaurant`, `courier`, `admin`) + función `has_role()` para RLS segura.
-- Onboarding por rol tras el registro:
-  - **Restaurante**: nombre del local, dirección (input + selección en mapa Leaflet con búsqueda Nominatim), teléfono, categoría de comida.
-  - **Repartidor**: datos personales + carga de documentos a Supabase Storage (INE frente, INE vuelta, licencia, foto moto, placa, foto mochila) + dirección de domicilio en mapa. Estado inicial: `pending_validation`.
-- Repartidor no validado ve pantalla "En revisión" y no accede al feed.
+## Cambios en la base de datos
 
-## 2. Modelo de negocio del repartidor (lógica core)
+Migración nueva:
+- `couriers`: agregar `circulation_url text`, `has_backpack boolean default false`, `willing_to_get_backpack boolean default false`, `ai_validation jsonb default '{}'`.
+- `profiles`: agregar `country_code text default 'MX'` (ISO-2) y `phone_dial_code text default '+52'`. El campo `phone` ya existe y guardará solo el número nacional.
 
-Sección "Plan y Wallet" en el perfil del repartidor:
+Bucket `courier-docs` ya privado con RLS correcto — sin cambios.
 
-- **PPS (Pago por Servicio)**: $5 MXN se descuentan del wallet por cada pedido marcado `delivered`. Si `wallet_balance < 5`, el botón "Aceptar pedido" se bloquea con mensaje "Recarga tu monedero".
-- **Suscripción**: $249 MXN / mes, comisión $0. Mientras `subscription_active = true` y `subscription_expires_at > now()`, no se descuenta del wallet.
-- **Regla de cambio**: si está suscrito y cambia a PPS, la suscripción sigue vigente hasta `subscription_expires_at`. El cobro de $5 inicia automáticamente al vencer.
-- Recargas y suscripción **simuladas**: botones "Recargar $50 / $100 / $200" y "Activar suscripción $249" que insertan en `wallet_transactions` y actualizan saldo/suscripción. Listo para conectar Stripe en el futuro.
+## Server function: `validate-document`
 
-## 3. Flujo en vivo (Live Workflow)
+`src/server/validate-document.functions.ts` (protegida con `requireSupabaseAuth`):
 
-**Restaurante — Dashboard**
-- Botón grande central "Solicitar Repartidor".
-- Modal: dirección de destino (mapa + búsqueda), monto a cobrar al cliente, ID de pedido, notas.
-- Crea registro en `orders` con estado `pending` → realtime + Web Push a repartidores validados cercanos.
-- Lista de pedidos activos del restaurante con estado en vivo.
+- Input: `{ docPath, docType: "ine_front"|"ine_back"|"license"|"circulation", expectedFullName }`
+- Descarga la imagen del bucket con `supabaseAdmin.storage.download()`, la convierte a base64 data URL.
+- Llama Lovable AI Gateway (`google/gemini-2.5-pro`) con **tool calling** forzado para extraer JSON:
+  ```json
+  { "full_name": "...", "expiration_date": "YYYY-MM-DD|null", "document_type": "...", "is_readable": true }
+  ```
+- Lógica:
+  - `expiration_date < hoy` → `{ status: "expired" }`
+  - Fuzzy match (Jaro-Winkler ≥ 0.85, normalizando acentos) entre `full_name` y `expectedFullName` → si falla, `{ status: "name_mismatch" }`
+  - `is_readable=false` → `{ status: "unreadable" }`
+  - OK → `{ status: "valid", extracted }`
+- Persiste en `couriers.ai_validation->{docType}`.
+- Maneja 429/402 con mensajes amigables.
 
-**Repartidor — Dashboard**
-- Feed de pedidos `pending` ordenados por cercanía (filtrado client-side con coordenadas del restaurante).
-- Botón "Aceptar" → server function que actualiza el pedido a `assigned` solo si sigue `pending` (lock atómico). Si otro lo tomó, muestra "Ya fue tomado".
-- Vista de pedido aceptado con mapa Leaflet mostrando ruta Restaurante → Cliente (línea recta + distancia; sin Google Directions para mantenerlo gratis).
-- Botones de transición de estado: "En camino" → "Entregado".
-- Al marcar `delivered`: si plan PPS y sin suscripción vigente, descuenta $5 del wallet en la misma server function.
+## Frontend: wizard de 3 pasos
 
-**Estados del pedido**: `pending → assigned → in_transit → delivered` (+ `cancelled`).
+Reescribir `src/features/courier/CourierOnboarding.tsx`. Barra `<Progress />` superior fija con “Paso X de 3”.
 
-**Notificaciones (Realtime + Web Push)**
-- Restaurante recibe push cuando un repartidor acepta y cuando entrega.
-- Repartidores validados reciben push cuando hay un nuevo pedido `pending`.
-- In-app: badges y toasts vía Supabase Realtime sobre la tabla `orders`.
-- Service worker registra suscripción Web Push y guarda endpoint en `push_subscriptions`. Una server function envía las notificaciones con la web-push library usando claves VAPID.
+### Paso 1 — Datos de Acceso
+- **Nombre completo** (pre-llenado desde `profiles`, editable, zod ≥ 2).
+- **Correo** (editable solo si no hay sesión; en el flujo actual ya está autenticado).
+- **Contraseña** (solo si signup desde cero).
+- **Teléfono con selector de país**:
+  - Componente nuevo `src/components/PhoneInput.tsx`.
+  - Lista de países con bandera (emoji), nombre y dial code (`+52` MX, `+1` US/CA, `+34` ES, `+57` CO, `+54` AR, `+56` CL, `+51` PE, `+58` VE, `+502`–`+507` Centroamérica, `+55` BR, `+44` UK, `+33` FR, `+49` DE, etc. — lista curada de ~30 países, México **default seleccionado**).
+  - UI: `<Select>` shadcn a la izquierda mostrando 🇲🇽 +52, `<Input type="tel">` a la derecha para el número nacional. Validación zod (8–15 dígitos).
+- Guarda en `profiles`: `full_name`, `phone` (solo número), `country_code` (ISO-2), `phone_dial_code`.
 
-## 4. Panel Admin
+### Paso 2 — Carga de Documentos
+4 dropzones grandes (`h-32`, mobile-first): **INE Frente**, **INE Reverso**, **Licencia**, **Tarjeta de Circulación**.
 
-- Ruta `/admin` protegida por rol `admin`.
-- Lista de repartidores `pending_validation` con preview de cada documento.
-- Acciones: **Aprobar** (estado → `active`) o **Rechazar** (estado → `rejected` + motivo).
-- Notificación in-app + Web Push al repartidor cuando se aprueba/rechaza.
+Por cada foto:
+1. Sube a `courier-docs/{user_id}/{docType}-{ts}.jpg`.
+2. Estado “Verificando documentos…” con spinner sobre el slot.
+3. Llama `validateDocument({...})`.
+4. Renderiza resultado:
+   - ✅ verde: “{nombre extraído} · vence {fecha}”
+   - ⚠️ rojo + botón **Volver a subir**: “Documento expirado” / “Foto borrosa” / “El nombre no coincide con tu perfil”
+5. No avanza al Paso 3 hasta que los 4 docs estén `valid`. Tras 2 intentos `name_mismatch` se permite continuar marcando ese doc como `needs_review` (revisión manual).
 
-## 5. Vistas adicionales
+### Paso 3 — Equipamiento
+- “¿Tienes mochila de repartidor?” (botones grandes Sí/No).
+- Si **No** → “¿Estás dispuesto a adquirir una o contar con un compartimento para transportar productos?” (Sí/No).
+  - Si responde No al segundo → botón Continuar deshabilitado: “Necesitas equipamiento para repartir.”
+- Guarda `has_backpack`, `willing_to_get_backpack`.
 
-- **Historial** (ambos roles): lista de pedidos pasados con monto, fecha, estado, contraparte.
-- **Ganancias** repartidor: total entregas, ingresos del cliente cobrados, comisiones pagadas (PPS) o suscripción vigente.
-- **Wallet repartidor**: saldo actual, historial de movimientos, botones de recarga simulada.
+### Pantalla final
+Card centrada con icono ⏳:
+> **¡Registro en proceso!**  
+> Nuestro sistema y equipo están validando tus datos. Recibirás una notificación push cuando seas activado.
 
-## 6. Diseño UI/UX
+Setea `couriers.status = 'pending_validation'`.
 
-- Mobile-first, instalable como PWA (manifest + iconos; sin service worker de cache para evitar problemas en preview, solo SW para Web Push).
-- Paleta: verde vibrante `#00C853` como primario, negro `#0A0A0A` como fondo de marca, blanco para superficies, amarillo para pendientes, rojo para errores.
-- Tipografía sans moderna, botones grandes, tap targets generosos, mapas a pantalla completa cuando aplique.
-- Iconografía lucide-react (moto, paquete, mapa, billete).
+## UI / Mobile-first
+- Botones `size="lg"` con `h-14 text-base`.
+- Dropzones grandes con feedback visual (spinner / check / alerta).
+- Una sola columna, padding generoso, navegación Anterior/Siguiente fija abajo.
 
-## 7. Detalles técnicos
+## Admin panel
+Update menor en `AdminHome.tsx`: por cada doc con `ai_validation`, mostrar pill verde/ámbar/rojo con `extracted.full_name` y `expiration_date` para apoyar la decisión manual.
 
-**Stack**: TanStack Start + React + Tailwind v4 + shadcn/ui + Lovable Cloud (Supabase) + Leaflet + react-leaflet + web-push.
+## CourierHome
+Asegurar que `status === 'pending_validation'` muestra la pantalla “Registro en proceso” y NO el wizard de nuevo (a menos que esté `rejected`).
 
-**Tablas Supabase** (todas con RLS):
+## Archivos afectados
 
-```text
-profiles (id, role-derivado-via-user_roles, full_name, phone, created_at)
-user_roles (id, user_id, role)  -- enum: restaurant | courier | admin
-restaurants (id, user_id, name, address, lat, lng, phone, category)
-couriers (id, user_id, address, lat, lng,
-          ine_front_url, ine_back_url, license_url, moto_url,
-          plate, plate_url, backpack_url,
-          status, plan, wallet_balance,
-          subscription_active, subscription_expires_at, rejection_reason)
-orders (id, restaurant_id, courier_id, status,
-        pickup_address, pickup_lat, pickup_lng,
-        dropoff_address, dropoff_lat, dropoff_lng,
-        amount_to_collect, external_order_id, notes,
-        created_at, accepted_at, delivered_at)
-wallet_transactions (id, courier_id, type, amount, order_id, created_at)
-  -- type: topup | order_fee | subscription_charge
-subscriptions (id, courier_id, started_at, expires_at, amount, status)
-push_subscriptions (id, user_id, endpoint, p256dh, auth)
-```
+- **Crear** `supabase/migrations/<timestamp>_courier_onboarding_v2.sql`
+- **Crear** `src/server/validate-document.functions.ts`
+- **Crear** `src/components/PhoneInput.tsx` (selector país + input)
+- **Crear** `src/lib/countries.ts` (lista curada de países)
+- **Reescribir** `src/features/courier/CourierOnboarding.tsx` (wizard 3 pasos)
+- **Editar** `src/features/admin/AdminHome.tsx` (mostrar resultados IA)
+- **Editar** `src/features/courier/CourierHome.tsx` (gating de pantalla final)
 
-**Server functions clave** (`createServerFn` con `requireSupabaseAuth`):
-- `createOrder`, `acceptOrder` (lock atómico), `updateOrderStatus`, `markDelivered` (aplica cobro PPS).
-- `topUpWallet`, `activateSubscription`, `switchPlan`.
-- `approveCourier`, `rejectCourier` (admin).
-- `sendPush` (server-side, llamada desde las anteriores).
+## Detalles técnicos
+- Lovable AI: `google/gemini-2.5-pro` con `tools` + `tool_choice` forzado para JSON estructurado vía visión.
+- Fuzzy match nombres: Jaro-Winkler inline (sin nuevas dependencias).
+- Imagen → AI: `supabaseAdmin.storage.from('courier-docs').download(path)` → base64 data URL → `{type:"image_url", image_url:{url:"data:image/jpeg;base64,..."}}`.
+- Errores AI Gateway: 429 → toast “Espera unos segundos”; 402 → toast “Sin créditos de IA”.
+- Países: lista estática local (no API externa), México preseleccionado.
 
-**Realtime**: subscripciones a `orders` filtradas por `restaurant_id` o por estado `pending` para repartidores.
-
-**Mapas**: Leaflet + OpenStreetMap tiles, búsqueda con Nominatim, ruta como `Polyline` recta. Cálculo de cercanía con haversine en el cliente.
-
-**PWA**: `manifest.json` con iconos y `display: standalone` (instalable). Service worker mínimo solo para Web Push, registrado únicamente fuera de iframes/preview de Lovable.
-
-**Storage**: bucket privado `courier-docs` con RLS (el repartidor sube/lee lo suyo, admin lee todo).
-
-## 8. Entregables del primer sprint
-
-1. Auth + roles + onboarding restaurante y repartidor con upload de documentos.
-2. Panel admin para aprobar/rechazar repartidores.
-3. Wallet y planes (recargas y suscripción simuladas, regla de cambio).
-4. Flujo de pedido end-to-end con realtime y mapa Leaflet.
-5. Web Push (VAPID) + service worker mínimo + manifest PWA.
-6. Historial y ganancias para ambos roles.
-
-## Fuera de alcance (futuro)
-
-- Pagos reales con Stripe (recargas + suscripción recurrente).
-- Routing real con Directions API.
-- Tracking GPS en vivo del repartidor durante el viaje.
-- Calificaciones y reseñas.
-- App nativa.
+## No incluido
+- Envío real de push al aprobar (infra existe, falta VAPID + worker — futuro).
+- Verificación SMS del teléfono — futuro.

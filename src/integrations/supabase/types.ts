@@ -17,8 +17,11 @@ export type Database = {
       couriers: {
         Row: {
           address: string | null
+          ai_validation: Json
           backpack_url: string | null
+          circulation_url: string | null
           created_at: string
+          has_backpack: boolean
           id: string
           ine_back_url: string | null
           ine_front_url: string | null
@@ -36,11 +39,15 @@ export type Database = {
           updated_at: string
           user_id: string
           wallet_balance: number
+          willing_to_get_backpack: boolean
         }
         Insert: {
           address?: string | null
+          ai_validation?: Json
           backpack_url?: string | null
+          circulation_url?: string | null
           created_at?: string
+          has_backpack?: boolean
           id?: string
           ine_back_url?: string | null
           ine_front_url?: string | null
@@ -58,11 +65,15 @@ export type Database = {
           updated_at?: string
           user_id: string
           wallet_balance?: number
+          willing_to_get_backpack?: boolean
         }
         Update: {
           address?: string | null
+          ai_validation?: Json
           backpack_url?: string | null
+          circulation_url?: string | null
           created_at?: string
+          has_backpack?: boolean
           id?: string
           ine_back_url?: string | null
           ine_front_url?: string | null
@@ -80,6 +91,7 @@ export type Database = {
           updated_at?: string
           user_id?: string
           wallet_balance?: number
+          willing_to_get_backpack?: boolean
         }
         Relationships: []
       }
@@ -157,24 +169,30 @@ export type Database = {
       }
       profiles: {
         Row: {
+          country_code: string
           created_at: string
           full_name: string | null
           id: string
           phone: string | null
+          phone_dial_code: string
           updated_at: string
         }
         Insert: {
+          country_code?: string
           created_at?: string
           full_name?: string | null
           id: string
           phone?: string | null
+          phone_dial_code?: string
           updated_at?: string
         }
         Update: {
+          country_code?: string
           created_at?: string
           full_name?: string | null
           id?: string
           phone?: string | null
+          phone_dial_code?: string
           updated_at?: string
         }
         Relationships: []

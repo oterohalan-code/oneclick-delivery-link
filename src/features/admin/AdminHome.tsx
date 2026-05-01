@@ -10,6 +10,9 @@ interface Pending {
   id: string; user_id: string; address: string | null; plate: string | null; status: string;
   ine_front_url: string | null; ine_back_url: string | null; license_url: string | null;
   moto_url: string | null; plate_url: string | null; backpack_url: string | null;
+  circulation_url: string | null;
+  has_backpack: boolean | null; willing_to_get_backpack: boolean | null;
+  ai_validation: Record<string, { status?: string; message?: string; extracted?: { full_name?: string | null; expiration_date?: string | null } }> | null;
   profiles?: { full_name: string | null; phone: string | null };
 }
 
@@ -32,7 +35,7 @@ export function AdminHome() {
       // Sign all doc urls
       const urls: Record<string, string> = {};
       for (const c of enriched) {
-        for (const k of ["ine_front_url", "ine_back_url", "license_url", "moto_url", "plate_url", "backpack_url"]) {
+        for (const k of ["ine_front_url", "ine_back_url", "license_url", "moto_url", "plate_url", "backpack_url", "circulation_url"]) {
           const path = (c as any)[k];
           if (path) {
             const { data } = await supabase.storage.from("courier-docs").createSignedUrl(path, 3600);
@@ -84,23 +87,55 @@ export function AdminHome() {
               </div>
               <Badge className="bg-warning/20 text-warning-foreground">Pendiente</Badge>
             </div>
-            <div className="grid grid-cols-3 gap-2">
+            {(c.has_backpack !== null || c.willing_to_get_backpack !== null) && (
+              <div className="text-xs text-muted-foreground">
+                Mochila: <strong>{c.has_backpack ? "Sí" : "No"}</strong>
+                {c.has_backpack === false && (
+                  <> · Dispuesto a conseguir: <strong>{c.willing_to_get_backpack ? "Sí" : "No"}</strong></>
+                )}
+              </div>
+            )}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {[
-                ["ine_front_url", "INE Frente"],
-                ["ine_back_url", "INE Reverso"],
-                ["license_url", "Licencia"],
-                ["moto_url", "Moto"],
-                ["plate_url", "Placa"],
-                ["backpack_url", "Mochila"],
-              ].map(([k, label]) => {
+                ["ine_front_url", "INE Frente", "ine_front"],
+                ["ine_back_url", "INE Reverso", "ine_back"],
+                ["license_url", "Licencia", "license"],
+                ["circulation_url", "T. Circulación", "circulation"],
+                ["moto_url", "Moto", null],
+                ["plate_url", "Placa", null],
+                ["backpack_url", "Mochila", null],
+              ].map(([k, label, aiKey]) => {
                 const url = signedUrls[`${c.id}-${k}`];
+                const ai = aiKey ? c.ai_validation?.[aiKey as string] : null;
+                const aiBadge = ai?.status === "valid"
+                  ? { cls: "bg-success/20 text-success-foreground border-success", txt: "✓ IA" }
+                  : ai?.status === "needs_review"
+                  ? { cls: "bg-warning/20 text-warning-foreground border-warning", txt: "⚠ Revisar" }
+                  : ai?.status
+                  ? { cls: "bg-destructive/20 text-destructive border-destructive", txt: "✗ " + (ai.status as string) }
+                  : null;
                 return (
                   <a key={k as string} href={url} target="_blank" rel="noopener noreferrer"
                     className="block rounded-lg border border-border overflow-hidden text-xs">
-                    {url ? <img src={url} alt={label} className="w-full h-20 object-cover" />
+                    {url ? <img src={url} alt={label as string} className="w-full h-20 object-cover" />
                          : <div className="w-full h-20 bg-muted grid place-items-center text-muted-foreground">N/A</div>}
-                    <div className="px-1 py-1 flex items-center justify-between">
-                      <span>{label}</span>{url && <ExternalLink className="h-3 w-3" />}
+                    <div className="px-1.5 py-1">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">{label}</span>{url && <ExternalLink className="h-3 w-3" />}
+                      </div>
+                      {aiBadge && (
+                        <div className={`mt-1 inline-block px-1.5 py-0.5 rounded text-[10px] border ${aiBadge.cls}`}>
+                          {aiBadge.txt}
+                        </div>
+                      )}
+                      {ai?.extracted?.full_name && (
+                        <div className="mt-0.5 text-[10px] text-muted-foreground truncate" title={ai.extracted.full_name}>
+                          {ai.extracted.full_name}
+                        </div>
+                      )}
+                      {ai?.extracted?.expiration_date && (
+                        <div className="text-[10px] text-muted-foreground">vence {ai.extracted.expiration_date}</div>
+                      )}
                     </div>
                   </a>
                 );
