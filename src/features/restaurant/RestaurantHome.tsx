@@ -10,6 +10,7 @@ import { OrderChat } from "@/components/OrderChat";
 import { Badge } from "@/components/ui/badge";
 import { enablePush } from "@/lib/push";
 import { getCourierForOrder } from "@/server/orders.functions";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 
 interface Restaurant {
@@ -45,6 +46,7 @@ export function RestaurantHome() {
   const [open, setOpen] = useState(false);
   const [chatOrderId, setChatOrderId] = useState<string | null>(null);
   const [courierByOrder, setCourierByOrder] = useState<Record<string, CourierInfo>>({});
+  const getCourierForOrderRpc = useServerFn(getCourierForOrder);
 
   const load = async () => {
     if (!user) return;
@@ -75,7 +77,7 @@ export function RestaurantHome() {
     (async () => {
       for (const o of ordersWithCourier) {
         try {
-          const res = await getCourierForOrder({ data: { orderId: o.id } });
+          const res = await getCourierForOrderRpc({ data: { orderId: o.id } });
           if (res?.ok) {
             setCourierByOrder((prev) => ({
               ...prev,
