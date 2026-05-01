@@ -129,7 +129,6 @@ export function RestaurantSignupWizard() {
     if (!user) return toast.error("Sesión no encontrada");
 
     const parsed = step2Schema.safeParse({
-      category,
       address,
       lat: lat ?? NaN,
       lng: lng ?? NaN,
@@ -142,7 +141,6 @@ export function RestaurantSignupWizard() {
       user_id: user.id,
       name: name.trim(),
       phone: phone.trim(),
-      category,
       address: address.trim(),
       lat: lat!,
       lng: lng!,
