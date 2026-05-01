@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Card } from "@/components/ui/card";
@@ -54,7 +55,8 @@ interface Props {
 }
 
 export function CourierOnboarding({ existing, onDone }: Props) {
-  const { user } = useAuth();
+  const { user, session } = useAuth();
+  const validateDocumentFn = useServerFn(validateDocument);
   const [step, setStep] = useState(1);
   const [loaded, setLoaded] = useState(false);
 
@@ -146,7 +148,13 @@ export function CourierOnboarding({ existing, onDone }: Props) {
     setDocs((d) => ({ ...d, [key]: { ...d[key], status: "validating", path } }));
 
     try {
-      const result = await validateDocument({
+      const token = session?.access_token;
+      if (!token) {
+        throw new Error("Tu sesión expiró. Vuelve a iniciar sesión para validar documentos.");
+      }
+
+      const result = await validateDocumentFn({
+        headers: { Authorization: `Bearer ${token}` },
         data: { docPath: path, docType: key, expectedFullName: fullName.trim() },
       });
 
@@ -169,10 +177,17 @@ export function CourierOnboarding({ existing, onDone }: Props) {
         },
       }));
     } catch (e) {
+      const message =
+        e instanceof Error
+          ? e.message
+          : e instanceof Response
+            ? await e.text().catch(() => "Error de validación")
+            : "Error de validación";
       setDocs((d) => ({
         ...d,
-        [key]: { ...d[key], status: "error", message: e instanceof Error ? e.message : "Error de validación" },
+        [key]: { ...d[key], status: "error", message },
       }));
+      toast.error(message);
     }
   };
 
