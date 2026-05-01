@@ -5,6 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Phone, Send, X, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
+import { useServerFn } from "@tanstack/react-start";
+import { sendOrderMessage } from "@/server/orders.functions";
 import { toast } from "sonner";
 
 interface Message {
@@ -37,6 +39,7 @@ export function OrderChat({
   const [loading, setLoading] = useState(false);
   const [sending, setSending] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const sendOrderMessageRpc = useServerFn(sendOrderMessage);
 
   // Initial load + realtime subscription
   useEffect(() => {
@@ -96,8 +99,7 @@ export function OrderChat({
     if (content.length > 1000) return toast.error("Mensaje muy largo");
     setSending(true);
     try {
-      const { sendOrderMessage } = await import("@/server/orders.functions");
-      const res = await sendOrderMessage({
+      const res = await sendOrderMessageRpc({
         data: { orderId, content, senderRole: myRole },
       });
       if (!res?.ok) {
