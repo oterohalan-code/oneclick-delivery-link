@@ -38,6 +38,12 @@ export function CourierHome() {
   const [restaurants, setRestaurants] = useState<Record<string, { name: string; phone: string }>>({});
   const [loading, setLoading] = useState(true);
 
+  // Geolocalización cada 3 min cuando el repartidor está activo
+  const { permission: geoPermission } = useCourierLocationTracker({
+    enabled: courier?.status === "active",
+    courierId: courier?.id,
+  });
+
   const load = async () => {
     if (!user) return;
     const { data: c } = await supabase.from("couriers").select("*").eq("user_id", user.id).maybeSingle();
