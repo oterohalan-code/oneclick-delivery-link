@@ -122,6 +122,8 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
       dropoff_address: form.dropoff_address,
       dropoff_lat: form.lat, dropoff_lng: form.lng,
       amount_to_collect: amountToCollect,
+      shipping_fee: shippingFee,
+      distance_km: distanceKm,
       notes: composedNotes,
       customer_name: form.customer_name.trim(),
       customer_phone: fullPhone,
