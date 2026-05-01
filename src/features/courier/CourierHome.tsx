@@ -12,6 +12,7 @@ import { DeliveryProofDialog } from "./DeliveryProofDialog";
 import { MapView, haversine } from "@/components/MapView";
 import { acceptOrder as acceptOrderFn } from "@/server/orders.functions";
 import { useCourierLocationTracker } from "@/hooks/useCourierLocationTracker";
+import { LocationPermissionGate } from "@/components/LocationPermissionGate";
 import { toast } from "sonner";
 
 interface Courier {
@@ -39,7 +40,7 @@ export function CourierHome() {
   const [loading, setLoading] = useState(true);
 
   // Geolocalización cada 3 min cuando el repartidor está activo
-  const { permission: geoPermission } = useCourierLocationTracker({
+  const { permission: geoPermission, refreshPermission } = useCourierLocationTracker({
     enabled: courier?.status === "active",
     courierId: courier?.id,
   });
@@ -148,15 +149,12 @@ export function CourierHome() {
         </Badge>
       </Card>
 
-      {geoPermission === "denied" && (
-        <Card className="p-3 bg-warning/10 border-warning">
-          <div className="flex gap-2 text-sm">
-            <AlertCircle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
-            <div>
-              <strong>Activa tu ubicación</strong> para recibir pedidos cercanos y poder marcar entregas.
-            </div>
-          </div>
-        </Card>
+      {geoPermission !== "granted" && (
+        <LocationPermissionGate
+          permission={geoPermission}
+          reason="La usamos para mostrarte pedidos cercanos, asignarte rutas óptimas y verificar tu llegada al punto de entrega."
+          onGranted={refreshPermission}
+        />
       )}
 
       {!canAccept ? (
