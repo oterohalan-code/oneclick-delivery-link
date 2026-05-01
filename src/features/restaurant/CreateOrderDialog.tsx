@@ -170,19 +170,29 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
             </div>
           </div>
           <div>
-            <Label>Dirección de entrega</Label>
+            <Label>Buscar dirección (opcional)</Label>
             <AddressSearch
               value={form.dropoff_address}
               onChange={(a, lat, lng) => setForm({ ...form, dropoff_address: a, lat: lat ?? form.lat, lng: lng ?? form.lng })}
             />
+            <p className="text-xs text-muted-foreground mt-1">O toca el mapa para colocar el pin del destino.</p>
           </div>
           <div className="h-56">
             <MapView
               pins={pins}
               showRoute
-              onMapClick={(lat, lng) => setForm({ ...form, lat, lng })}
+              onMapClick={handleMapClick}
               onRouteInfo={handleRouteInfo}
               height="100%"
+            />
+          </div>
+          <div>
+            <Label>Destino seleccionado</Label>
+            <Input
+              readOnly
+              className="bg-muted"
+              value={addressLoading ? "Obteniendo dirección…" : form.dropoff_address}
+              placeholder="Selecciona en el mapa o busca arriba"
             />
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
