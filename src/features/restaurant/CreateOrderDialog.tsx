@@ -4,16 +4,25 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AddressSearch } from "@/components/AddressSearch";
 import { MapView } from "@/components/MapView";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
 
+type PaymentStatus = "pending" | "all" | "paid";
+
+const PAYMENT_LABELS: Record<PaymentStatus, string> = {
+  pending: "Envío pendiente",
+  all: "Cliente pagará todo",
+  paid: "Envío y producto pagados",
+};
+
 const schema = z.object({
   dropoff_address: z.string().trim().min(5).max(300),
-  amount_to_collect: z.number().min(0).max(100000),
-  external_order_id: z.string().trim().max(50).optional(),
+  total: z.number().min(0).max(100000),
+  payment: z.enum(["pending", "all", "paid"]),
   notes: z.string().trim().max(500).optional(),
 });
 
@@ -24,7 +33,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
 }) {
   const [form, setForm] = useState({
     dropoff_address: "", lat: null as number | null, lng: null as number | null,
-    amount: "", external: "", notes: "",
+    amount: "", payment: "pending" as PaymentStatus, notes: "",
   });
   const [loading, setLoading] = useState(false);
 
@@ -32,28 +41,31 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
     e.preventDefault();
     const parsed = schema.safeParse({
       dropoff_address: form.dropoff_address,
-      amount_to_collect: Number(form.amount || 0),
-      external_order_id: form.external || undefined,
+      total: Number(form.amount || 0),
+      payment: form.payment,
       notes: form.notes || undefined,
     });
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
     if (form.lat == null || form.lng == null) return toast.error("Selecciona el destino en el mapa");
     setLoading(true);
+    const total = Number(form.amount || 0);
+    const amountToCollect = form.payment === "paid" ? 0 : total;
+    const paymentNote = `[Pago: ${PAYMENT_LABELS[form.payment]}]`;
+    const composedNotes = form.notes ? `${paymentNote} ${form.notes}` : paymentNote;
     const { error } = await supabase.from("orders").insert({
       restaurant_id: restaurant.id,
       pickup_address: restaurant.address,
       pickup_lat: restaurant.lat, pickup_lng: restaurant.lng,
       dropoff_address: form.dropoff_address,
       dropoff_lat: form.lat, dropoff_lng: form.lng,
-      amount_to_collect: Number(form.amount || 0),
-      external_order_id: form.external || null,
-      notes: form.notes || null,
+      amount_to_collect: amountToCollect,
+      notes: composedNotes,
       status: "pending",
     });
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Pedido publicado. Avisando a repartidores...");
-    setForm({ dropoff_address: "", lat: null, lng: null, amount: "", external: "", notes: "" });
+    setForm({ dropoff_address: "", lat: null, lng: null, amount: "", payment: "pending", notes: "" });
     onOpenChange(false);
     onCreated();
   };
@@ -81,16 +93,22 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
               height="100%"
             />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <Label>Monto a cobrar</Label>
+              <Label>Total del pedido</Label>
               <Input type="number" step="0.01" placeholder="0.00" value={form.amount}
                 onChange={(e) => setForm({ ...form, amount: e.target.value })} required />
             </div>
             <div>
-              <Label>ID pedido</Label>
-              <Input placeholder="Opcional" value={form.external}
-                onChange={(e) => setForm({ ...form, external: e.target.value })} />
+              <Label>¿Pagado por el cliente?</Label>
+              <Select value={form.payment} onValueChange={(v) => setForm({ ...form, payment: v as PaymentStatus })}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pending">Envío pendiente</SelectItem>
+                  <SelectItem value="all">Cliente pagará todo</SelectItem>
+                  <SelectItem value="paid">Envío y producto pagados</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
           </div>
           <div>
