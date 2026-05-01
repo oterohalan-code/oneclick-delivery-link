@@ -128,10 +128,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
           </div>
           <div className="h-56">
             <MapView
-              pins={[
-                ...(restaurant.lat && restaurant.lng ? [{ lat: restaurant.lat, lng: restaurant.lng, label: "Recogida" }] : []),
-                ...(form.lat && form.lng ? [{ lat: form.lat, lng: form.lng, label: "Entrega" }] : []),
-              ]}
+              pins={pins}
               showRoute
               onMapClick={(lat, lng) => setForm({ ...form, lat, lng })}
               onRouteInfo={handleRouteInfo}
