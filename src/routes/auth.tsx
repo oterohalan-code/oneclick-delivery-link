@@ -30,7 +30,7 @@ const signupSchema = z.object({
 function AuthPage() {
   const { role: roleParam } = Route.useSearch();
   const navigate = useNavigate();
-  const [tab, setTab] = useState<"login" | "signup">("login");
+  const [tab, setTab] = useState<"login" | "signup">(roleParam ? "signup" : "login");
   const [role, setRole] = useState<RoleParam>(roleParam ?? "restaurant");
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ email: "", password: "", fullName: "", phone: "" });
