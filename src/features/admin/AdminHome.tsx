@@ -3,8 +3,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle2, XCircle, ExternalLink } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, ExternalLink, AlertTriangle, Clock } from "lucide-react";
 import { toast } from "sonner";
+
+interface StaleOrder {
+  id: string;
+  pickup_address: string;
+  dropoff_address: string;
+  amount_to_collect: number;
+  external_order_id: string | null;
+  created_at: string;
+}
 
 interface Pending {
   id: string; user_id: string; address: string | null; plate: string | null; status: string;
@@ -20,6 +29,18 @@ export function AdminHome() {
   const [list, setList] = useState<Pending[]>([]);
   const [loading, setLoading] = useState(true);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
+  const [stale, setStale] = useState<StaleOrder[]>([]);
+
+  const loadStale = async () => {
+    const cutoff = new Date(Date.now() - 10 * 60 * 1000).toISOString();
+    const { data } = await supabase
+      .from("orders")
+      .select("id,pickup_address,dropoff_address,amount_to_collect,external_order_id,created_at")
+      .eq("status", "pending")
+      .lt("created_at", cutoff)
+      .order("created_at", { ascending: true });
+    setStale((data as any) ?? []);
+  };
 
   const load = async () => {
     setLoading(true);
@@ -50,7 +71,15 @@ export function AdminHome() {
     setLoading(false);
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    load();
+    loadStale();
+    const id = setInterval(loadStale, 60_000);
+    const ch = supabase.channel("admin-stale-orders")
+      .on("postgres_changes", { event: "*", schema: "public", table: "orders" }, () => loadStale())
+      .subscribe();
+    return () => { clearInterval(id); supabase.removeChannel(ch); };
+  }, []);
 
   const decide = async (id: string, approve: boolean) => {
     let reason: string | null = null;
@@ -70,9 +99,50 @@ export function AdminHome() {
   if (loading) return <div className="grid place-items-center py-20"><Loader2 className="h-6 w-6 animate-spin" /></div>;
 
   return (
-    <div className="space-y-4">
-      <h1 className="font-display text-2xl font-bold">Panel de validación</h1>
-      <p className="text-sm text-muted-foreground">{list.length} repartidor(es) en espera</p>
+    <div className="space-y-6">
+      <div>
+        <h1 className="font-display text-2xl font-bold">Panel de administrador</h1>
+        <p className="text-sm text-muted-foreground">Validaciones y monitoreo en vivo</p>
+      </div>
+
+      {/* Pedidos rezagados */}
+      <section className="space-y-2">
+        <div className="flex items-center justify-between">
+          <h2 className="font-display text-lg font-semibold flex items-center gap-2">
+            <Clock className="h-5 w-5 text-warning" />
+            Pedidos sin asignar &gt; 10 min
+          </h2>
+          {stale.length > 0 && <Badge className="bg-destructive text-destructive-foreground">{stale.length}</Badge>}
+        </div>
+        {stale.length === 0 ? (
+          <Card className="p-4 text-sm text-muted-foreground">Sin alertas — todo fluye 🎯</Card>
+        ) : (
+          <div className="space-y-2">
+            {stale.map((o) => {
+              const mins = Math.floor((Date.now() - new Date(o.created_at).getTime()) / 60000);
+              return (
+                <Card key={o.id} className="p-3 border-destructive/50 bg-destructive/5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 text-sm">
+                      <div className="flex items-center gap-2">
+                        <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
+                        <span className="font-medium">#{o.external_order_id ?? o.id.slice(0, 6)}</span>
+                        <Badge variant="destructive" className="text-[10px]">{mins} min</Badge>
+                      </div>
+                      <div className="text-muted-foreground mt-1 truncate">→ {o.dropoff_address}</div>
+                      <div className="text-xs text-muted-foreground">${Number(o.amount_to_collect).toFixed(2)} MXN</div>
+                    </div>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
+        )}
+      </section>
+
+      {/* Validación de repartidores */}
+      <section className="space-y-3">
+        <h2 className="font-display text-lg font-semibold">Repartidores pendientes ({list.length})</h2>
 
       {list.length === 0 ? (
         <Card className="p-8 text-center text-muted-foreground">Sin solicitudes pendientes 🎉</Card>
@@ -152,6 +222,7 @@ export function AdminHome() {
           </Card>
         ))
       )}
+      </section>
     </div>
   );
 }

@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, MapPin, DollarSign, AlertCircle, Truck, CheckCircle2, Wallet, Crown } from "lucide-react";
 import { CourierOnboarding } from "./CourierOnboarding";
+import { DeliveryProofDialog } from "./DeliveryProofDialog";
 import { MapView, haversine } from "@/components/MapView";
 import { acceptOrder as acceptOrderFn } from "@/server/orders.functions";
+import { useCourierLocationTracker } from "@/hooks/useCourierLocationTracker";
 import { toast } from "sonner";
 
 interface Courier {
@@ -35,6 +37,12 @@ export function CourierHome() {
   const [active, setActive] = useState<OrderRow | null>(null);
   const [restaurants, setRestaurants] = useState<Record<string, { name: string; phone: string }>>({});
   const [loading, setLoading] = useState(true);
+
+  // Geolocalización cada 3 min cuando el repartidor está activo
+  const { permission: geoPermission } = useCourierLocationTracker({
+    enabled: courier?.status === "active",
+    courierId: courier?.id,
+  });
 
   const load = async () => {
     if (!user) return;
@@ -140,6 +148,17 @@ export function CourierHome() {
         </Badge>
       </Card>
 
+      {geoPermission === "denied" && (
+        <Card className="p-3 bg-warning/10 border-warning">
+          <div className="flex gap-2 text-sm">
+            <AlertCircle className="h-4 w-4 text-warning shrink-0 mt-0.5" />
+            <div>
+              <strong>Activa tu ubicación</strong> para recibir pedidos cercanos y poder marcar entregas.
+            </div>
+          </div>
+        </Card>
+      )}
+
       {!canAccept ? (
         <Card className="p-6 bg-warning/10 border-warning text-center space-y-3">
           <AlertCircle className="h-10 w-10 text-warning mx-auto" />
@@ -210,30 +229,39 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
   order: OrderRow; restaurant?: { name: string; phone: string }; courier: Courier; onChange: () => void;
 }) {
   const [busy, setBusy] = useState(false);
+  const [proofOpen, setProofOpen] = useState(false);
 
-  const setStatus = async (next: "in_transit" | "delivered") => {
+  const goInTransit = async () => {
     setBusy(true);
-    const updates: any = { status: next };
-    if (next === "delivered") updates.delivered_at = new Date().toISOString();
-    const { error } = await supabase.from("orders").update(updates).eq("id", order.id);
-    if (error) { setBusy(false); return toast.error(error.message); }
-
-    if (next === "delivered") {
-      // PPS charge if no active subscription
-      const subActive = courier.subscription_active && courier.subscription_expires_at && new Date(courier.subscription_expires_at) > new Date();
-      if (!subActive) {
-        const newBal = Number(courier.wallet_balance) - 5;
-        await supabase.from("couriers").update({ wallet_balance: newBal }).eq("id", courier.id);
-        await supabase.from("wallet_transactions").insert({
-          courier_id: courier.id, type: "order_fee", amount: -5, balance_after: newBal,
-          order_id: order.id, description: "Comisión por entrega",
-        });
-        toast.success(`Entregado. Se descontaron $5 (saldo: $${newBal.toFixed(2)})`);
-      } else {
-        toast.success("Pedido entregado ✅");
-      }
-    }
+    const { error } = await supabase.from("orders").update({ status: "in_transit" }).eq("id", order.id);
     setBusy(false);
+    if (error) return toast.error(error.message);
+    onChange();
+  };
+
+  const finalizeDelivery = async (proofPath: string, lat: number, lng: number): Promise<void> => {
+    const { error } = await supabase.from("orders").update({
+      status: "delivered",
+      delivered_at: new Date().toISOString(),
+      delivery_proof_url: proofPath,
+      delivered_lat: lat,
+      delivered_lng: lng,
+    }).eq("id", order.id);
+    if (error) { toast.error(error.message); return; }
+
+    // PPS charge if no active subscription
+    const subActive = courier.subscription_active && courier.subscription_expires_at && new Date(courier.subscription_expires_at) > new Date();
+    if (!subActive) {
+      const newBal = Number(courier.wallet_balance) - 5;
+      await supabase.from("couriers").update({ wallet_balance: newBal }).eq("id", courier.id);
+      await supabase.from("wallet_transactions").insert({
+        courier_id: courier.id, type: "order_fee", amount: -5, balance_after: newBal,
+        order_id: order.id, description: "Comisión por entrega",
+      });
+      toast.success(`Entregado. Se descontaron $5 (saldo: $${newBal.toFixed(2)})`);
+    } else {
+      toast.success("Pedido entregado ✅");
+    }
     onChange();
   };
 
@@ -260,16 +288,24 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
 
       <div className="grid grid-cols-2 gap-3">
         {order.status === "assigned" && (
-          <Button onClick={() => setStatus("in_transit")} disabled={busy} className="col-span-2">
+          <Button onClick={goInTransit} disabled={busy} className="col-span-2 h-12">
             <Truck className="mr-2 h-4 w-4" /> En camino
           </Button>
         )}
         {order.status === "in_transit" && (
-          <Button onClick={() => setStatus("delivered")} disabled={busy} className="col-span-2">
-            <CheckCircle2 className="mr-2 h-4 w-4" /> Marcar entregado
+          <Button onClick={() => setProofOpen(true)} className="col-span-2 h-12">
+            <CheckCircle2 className="mr-2 h-4 w-4" /> Finalizar entrega
           </Button>
         )}
       </div>
+
+      <DeliveryProofDialog
+        open={proofOpen}
+        onOpenChange={setProofOpen}
+        order={order}
+        courierId={courier.id}
+        onDelivered={finalizeDelivery}
+      />
     </div>
   );
 }
