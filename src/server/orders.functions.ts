@@ -146,7 +146,13 @@ export const setOrderStatus = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
-    const update: Record<string, unknown> = { status: data.status };
+    const update: {
+      status: "in_transit" | "delivered";
+      delivered_at?: string;
+      delivery_proof_url?: string;
+      delivered_lat?: number;
+      delivered_lng?: number;
+    } = { status: data.status };
     if (data.status === "delivered") {
       update.delivered_at = new Date().toISOString();
       if (data.proofUrl) update.delivery_proof_url = data.proofUrl;
