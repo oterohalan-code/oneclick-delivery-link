@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -63,10 +63,19 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
     setRouteLoading(true);
   }, [restaurant.lat, restaurant.lng, form.lat, form.lng]);
 
-  const handleRouteInfo = (info: { distanceKm: number; durationMin: number } | null) => {
+  const handleRouteInfo = useCallback((info: { distanceKm: number; durationMin: number } | null) => {
     setRouteInfo(info);
     setRouteLoading(false);
-  };
+  }, []);
+
+  const pins = useMemo(() => [
+    ...(restaurant.lat != null && restaurant.lng != null
+      ? [{ lat: restaurant.lat, lng: restaurant.lng, label: "Recogida" }]
+      : []),
+    ...(form.lat != null && form.lng != null
+      ? [{ lat: form.lat, lng: form.lng, label: "Entrega" }]
+      : []),
+  ], [restaurant.lat, restaurant.lng, form.lat, form.lng]);
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,10 +128,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
           </div>
           <div className="h-56">
             <MapView
-              pins={[
-                ...(restaurant.lat && restaurant.lng ? [{ lat: restaurant.lat, lng: restaurant.lng, label: "Recogida" }] : []),
-                ...(form.lat && form.lng ? [{ lat: form.lat, lng: form.lng, label: "Entrega" }] : []),
-              ]}
+              pins={pins}
               showRoute
               onMapClick={(lat, lng) => setForm({ ...form, lat, lng })}
               onRouteInfo={handleRouteInfo}

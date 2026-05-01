@@ -60,6 +60,12 @@ export function MapView({ pins = [], showRoute, center, zoom = 13, height = "320
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Stable key from pin coords so the effect doesn't loop on every parent render
+  const pinsKey = pins
+    .filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng))
+    .map((p) => `${p.lat.toFixed(6)},${p.lng.toFixed(6)},${p.label ?? ""}`)
+    .join("|");
+
   // update pins + route
   useEffect(() => {
     if (!mapRef.current || !layerRef.current) return;
@@ -74,7 +80,6 @@ export function MapView({ pins = [], showRoute, center, zoom = 13, height = "320
     const controller = new AbortController();
 
     if (showRoute && valid.length >= 2) {
-      // Provisional straight line while routing loads
       const straight = L.polyline(valid.map((p) => [p.lat, p.lng]) as [number, number][], {
         color: "#94a3b8", weight: 3, opacity: 0.6, dashArray: "6 6",
       });
@@ -108,11 +113,15 @@ export function MapView({ pins = [], showRoute, center, zoom = 13, height = "320
       mapRef.current.fitBounds(bounds, { padding: [40, 40] });
     }
 
+    // Force size recalc when the map lives inside a Dialog
+    setTimeout(() => mapRef.current?.invalidateSize(), 0);
+
     return () => {
       cancelled = true;
       controller.abort();
     };
-  }, [pins, showRoute, zoom]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pinsKey, showRoute, zoom]);
 
   return <div ref={containerRef} style={{ height, width: "100%" }} className="rounded-xl overflow-hidden border border-border" />;
 }
