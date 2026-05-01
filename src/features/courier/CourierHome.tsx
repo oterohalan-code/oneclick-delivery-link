@@ -8,8 +8,10 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Loader2, MapPin, DollarSign, AlertCircle, Truck, CheckCircle2, Wallet, Crown } from "lucide-react";
 import { CourierOnboarding } from "./CourierOnboarding";
+import { DeliveryProofDialog } from "./DeliveryProofDialog";
 import { MapView, haversine } from "@/components/MapView";
 import { acceptOrder as acceptOrderFn } from "@/server/orders.functions";
+import { useCourierLocationTracker } from "@/hooks/useCourierLocationTracker";
 import { toast } from "sonner";
 
 interface Courier {
