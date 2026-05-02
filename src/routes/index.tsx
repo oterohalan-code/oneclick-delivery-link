@@ -73,21 +73,54 @@ function Landing() {
             </div>
           </div>
 
-          {/* Hero image */}
+          {/* Hero image with glass overlays */}
           <div className="relative animate-scale-in">
-            <GlassCard variant="strong" className="aspect-square p-3 overflow-hidden">
-              <div className="relative h-full w-full rounded-xl overflow-hidden">
+            {/* Decorative glow halo */}
+            <div className="absolute -inset-8 -z-10 rounded-[2rem] opacity-70 blur-3xl"
+                 style={{ background: "radial-gradient(60% 60% at 70% 30%, oklch(0.72 0.16 45 / 0.45), transparent 60%), radial-gradient(50% 50% at 20% 80%, oklch(0.55 0.14 25 / 0.35), transparent 65%)" }} />
+            <GlassCard variant="strong" className="aspect-square p-2.5 overflow-hidden">
+              <div className="relative h-full w-full rounded-2xl overflow-hidden">
                 <img
                   src={heroCourier}
                   alt="Repartidor profesional 1Click en Cancún al atardecer"
                   width={1024}
                   height={1024}
-                  className="h-full w-full object-cover"
+                  className="h-full w-full object-cover scale-105"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-ink/60 via-transparent to-transparent" />
-                <div className="absolute top-5 left-5 eyebrow text-bone/90">01 — Red verificada</div>
-                <div className="absolute bottom-5 right-5 text-[10px] tracking-[0.25em] uppercase text-bone/80">Premium service</div>
-                <div className="absolute bottom-5 left-5 text-display italic text-2xl font-light text-bone">Cancún · Q.Roo</div>
+                {/* Color grade overlays */}
+                <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/20 to-transparent" />
+                <div className="absolute inset-0 mix-blend-overlay opacity-40"
+                     style={{ background: "linear-gradient(135deg, oklch(0.72 0.16 45 / 0.5), transparent 50%, oklch(0.55 0.14 25 / 0.4))" }} />
+
+                {/* Top eyebrow chip */}
+                <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
+                  <div className="px-3 py-1.5 rounded-full backdrop-blur-xl bg-white/10 border border-white/20 eyebrow text-bone/95">
+                    01 — Red verificada
+                  </div>
+                  <div className="h-2 w-2 rounded-full bg-ember shadow-[0_0_12px_oklch(0.72_0.16_45)]" />
+                </div>
+
+                {/* Bottom glass info bar */}
+                <div className="absolute bottom-3 left-3 right-3 rounded-2xl backdrop-blur-2xl bg-white/10 border border-white/20 p-4 shadow-[0_8px_32px_rgb(0_0_0/0.3)]">
+                  <div className="flex items-end justify-between gap-3">
+                    <div>
+                      <div className="text-[10px] tracking-[0.25em] uppercase text-bone/70">Premium service</div>
+                      <div className="text-display italic text-2xl font-light text-bone leading-tight mt-1">
+                        Cancún · Q.Roo
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <div className="text-[10px] tracking-[0.25em] uppercase text-bone/70">ETA</div>
+                      <div className="text-display text-xl font-medium text-bone">&lt; 30s</div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Floating stat chip */}
+                <div className="hidden md:flex absolute top-1/2 -left-4 -translate-y-1/2 items-center gap-2 px-3 py-2 rounded-full backdrop-blur-xl bg-white/15 border border-white/25 shadow-[0_8px_24px_rgb(0_0_0/0.25)]">
+                  <div className="h-1.5 w-1.5 rounded-full bg-ember animate-pulse" />
+                  <span className="text-[10px] tracking-[0.2em] uppercase text-bone">En vivo</span>
+                </div>
               </div>
             </GlassCard>
           </div>
