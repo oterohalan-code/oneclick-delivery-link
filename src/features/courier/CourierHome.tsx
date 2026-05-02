@@ -223,9 +223,13 @@ export function CourierHome() {
         </Card>
       ) : (
         <div>
-          <h3 className="font-display text-lg font-semibold mb-3">Pedidos disponibles ({sorted.length})</h3>
+          <h3 className="text-display text-xl font-medium mb-3">Pedidos disponibles ({sorted.length})</h3>
           {sorted.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No hay pedidos por ahora. Te avisaremos al instante.</p>
+            <EmptyState
+              icon={Inbox}
+              title="Sin pedidos por ahora"
+              description="Mantén la app abierta. Te notificaremos al instante cuando haya un pedido cerca de ti."
+            />
           ) : (
             <div className="space-y-3">
               {sorted.map(({ o, dist }) => {
