@@ -31,7 +31,7 @@ export async function enablePush(userId: string): Promise<boolean> {
       const { key } = await getVapidPublicKey();
       sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlB64ToUint8Array(key),
+        applicationServerKey: urlB64ToUint8Array(key).buffer as ArrayBuffer,
       });
     }
 
