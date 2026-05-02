@@ -243,7 +243,21 @@ export function CourierHome() {
         </Card>
       ) : (
         <div>
-          <h3 className="text-display text-xl font-medium mb-3">Pedidos disponibles ({sorted.length})</h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-display text-xl font-medium">Pedidos disponibles ({sorted.length})</h3>
+            {sorted.length >= 2 && (
+              <Button
+                variant={batchMode ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setBatchMode((v) => !v);
+                  setSelected(new Set());
+                }}
+              >
+                {batchMode ? "Cancelar" : "Tomar varios"}
+              </Button>
+            )}
+          </div>
           {sorted.length === 0 ? (
             <EmptyState
               icon={Inbox}
@@ -251,13 +265,38 @@ export function CourierHome() {
               description="Mantén la app abierta. Te notificaremos al instante cuando haya un pedido cerca de ti."
             />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 pb-24">
               {sorted.map(({ o, dist }) => {
                 const r = restaurants[o.restaurant_id];
+                const isSelected = selected.has(o.id);
+                const toggleSelect = () => {
+                  setSelected((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(o.id)) next.delete(o.id);
+                    else if (next.size < 3) next.add(o.id);
+                    else toast.info("Máximo 3 pedidos por batch.");
+                    return next;
+                  });
+                };
                 return (
-                <Card key={o.id} className="p-4">
+                <Card
+                  key={o.id}
+                  className={`p-4 transition-all ${batchMode ? "cursor-pointer" : ""} ${
+                    isSelected ? "ring-2 ring-primary border-primary" : ""
+                  }`}
+                  onClick={() => batchMode && toggleSelect()}
+                >
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex items-center gap-3 min-w-0">
+                      {batchMode && (
+                        <div
+                          className={`h-6 w-6 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                            isSelected ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/40"
+                          }`}
+                        >
+                          {isSelected && <CheckCircle2 className="h-4 w-4" />}
+                        </div>
+                      )}
                       {r?.facadeUrl ? (
                         <img src={r.facadeUrl} alt={r.name} className="h-12 w-12 rounded-lg object-cover border" loading="lazy" />
                       ) : (
@@ -279,19 +318,69 @@ export function CourierHome() {
                         <DollarSign className="h-5 w-5" />{Number(o.shipping_fee).toFixed(0)}
                       </div>
                     </div>
-                    <Button size="sm" className="h-11" onClick={() => onAccept(o.id)}>
-                      Aceptar
-                    </Button>
+                    {!batchMode && (
+                      <Button size="sm" className="h-11" onClick={() => onAccept(o.id)}>
+                        Aceptar
+                      </Button>
+                    )}
                   </div>
                 </Card>
                 );
               })}
             </div>
           )}
+
+          {/* Barra fija inferior cuando hay pedidos seleccionados en modo batch */}
+          {batchMode && selected.size >= 2 && (
+            <div className="fixed bottom-20 left-0 right-0 px-4 z-30 pointer-events-none">
+              <Card className="max-w-md mx-auto p-3 shadow-2xl border-primary pointer-events-auto bg-paper/95 backdrop-blur">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-xs text-muted-foreground">{selected.size} pedidos seleccionados</div>
+                    <div className="font-display text-lg font-bold text-success">
+                      Ganas ${sorted
+                        .filter((s) => selected.has(s.o.id))
+                        .reduce((sum, s) => sum + Number(s.o.shipping_fee), 0)
+                        .toFixed(0)}
+                    </div>
+                  </div>
+                  <Button onClick={onAcceptBatch} disabled={batchBusy} className="h-11">
+                    {batchBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : `Aceptar ${selected.size}`}
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          )}
         </div>
       )}
     </div>
   );
+
+  function onAcceptBatch() {
+    const token = session?.access_token;
+    if (!token) { toast.error("Sesión expirada."); return; }
+    if (selected.size < 2) return;
+    setBatchBusy(true);
+    acceptBatchRpc({
+      headers: { Authorization: `Bearer ${token}` },
+      data: { orderIds: Array.from(selected) },
+    })
+      .then((res: any) => {
+        if (!res?.ok) {
+          toast.error(res?.message ?? "No se pudo aceptar el batch.");
+          return;
+        }
+        toast.success(res.partial ? res.message : `¡${res.assigned} pedidos asignados!`);
+        setBatchMode(false);
+        setSelected(new Set());
+        load();
+      })
+      .catch(async (e: any) => {
+        const msg = e instanceof Response ? await e.text().catch(() => "Error") : (e?.message ?? "Error");
+        toast.error(msg);
+      })
+      .finally(() => setBatchBusy(false));
+  }
 
   function onAccept(orderId: string) {
     const token = session?.access_token;
