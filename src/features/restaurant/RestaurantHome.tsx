@@ -220,6 +220,23 @@ export function RestaurantHome() {
     }
   };
 
+  const cancelOrder = async (o: Order) => {
+    const label = o.status === "pending" ? "buscando repartidor" : "asignado";
+    if (!window.confirm(`Cancelar este pedido (${label})? Esta acción no se puede deshacer.`)) return;
+    const reason = window.prompt("Motivo de cancelación (opcional):") ?? "";
+    const note = `[CANCELADO POR RESTAURANTE${reason.trim() ? `: ${reason.trim()}` : ""}]`;
+    const { error } = await supabase
+      .from("orders")
+      .update({ status: "cancelled", notes: note })
+      .eq("id", o.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Pedido cancelado");
+    load();
+  };
+
   return (
     <div className="space-y-6">
       <div>
