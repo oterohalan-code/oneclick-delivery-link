@@ -75,8 +75,34 @@ function AuthPage() {
     navigate({ to: "/app" });
   };
 
+  const onAdminSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const email = form.email.trim().toLowerCase();
+    if (!email.endsWith(ADMIN_DOMAIN)) {
+      return toast.error(`Solo correos ${ADMIN_DOMAIN} pueden registrarse como administradores.`);
+    }
+    if (!form.password || form.password.length < 6) {
+      return toast.error("La contraseña debe tener al menos 6 caracteres.");
+    }
+    if (!form.fullName.trim()) {
+      return toast.error("Escribe tu nombre completo.");
+    }
+    setLoading(true);
+    const { error } = await supabase.auth.signUp({
+      email,
+      password: form.password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth`,
+        data: { full_name: form.fullName.trim(), role: "admin_pending" },
+      },
+    });
+    setLoading(false);
+    if (error) return toast.error(error.message);
+    toast.success("Cuenta creada. Revisa tu correo para confirmar tu acceso de administrador.");
+    setTab("login");
+  };
 
-  return (
+
     <div className="relative min-h-screen bg-background text-foreground flex flex-col overflow-hidden">
       <MeshBackground />
 
