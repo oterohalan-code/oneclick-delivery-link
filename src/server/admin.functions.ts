@@ -186,3 +186,50 @@ export const sendTestAuthEmail = createServerFn({ method: "POST" })
     if (error) throw new Error(`recovery: ${error.message}`);
     return { ok: true, type: data.type, action_link: link?.properties?.action_link ?? null };
   });
+
+const ADMIN_DOMAIN = "@punchingsolutions.com.mx";
+
+/**
+ * Promueve al usuario autenticado a admin si:
+ *  - su email termina en @punchingsolutions.com.mx
+ *  - su correo está confirmado
+ *  - aún no tiene rol asignado
+ * Retorna { promoted: boolean, reason?: string }.
+ */
+export const claimAdminRole = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const userId = context.userId;
+
+    // 1. Obtener email + email_confirmed_at desde auth.users
+    const { data: userRes, error: uErr } = await supabaseAdmin.auth.admin.getUserById(userId);
+    if (uErr || !userRes?.user) return { promoted: false, reason: "user_not_found" };
+
+    const email = (userRes.user.email ?? "").toLowerCase().trim();
+    const confirmed = !!userRes.user.email_confirmed_at;
+
+    if (!email.endsWith(ADMIN_DOMAIN)) {
+      return { promoted: false, reason: "domain_not_allowed" };
+    }
+    if (!confirmed) {
+      return { promoted: false, reason: "email_not_confirmed" };
+    }
+
+    // 2. Verificar si ya tiene rol admin
+    const { data: existing } = await supabaseAdmin
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", userId)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (existing) return { promoted: true, reason: "already_admin" };
+
+    // 3. Insertar rol admin
+    const { error: insErr } = await supabaseAdmin
+      .from("user_roles")
+      .insert({ user_id: userId, role: "admin" });
+    if (insErr) return { promoted: false, reason: insErr.message };
+
+    return { promoted: true };
+  });
+
