@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Plus, Loader2, Package, Truck, CheckCircle2, Clock, MessageCircle, Phone, Inbox, Share2, Copy, Star } from "lucide-react";
+import { Plus, Loader2, Package, Truck, CheckCircle2, Clock, MessageCircle, Phone, Inbox, Share2, Copy, Star, Ban } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SkeletonList } from "@/components/ui/skeleton";
 import { RestaurantOnboarding } from "./RestaurantOnboarding";
@@ -220,6 +220,23 @@ export function RestaurantHome() {
     }
   };
 
+  const cancelOrder = async (o: Order) => {
+    const label = o.status === "pending" ? "buscando repartidor" : "asignado";
+    if (!window.confirm(`Cancelar este pedido (${label})? Esta acción no se puede deshacer.`)) return;
+    const reason = window.prompt("Motivo de cancelación (opcional):") ?? "";
+    const note = `[CANCELADO POR RESTAURANTE${reason.trim() ? `: ${reason.trim()}` : ""}]`;
+    const { error } = await supabase
+      .from("orders")
+      .update({ status: "cancelled", notes: note })
+      .eq("id", o.id);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Pedido cancelado");
+    load();
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -281,6 +298,19 @@ export function RestaurantHome() {
                         title="Copiar enlace"
                       >
                         <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  )}
+
+                  {(o.status === "pending" || o.status === "assigned") && (
+                    <div className="mt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                        onClick={() => cancelOrder(o)}
+                      >
+                        <Ban className="h-3.5 w-3.5 mr-1.5" /> Cancelar envío
                       </Button>
                     </div>
                   )}
