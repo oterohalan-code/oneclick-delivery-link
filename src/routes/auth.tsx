@@ -14,7 +14,9 @@ import { toast } from "sonner";
 import { CourierSignupWizard } from "@/features/courier/CourierSignupWizard";
 import { RestaurantSignupWizard } from "@/features/restaurant/RestaurantSignupWizard";
 
-type RoleParam = "restaurant" | "courier";
+type RoleParam = "restaurant" | "courier" | "admin";
+
+const ADMIN_DOMAIN = "@punchingsolutions.com.mx";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (s: Record<string, unknown>): { role?: RoleParam } => ({
