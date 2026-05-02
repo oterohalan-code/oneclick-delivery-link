@@ -1,7 +1,7 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
-import { claimAdminRole } from "@/server/admin.functions";
+import { claimAdminRole } from "@/server/admin-claim.functions";
 
 export type AppRole = "restaurant" | "courier" | "admin";
 
