@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, CheckCircle2, XCircle, ExternalLink, AlertTriangle, Clock, DollarSign, Package, Users, TrendingUp, Ban, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
-import { getAdminFinance, adminCancelOrder, adminUnassignOrder } from "@/server/admin.functions";
+import { getAdminFinance, adminCancelOrder, adminUnassignOrder, sendTestAuthEmail } from "@/server/admin.functions";
+import { Input } from "@/components/ui/input";
 
 interface StaleOrder {
   id: string;
@@ -358,6 +359,9 @@ export function AdminHome() {
           </Card>
         ))
       )}
+        </TabsContent>
+        <TabsContent value="emails" className="space-y-3 mt-4">
+          <EmailTester />
         </TabsContent>
       </Tabs>
     </div>
