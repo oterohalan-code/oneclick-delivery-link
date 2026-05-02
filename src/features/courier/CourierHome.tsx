@@ -423,9 +423,16 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
 
   return (
     <div className="space-y-4">
-      <Badge className="bg-primary text-primary-foreground">
-        {goingToPickup ? "En camino al restaurante" : "Pedido activo"}
-      </Badge>
+      <div className="flex items-center justify-between gap-2">
+        <Badge className="bg-primary text-primary-foreground">
+          {goingToPickup ? "En camino al restaurante" : "Pedido activo"}
+        </Badge>
+        {eta != null && (
+          <Badge variant="secondary" className="font-mono">
+            ⏱ ETA {formatEta(eta)}
+          </Badge>
+        )}
+      </div>
       <Card className="p-4 space-y-2">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0">
