@@ -28,11 +28,17 @@ export type Database = {
           lat: number | null
           license_url: string | null
           lng: number | null
+          location_updated_at: string | null
           moto_url: string | null
           plan: Database["public"]["Enums"]["courier_plan"]
           plate: string | null
           plate_url: string | null
           rejection_reason: string | null
+          stats_avg_minutes: number
+          stats_cancelled: number
+          stats_on_time_deliveries: number
+          stats_score: number
+          stats_total_deliveries: number
           status: Database["public"]["Enums"]["courier_status"]
           subscription_active: boolean
           subscription_expires_at: string | null
@@ -54,11 +60,17 @@ export type Database = {
           lat?: number | null
           license_url?: string | null
           lng?: number | null
+          location_updated_at?: string | null
           moto_url?: string | null
           plan?: Database["public"]["Enums"]["courier_plan"]
           plate?: string | null
           plate_url?: string | null
           rejection_reason?: string | null
+          stats_avg_minutes?: number
+          stats_cancelled?: number
+          stats_on_time_deliveries?: number
+          stats_score?: number
+          stats_total_deliveries?: number
           status?: Database["public"]["Enums"]["courier_status"]
           subscription_active?: boolean
           subscription_expires_at?: string | null
@@ -80,11 +92,17 @@ export type Database = {
           lat?: number | null
           license_url?: string | null
           lng?: number | null
+          location_updated_at?: string | null
           moto_url?: string | null
           plan?: Database["public"]["Enums"]["courier_plan"]
           plate?: string | null
           plate_url?: string | null
           rejection_reason?: string | null
+          stats_avg_minutes?: number
+          stats_cancelled?: number
+          stats_on_time_deliveries?: number
+          stats_score?: number
+          stats_total_deliveries?: number
           status?: Database["public"]["Enums"]["courier_status"]
           subscription_active?: boolean
           subscription_expires_at?: string | null
@@ -134,6 +152,7 @@ export type Database = {
         Row: {
           accepted_at: string | null
           amount_to_collect: number
+          batch_id: string | null
           courier_id: string | null
           created_at: string
           customer_name: string | null
@@ -147,9 +166,11 @@ export type Database = {
           dropoff_address: string
           dropoff_lat: number | null
           dropoff_lng: number | null
+          eta_minutes: number | null
           external_order_id: string | null
           id: string
           notes: string | null
+          picked_up_at: string | null
           pickup_address: string
           pickup_lat: number | null
           pickup_lng: number | null
@@ -161,6 +182,7 @@ export type Database = {
         Insert: {
           accepted_at?: string | null
           amount_to_collect?: number
+          batch_id?: string | null
           courier_id?: string | null
           created_at?: string
           customer_name?: string | null
@@ -174,9 +196,11 @@ export type Database = {
           dropoff_address: string
           dropoff_lat?: number | null
           dropoff_lng?: number | null
+          eta_minutes?: number | null
           external_order_id?: string | null
           id?: string
           notes?: string | null
+          picked_up_at?: string | null
           pickup_address: string
           pickup_lat?: number | null
           pickup_lng?: number | null
@@ -188,6 +212,7 @@ export type Database = {
         Update: {
           accepted_at?: string | null
           amount_to_collect?: number
+          batch_id?: string | null
           courier_id?: string | null
           created_at?: string
           customer_name?: string | null
@@ -201,9 +226,11 @@ export type Database = {
           dropoff_address?: string
           dropoff_lat?: number | null
           dropoff_lng?: number | null
+          eta_minutes?: number | null
           external_order_id?: string | null
           id?: string
           notes?: string | null
+          picked_up_at?: string | null
           pickup_address?: string
           pickup_lat?: number | null
           pickup_lng?: number | null
@@ -533,17 +560,32 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_courier_stats: {
+        Args: { _courier_id: string }
+        Returns: {
+          avg_minutes: number
+          full_name: string
+          on_time_deliveries: number
+          score: number
+          total_deliveries: number
+        }[]
+      }
       get_public_tracking: {
         Args: { _token: string }
         Returns: {
           accepted_at: string
           courier_lat: number
           courier_lng: number
+          courier_name: string
+          courier_score: number
           created_at: string
           delivered_at: string
           dropoff_address: string
           dropoff_lat: number
           dropoff_lng: number
+          eta_minutes: number
+          location_updated_at: string
+          picked_up_at: string
           pickup_address: string
           pickup_lat: number
           pickup_lng: number
