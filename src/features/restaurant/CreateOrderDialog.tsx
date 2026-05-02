@@ -10,6 +10,8 @@ import { MapView, reverseGeocode } from "@/components/MapView";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
+import { calculateShippingFee, surgeLabel } from "@/lib/pricing";
+import { Badge } from "@/components/ui/badge";
 
 type PaymentStatus = "pending" | "all" | "paid";
 
@@ -18,17 +20,6 @@ const PAYMENT_LABELS: Record<PaymentStatus, string> = {
   all: "Cliente pagará todo",
   paid: "Envío y producto pagados",
 };
-
-function calcShippingFee(km: number): number {
-  if (!Number.isFinite(km) || km <= 0) return 0;
-  if (km <= 3) return 40;
-  if (km <= 5) return 50;
-  if (km <= 7) return 60;
-  if (km <= 9) return 70;
-  if (km <= 10.9) return 80;
-  const extra = Math.ceil(km - 11);
-  return 80 + 10 + extra * 10;
-}
 
 const schema = z.object({
   customer_name: z.string().trim().min(2, "Nombre del cliente requerido").max(80),
@@ -66,7 +57,11 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
   }, []);
 
   const distanceKm = routeInfo?.distanceKm ?? null;
-  const shippingFee = useMemo(() => (distanceKm == null ? 0 : calcShippingFee(distanceKm)), [distanceKm]);
+  const quote = useMemo(
+    () => (distanceKm == null ? null : calculateShippingFee(distanceKm)),
+    [distanceKm]
+  );
+  const shippingFee = quote?.totalFee ?? 0;
 
   // Reset route info & mark loading whenever destination changes
   useEffect(() => {
@@ -244,6 +239,11 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
                 value={routeLoading ? "…" : distanceKm == null ? "" : `$${shippingFee}`}
                 placeholder="—"
               />
+              {quote && quote.surgeReason !== "normal" && (
+                <Badge variant="secondary" className="mt-1 text-xs">
+                  {surgeLabel(quote.surgeReason)} · base ${quote.baseFee}
+                </Badge>
+              )}
             </div>
           </div>
           <div>
