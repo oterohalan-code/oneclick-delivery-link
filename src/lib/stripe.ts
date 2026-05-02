@@ -2,17 +2,18 @@ import { loadStripe, type Stripe } from "@stripe/stripe-js";
 
 type StripeEnv = 'sandbox' | 'live';
 
-const clientToken = import.meta.env.VITE_PAYMENTS_CLIENT_TOKEN as string | undefined;
-const environment: StripeEnv = clientToken?.startsWith('pk_test_') ? 'sandbox' : 'live';
+// Publishable key del usuario (BYOK). Es seguro exponerla en el cliente.
+const publishableKey = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
+const environment: StripeEnv = publishableKey?.startsWith('pk_live_') ? 'live' : 'sandbox';
 
 let stripePromise: Promise<Stripe | null> | null = null;
 
 export function getStripe(): Promise<Stripe | null> {
   if (!stripePromise) {
-    if (!clientToken) {
-      throw new Error("VITE_PAYMENTS_CLIENT_TOKEN is not set");
+    if (!publishableKey) {
+      throw new Error("VITE_STRIPE_PUBLISHABLE_KEY no está configurada");
     }
-    stripePromise = loadStripe(clientToken);
+    stripePromise = loadStripe(publishableKey);
   }
   return stripePromise;
 }
