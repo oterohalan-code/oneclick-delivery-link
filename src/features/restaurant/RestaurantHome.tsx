@@ -53,6 +53,7 @@ export function RestaurantHome() {
   const [chatOrderId, setChatOrderId] = useState<string | null>(null);
   const [courierByOrder, setCourierByOrder] = useState<Record<string, CourierInfo>>({});
   const getCourierForOrderRpc = useServerFn(getCourierForOrder);
+  const getCourierStatsRpc = useServerFn(getCourierStats);
 
   const load = async () => {
     if (!user) return;
@@ -99,6 +100,25 @@ export function RestaurantHome() {
               ...prev,
               [o.id]: { fullName: res.fullName, phone: res.phone, phoneDialCode: res.phoneDialCode },
             }));
+            // Cargar stats en paralelo (best-effort)
+            if (res.courierId) {
+              getCourierStatsRpc({
+                headers: { Authorization: `Bearer ${token}` },
+                data: { courierId: res.courierId },
+              })
+                .then((stats: any) => {
+                  if (cancelled || !stats?.ok) return;
+                  setCourierByOrder((prev) => ({
+                    ...prev,
+                    [o.id]: {
+                      ...prev[o.id],
+                      score: stats.score,
+                      totalDeliveries: stats.totalDeliveries,
+                    },
+                  }));
+                })
+                .catch(() => {});
+            }
           }
         } catch (e) {
           console.warn("getCourierForOrder failed", e);
