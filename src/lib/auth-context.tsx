@@ -45,9 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { data: { session: s } } = await supabase.auth.getSession();
       const token = s?.access_token;
       if (!token) return;
-      const res = await claimAdminRole({
-        headers: { Authorization: `Bearer ${token}` },
-      } as any);
+      const res = await claimAdminRole({ data: { accessToken: token } });
       if ((res as any)?.promoted) await fetchRole(u.id);
     } catch {
       // silencioso: no bloquea login
