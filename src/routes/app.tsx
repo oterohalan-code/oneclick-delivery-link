@@ -86,11 +86,11 @@ function AppLayout() {
                   to={it.to}
                   aria-current={active ? "page" : undefined}
                   className={`relative flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold tracking-wider uppercase rounded-full press transition ${
-                    active ? "text-bone" : "text-foreground/75 hover:text-foreground"
+                    active ? "text-ember-foreground" : "text-foreground/75 hover:text-foreground"
                   }`}
                 >
                   {active && (
-                    <span aria-hidden className="absolute inset-0 rounded-full bg-foreground shadow-button" />
+                    <span aria-hidden className="absolute inset-0 rounded-full bg-ember shadow-button" />
                   )}
                   <it.icon className="relative h-4 w-4" strokeWidth={1.6} />
                   <span className="relative">{it.label}</span>
