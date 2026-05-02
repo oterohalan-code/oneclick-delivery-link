@@ -51,7 +51,11 @@ async function flushAction(a: QueuedAction): Promise<boolean> {
       return !error;
     }
     if (a.kind === "order_status") {
-      const patch: Record<string, unknown> = { status: a.status, ...(a.extra ?? {}) };
+      const patch: {
+        status: "picked_up" | "delivered";
+        picked_up_at?: string;
+        delivered_at?: string;
+      } = { status: a.status };
       if (a.status === "picked_up") patch.picked_up_at = new Date(a.ts).toISOString();
       if (a.status === "delivered") patch.delivered_at = new Date(a.ts).toISOString();
       const { error } = await supabase
