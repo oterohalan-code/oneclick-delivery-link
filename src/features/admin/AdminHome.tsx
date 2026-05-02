@@ -32,6 +32,45 @@ export function AdminHome() {
   const [loading, setLoading] = useState(true);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const [stale, setStale] = useState<StaleOrder[]>([]);
+  const [finance, setFinance] = useState<Awaited<ReturnType<typeof getAdminFinance>> | null>(null);
+  const [financeLoading, setFinanceLoading] = useState(false);
+  const [financeDays, setFinanceDays] = useState(30);
+  const [actingId, setActingId] = useState<string | null>(null);
+
+  const loadFinance = async (days: number) => {
+    setFinanceLoading(true);
+    try {
+      const r = await getAdminFinance({ data: { days } });
+      setFinance(r);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Error al cargar finanzas");
+    } finally {
+      setFinanceLoading(false);
+    }
+  };
+
+  const handleCancel = async (orderId: string) => {
+    const reason = window.prompt("Motivo de cancelación:");
+    if (!reason || reason.trim().length < 3) return;
+    setActingId(orderId);
+    try {
+      await adminCancelOrder({ data: { orderId, reason: reason.trim() } });
+      toast.success("Pedido cancelado");
+      loadStale();
+    } catch (e: any) { toast.error(e?.message ?? "Error"); }
+    finally { setActingId(null); }
+  };
+
+  const handleUnassign = async (orderId: string) => {
+    if (!window.confirm("¿Liberar este pedido para reasignación?")) return;
+    setActingId(orderId);
+    try {
+      await adminUnassignOrder({ data: { orderId } });
+      toast.success("Pedido liberado — visible para couriers");
+      loadStale();
+    } catch (e: any) { toast.error(e?.message ?? "Error"); }
+    finally { setActingId(null); }
+  };
 
   const loadStale = async () => {
     const cutoff = new Date(Date.now() - 10 * 60 * 1000).toISOString();
