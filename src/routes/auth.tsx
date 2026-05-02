@@ -171,19 +171,52 @@ function AuthPage() {
             <TabsContent value="signup" className="mt-6 space-y-5">
               <div>
                 <Label className="mb-2 block text-xs uppercase tracking-wider text-muted-foreground">Soy</Label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <button type="button" onClick={() => setRole("restaurant")}
-                    className={`rounded-xl p-4 border transition flex flex-col items-center gap-1.5 ${role === "restaurant" ? "border-primary bg-primary text-primary-foreground shadow-button" : "border-hairline bg-card/60 text-foreground hover:border-primary/50"}`}>
-                    <Store className="h-5 w-5" strokeWidth={1.5} /> <span className="text-sm font-medium">Restaurante</span>
+                    className={`rounded-xl p-3 border transition flex flex-col items-center gap-1.5 ${role === "restaurant" ? "border-primary bg-primary text-primary-foreground shadow-button" : "border-hairline bg-card/60 text-foreground hover:border-primary/50"}`}>
+                    <Store className="h-5 w-5" strokeWidth={1.5} /> <span className="text-xs font-medium">Restaurante</span>
                   </button>
                   <button type="button" onClick={() => setRole("courier")}
-                    className={`rounded-xl p-4 border transition flex flex-col items-center gap-1.5 ${role === "courier" ? "border-primary bg-primary text-primary-foreground shadow-button" : "border-hairline bg-card/60 text-foreground hover:border-primary/50"}`}>
-                    <Bike className="h-5 w-5" strokeWidth={1.5} /> <span className="text-sm font-medium">Repartidor</span>
+                    className={`rounded-xl p-3 border transition flex flex-col items-center gap-1.5 ${role === "courier" ? "border-primary bg-primary text-primary-foreground shadow-button" : "border-hairline bg-card/60 text-foreground hover:border-primary/50"}`}>
+                    <Bike className="h-5 w-5" strokeWidth={1.5} /> <span className="text-xs font-medium">Repartidor</span>
+                  </button>
+                  <button type="button" onClick={() => setRole("admin")}
+                    className={`rounded-xl p-3 border transition flex flex-col items-center gap-1.5 ${role === "admin" ? "border-primary bg-primary text-primary-foreground shadow-button" : "border-hairline bg-card/60 text-foreground hover:border-primary/50"}`}>
+                    <ShieldCheck className="h-5 w-5" strokeWidth={1.5} /> <span className="text-xs font-medium">Admin</span>
                   </button>
                 </div>
               </div>
 
-              {role === "courier" ? <CourierSignupWizard /> : <RestaurantSignupWizard />}
+              {role === "admin" ? (
+                <form onSubmit={onAdminSignup} className="space-y-4">
+                  <p className="text-xs text-muted-foreground bg-muted/40 border border-hairline rounded-lg p-3">
+                    Solo correos <strong className="text-foreground">{ADMIN_DOMAIN}</strong> pueden registrarse como administradores. Recibirás un correo de confirmación.
+                  </p>
+                  <div>
+                    <Label htmlFor="an" className="text-xs uppercase tracking-wider text-muted-foreground">Nombre completo</Label>
+                    <Input id="an" required value={form.fullName}
+                      className="mt-1.5 h-11 rounded-xl border-hairline bg-card/70"
+                      onChange={(e) => setForm({ ...form, fullName: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label htmlFor="ae" className="text-xs uppercase tracking-wider text-muted-foreground">Email corporativo</Label>
+                    <Input id="ae" type="email" required value={form.email}
+                      placeholder={`tu-correo${ADMIN_DOMAIN}`}
+                      className="mt-1.5 h-11 rounded-xl border-hairline bg-card/70"
+                      onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label htmlFor="ap" className="text-xs uppercase tracking-wider text-muted-foreground">Contraseña</Label>
+                    <Input id="ap" type="password" required minLength={6} value={form.password}
+                      className="mt-1.5 h-11 rounded-xl border-hairline bg-card/70"
+                      onChange={(e) => setForm({ ...form, password: e.target.value })} />
+                  </div>
+                  <Button type="submit" disabled={loading} variant="default" size="lg" className="w-full mt-2">
+                    Crear cuenta de administrador
+                  </Button>
+                </form>
+              ) : role === "courier" ? <CourierSignupWizard /> : <RestaurantSignupWizard />}
+
             </TabsContent>
           </Tabs>
         </GlassCard>
