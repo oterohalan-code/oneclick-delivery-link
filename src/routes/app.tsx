@@ -100,6 +100,8 @@ function AppLayout() {
           </div>
         </div>
       </nav>
+
+      <SupportChat />
     </div>
   );
 }
