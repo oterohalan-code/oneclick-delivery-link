@@ -75,11 +75,11 @@ function AuthPage() {
 
 
   return (
-    <div className="relative min-h-screen bg-bone text-ink flex flex-col overflow-hidden">
+    <div className="relative min-h-screen bg-background text-foreground flex flex-col overflow-hidden">
       <MeshBackground />
 
       <header className="px-6 py-5 max-w-md mx-auto w-full flex items-center justify-between">
-        <Link to="/" className="inline-flex items-center gap-2 text-xs text-graphite hover:text-ink transition tracking-wider uppercase">
+        <Link to="/" className="inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition tracking-wider uppercase">
           <ArrowLeft className="h-3.5 w-3.5" /> Volver
         </Link>
         <Logo size="sm" />
@@ -89,14 +89,14 @@ function AuthPage() {
         <GlassCard variant="strong" className="w-full max-w-md p-8 animate-fade-in">
           <div className="eyebrow mb-3">Acceso</div>
           <h1 className="text-display text-3xl font-medium leading-tight">
-            Bienvenido <span className="italic font-light text-graphite">de vuelta.</span>
+            Bienvenido <span className="italic font-light text-muted-foreground">de vuelta.</span>
           </h1>
-          <p className="text-sm text-graphite mt-2">Entra o crea tu cuenta para continuar.</p>
+          <p className="text-sm text-muted-foreground mt-2">Entra o crea tu cuenta para continuar.</p>
 
           <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="mt-7">
             <TabsList className="grid grid-cols-2 w-full bg-secondary/50 p-1 rounded-full h-auto">
-              <TabsTrigger value="login" className="rounded-full data-[state=active]:bg-ink data-[state=active]:text-bone data-[state=active]:shadow-sm py-2">Entrar</TabsTrigger>
-              <TabsTrigger value="signup" className="rounded-full data-[state=active]:bg-ink data-[state=active]:text-bone data-[state=active]:shadow-sm py-2">Crear cuenta</TabsTrigger>
+              <TabsTrigger value="login" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm py-2">Entrar</TabsTrigger>
+              <TabsTrigger value="signup" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm py-2">Crear cuenta</TabsTrigger>
             </TabsList>
 
             <TabsContent value="login" className="mt-6">
@@ -112,19 +112,19 @@ function AuthPage() {
               </Button>
               <div className="relative my-4">
                 <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-hairline" /></div>
-                <div className="relative flex justify-center"><span className="bg-paper px-2 text-[10px] uppercase tracking-widest text-graphite">o con email</span></div>
+                <div className="relative flex justify-center"><span className="bg-card px-2 text-[10px] uppercase tracking-widest text-muted-foreground">o con email</span></div>
               </div>
               <form onSubmit={onLogin} className="space-y-4">
                 <div>
-                  <Label htmlFor="le" className="text-xs uppercase tracking-wider text-graphite">Email</Label>
+                  <Label htmlFor="le" className="text-xs uppercase tracking-wider text-muted-foreground">Email</Label>
                   <Input id="le" type="email" required value={form.email}
-                    className="mt-1.5 h-11 rounded-xl border-hairline bg-paper/70"
+                    className="mt-1.5 h-11 rounded-xl border-hairline bg-card/70"
                     onChange={(e) => setForm({ ...form, email: e.target.value })} />
                 </div>
                 <div>
-                  <Label htmlFor="lp" className="text-xs uppercase tracking-wider text-graphite">Contraseña</Label>
+                  <Label htmlFor="lp" className="text-xs uppercase tracking-wider text-muted-foreground">Contraseña</Label>
                   <Input id="lp" type="password" required value={form.password}
-                    className="mt-1.5 h-11 rounded-xl border-hairline bg-paper/70"
+                    className="mt-1.5 h-11 rounded-xl border-hairline bg-card/70"
                     onChange={(e) => setForm({ ...form, password: e.target.value })} />
                 </div>
                 <Button type="submit" disabled={loading} variant="default" size="lg" className="w-full mt-2">Entrar</Button>
@@ -132,7 +132,7 @@ function AuthPage() {
                   type="button"
                   onClick={onForgotPassword}
                   disabled={loading}
-                  className="text-xs text-graphite hover:text-ink hover:underline block mx-auto mt-1"
+                  className="text-xs text-muted-foreground hover:text-foreground hover:underline block mx-auto mt-1"
                 >
                   ¿Olvidaste tu contraseña?
                 </button>
@@ -141,14 +141,14 @@ function AuthPage() {
 
             <TabsContent value="signup" className="mt-6 space-y-5">
               <div>
-                <Label className="mb-2 block text-xs uppercase tracking-wider text-graphite">Soy</Label>
+                <Label className="mb-2 block text-xs uppercase tracking-wider text-muted-foreground">Soy</Label>
                 <div className="grid grid-cols-2 gap-2">
                   <button type="button" onClick={() => setRole("restaurant")}
-                    className={`rounded-xl p-4 border transition flex flex-col items-center gap-1.5 ${role === "restaurant" ? "border-ink bg-ink text-bone shadow-button" : "border-hairline bg-paper/60 hover:border-ink/40"}`}>
+                    className={`rounded-xl p-4 border transition flex flex-col items-center gap-1.5 ${role === "restaurant" ? "border-primary bg-primary text-primary-foreground shadow-button" : "border-hairline bg-card/60 text-foreground hover:border-primary/50"}`}>
                     <Store className="h-5 w-5" strokeWidth={1.5} /> <span className="text-sm font-medium">Restaurante</span>
                   </button>
                   <button type="button" onClick={() => setRole("courier")}
-                    className={`rounded-xl p-4 border transition flex flex-col items-center gap-1.5 ${role === "courier" ? "border-ink bg-ink text-bone shadow-button" : "border-hairline bg-paper/60 hover:border-ink/40"}`}>
+                    className={`rounded-xl p-4 border transition flex flex-col items-center gap-1.5 ${role === "courier" ? "border-primary bg-primary text-primary-foreground shadow-button" : "border-hairline bg-card/60 text-foreground hover:border-primary/50"}`}>
                     <Bike className="h-5 w-5" strokeWidth={1.5} /> <span className="text-sm font-medium">Repartidor</span>
                   </button>
                 </div>
