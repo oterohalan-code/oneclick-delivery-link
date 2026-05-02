@@ -1,0 +1,143 @@
+import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { z } from "zod";
+
+async function assertAdmin(userId: string) {
+  const { data } = await supabaseAdmin
+    .from("user_roles")
+    .select("role")
+    .eq("user_id", userId)
+    .eq("role", "admin")
+    .maybeSingle();
+  if (!data) throw new Error("Unauthorized");
+}
+
+export const getAdminFinance = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { days?: number }) => ({
+    days: data?.days && data.days > 0 && data.days <= 365 ? data.days : 30,
+  }))
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const since = new Date(Date.now() - data.days * 24 * 60 * 60 * 1000).toISOString();
+
+    const { data: orders } = await supabaseAdmin
+      .from("orders")
+      .select("id,status,shipping_fee,amount_to_collect,distance_km,courier_id,restaurant_id,created_at,delivered_at")
+      .gte("created_at", since);
+
+    const list = orders ?? [];
+    const delivered = list.filter((o: any) => o.status === "delivered");
+    const totalShipping = delivered.reduce((s: number, o: any) => s + Number(o.shipping_fee || 0), 0);
+    const totalCollected = delivered.reduce((s: number, o: any) => s + Number(o.amount_to_collect || 0), 0);
+    // Comisión PPS estimada: $20 por pedido entregado para couriers sin suscripción activa
+    const { data: couriers } = await supabaseAdmin
+      .from("couriers")
+      .select("id,plan,subscription_active,wallet_balance,stats_score,user_id");
+    const couriersMap: Record<string, any> = {};
+    (couriers ?? []).forEach((c: any) => { couriersMap[c.id] = c; });
+    let commissionEstimate = 0;
+    delivered.forEach((o: any) => {
+      const c = o.courier_id ? couriersMap[o.courier_id] : null;
+      if (c && !c.subscription_active) commissionEstimate += 20;
+    });
+
+    // Top restaurantes
+    const restAgg: Record<string, { count: number; revenue: number }> = {};
+    delivered.forEach((o: any) => {
+      const r = o.restaurant_id;
+      if (!r) return;
+      restAgg[r] = restAgg[r] || { count: 0, revenue: 0 };
+      restAgg[r].count++;
+      restAgg[r].revenue += Number(o.shipping_fee || 0);
+    });
+    const restIds = Object.keys(restAgg).slice(0, 50);
+    const { data: rests } = await supabaseAdmin
+      .from("restaurants").select("id,name").in("id", restIds.length ? restIds : ["00000000-0000-0000-0000-000000000000"]);
+    const restNames: Record<string, string> = {};
+    (rests ?? []).forEach((r: any) => { restNames[r.id] = r.name; });
+    const topRestaurants = Object.entries(restAgg)
+      .map(([id, v]) => ({ id, name: restNames[id] ?? "—", count: v.count, revenue: v.revenue }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    // Top couriers
+    const courAgg: Record<string, { count: number; revenue: number }> = {};
+    delivered.forEach((o: any) => {
+      const c = o.courier_id;
+      if (!c) return;
+      courAgg[c] = courAgg[c] || { count: 0, revenue: 0 };
+      courAgg[c].count++;
+      courAgg[c].revenue += Number(o.shipping_fee || 0);
+    });
+    const courUserIds = Object.keys(courAgg)
+      .map((id) => couriersMap[id]?.user_id)
+      .filter(Boolean);
+    const { data: profs } = await supabaseAdmin
+      .from("profiles").select("id,full_name").in("id", courUserIds.length ? courUserIds : ["00000000-0000-0000-0000-000000000000"]);
+    const profNames: Record<string, string> = {};
+    (profs ?? []).forEach((p: any) => { profNames[p.id] = p.full_name; });
+    const topCouriers = Object.entries(courAgg)
+      .map(([id, v]) => {
+        const c = couriersMap[id];
+        return {
+          id,
+          name: c?.user_id ? profNames[c.user_id] ?? "—" : "—",
+          count: v.count,
+          revenue: v.revenue,
+          score: c?.stats_score ?? null,
+        };
+      })
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 5);
+
+    return {
+      days: data.days,
+      totals: {
+        ordersCreated: list.length,
+        ordersDelivered: delivered.length,
+        ordersCancelled: list.filter((o: any) => o.status === "cancelled").length,
+        totalShipping: Math.round(totalShipping * 100) / 100,
+        totalCollected: Math.round(totalCollected * 100) / 100,
+        commissionEstimate: Math.round(commissionEstimate * 100) / 100,
+        activeCouriers: (couriers ?? []).filter((c: any) => c.subscription_active).length,
+        totalCouriers: (couriers ?? []).length,
+      },
+      topRestaurants,
+      topCouriers,
+    };
+  });
+
+export const adminCancelOrder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { orderId: string; reason: string }) =>
+    z.object({ orderId: z.string().uuid(), reason: z.string().min(3).max(500) }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const { error } = await supabaseAdmin
+      .from("orders")
+      .update({
+        status: "cancelled",
+        notes: `[ADMIN CANCEL: ${data.reason}]`,
+      })
+      .eq("id", data.orderId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const adminUnassignOrder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { orderId: string }) =>
+    z.object({ orderId: z.string().uuid() }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+    const { error } = await supabaseAdmin
+      .from("orders")
+      .update({ status: "pending", courier_id: null, accepted_at: null, picked_up_at: null })
+      .eq("id", data.orderId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
