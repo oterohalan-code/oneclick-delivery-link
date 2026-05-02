@@ -10,6 +10,7 @@ import { Loader2, Plus, Crown, ArrowDownCircle, ArrowUpCircle, AlertCircle, Chec
 import { toast } from "sonner";
 import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
+import { PaymentModeBadge } from "@/components/PaymentModeBadge";
 
 export const Route = createFileRoute("/app/wallet")({
   validateSearch: (search: Record<string, unknown>): { checkout?: string; session_id?: string } => ({
@@ -116,7 +117,10 @@ function WalletPage() {
       </Card>
 
       <div>
-        <h3 className="font-display text-lg font-semibold mb-3">Recargar monedero</h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-display text-lg font-semibold">Recargar monedero</h3>
+          <PaymentModeBadge />
+        </div>
         <div className="grid grid-cols-4 gap-2">
           {TOPUPS.map((t) => (
             <Button
