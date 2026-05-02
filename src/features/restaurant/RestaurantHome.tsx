@@ -209,6 +209,27 @@ export function RestaurantHome() {
                     <Badge className={m.color}><Icon className="h-3 w-3 mr-1" />{m.label}</Badge>
                   </div>
 
+                  {o.tracking_token && (
+                    <div className="mt-3 flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => shareTracking(o)}
+                      >
+                        <Share2 className="h-3.5 w-3.5 mr-1.5" /> Enviar a cliente
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => copyTracking(o.tracking_token!)}
+                        title="Copiar enlace"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  )}
+
                   {o.courier_id && (o.status === "assigned" || o.status === "in_transit") && (
                     <div className="mt-3 pt-3 border-t space-y-2">
                       <div className="flex items-center justify-between gap-2">
