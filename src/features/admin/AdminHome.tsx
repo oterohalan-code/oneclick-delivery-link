@@ -3,8 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle2, XCircle, ExternalLink, AlertTriangle, Clock } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader2, CheckCircle2, XCircle, ExternalLink, AlertTriangle, Clock, DollarSign, Package, Users, TrendingUp, Ban, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
+import { getAdminFinance, adminCancelOrder, adminUnassignOrder } from "@/server/admin.functions";
 
 interface StaleOrder {
   id: string;
@@ -30,6 +32,45 @@ export function AdminHome() {
   const [loading, setLoading] = useState(true);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
   const [stale, setStale] = useState<StaleOrder[]>([]);
+  const [finance, setFinance] = useState<Awaited<ReturnType<typeof getAdminFinance>> | null>(null);
+  const [financeLoading, setFinanceLoading] = useState(false);
+  const [financeDays, setFinanceDays] = useState(30);
+  const [actingId, setActingId] = useState<string | null>(null);
+
+  const loadFinance = async (days: number) => {
+    setFinanceLoading(true);
+    try {
+      const r = await getAdminFinance({ data: { days } });
+      setFinance(r);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Error al cargar finanzas");
+    } finally {
+      setFinanceLoading(false);
+    }
+  };
+
+  const handleCancel = async (orderId: string) => {
+    const reason = window.prompt("Motivo de cancelación:");
+    if (!reason || reason.trim().length < 3) return;
+    setActingId(orderId);
+    try {
+      await adminCancelOrder({ data: { orderId, reason: reason.trim() } });
+      toast.success("Pedido cancelado");
+      loadStale();
+    } catch (e: any) { toast.error(e?.message ?? "Error"); }
+    finally { setActingId(null); }
+  };
+
+  const handleUnassign = async (orderId: string) => {
+    if (!window.confirm("¿Liberar este pedido para reasignación?")) return;
+    setActingId(orderId);
+    try {
+      await adminUnassignOrder({ data: { orderId } });
+      toast.success("Pedido liberado — visible para couriers");
+      loadStale();
+    } catch (e: any) { toast.error(e?.message ?? "Error"); }
+    finally { setActingId(null); }
+  };
 
   const loadStale = async () => {
     const cutoff = new Date(Date.now() - 10 * 60 * 1000).toISOString();
@@ -102,47 +143,141 @@ export function AdminHome() {
     <div className="space-y-6">
       <div>
         <h1 className="font-display text-2xl font-bold">Panel de administrador</h1>
-        <p className="text-sm text-muted-foreground">Validaciones y monitoreo en vivo</p>
+        <p className="text-sm text-muted-foreground">Validaciones, finanzas y monitoreo en vivo</p>
       </div>
 
-      {/* Pedidos rezagados */}
-      <section className="space-y-2">
-        <div className="flex items-center justify-between">
-          <h2 className="font-display text-lg font-semibold flex items-center gap-2">
-            <Clock className="h-5 w-5 text-warning" />
-            Pedidos sin asignar &gt; 10 min
-          </h2>
-          {stale.length > 0 && <Badge className="bg-destructive text-destructive-foreground">{stale.length}</Badge>}
-        </div>
-        {stale.length === 0 ? (
-          <Card className="p-4 text-sm text-muted-foreground">Sin alertas — todo fluye 🎯</Card>
-        ) : (
-          <div className="space-y-2">
-            {stale.map((o) => {
-              const mins = Math.floor((Date.now() - new Date(o.created_at).getTime()) / 60000);
-              return (
-                <Card key={o.id} className="p-3 border-destructive/50 bg-destructive/5">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="min-w-0 text-sm">
-                      <div className="flex items-center gap-2">
-                        <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
-                        <span className="font-medium">#{o.external_order_id ?? o.id.slice(0, 6)}</span>
-                        <Badge variant="destructive" className="text-[10px]">{mins} min</Badge>
-                      </div>
-                      <div className="text-muted-foreground mt-1 truncate">→ {o.dropoff_address}</div>
-                      <div className="text-xs text-muted-foreground">${Number(o.amount_to_collect).toFixed(2)} MXN</div>
-                    </div>
-                  </div>
-                </Card>
-              );
-            })}
-          </div>
-        )}
-      </section>
+      <Tabs defaultValue="ops" onValueChange={(v) => { if (v === "finance" && !finance) loadFinance(financeDays); }}>
+        <TabsList className="grid grid-cols-3 w-full">
+          <TabsTrigger value="ops">Incidencias</TabsTrigger>
+          <TabsTrigger value="validation">Validación ({list.length})</TabsTrigger>
+          <TabsTrigger value="finance">Finanzas</TabsTrigger>
+        </TabsList>
 
-      {/* Validación de repartidores */}
-      <section className="space-y-3">
-        <h2 className="font-display text-lg font-semibold">Repartidores pendientes ({list.length})</h2>
+        {/* INCIDENCIAS */}
+        <TabsContent value="ops" className="space-y-3 mt-4">
+          <div className="flex items-center justify-between">
+            <h2 className="font-display text-lg font-semibold flex items-center gap-2">
+              <Clock className="h-5 w-5 text-warning" />
+              Pedidos sin asignar &gt; 10 min
+            </h2>
+            {stale.length > 0 && <Badge className="bg-destructive text-destructive-foreground">{stale.length}</Badge>}
+          </div>
+          {stale.length === 0 ? (
+            <Card className="p-4 text-sm text-muted-foreground">Sin alertas — todo fluye 🎯</Card>
+          ) : (
+            <div className="space-y-2">
+              {stale.map((o) => {
+                const mins = Math.floor((Date.now() - new Date(o.created_at).getTime()) / 60000);
+                const busy = actingId === o.id;
+                return (
+                  <Card key={o.id} className="p-3 border-destructive/50 bg-destructive/5">
+                    <div className="flex items-start justify-between gap-2 flex-wrap">
+                      <div className="min-w-0 text-sm flex-1">
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4 text-destructive shrink-0" />
+                          <span className="font-medium">#{o.external_order_id ?? o.id.slice(0, 6)}</span>
+                          <Badge variant="destructive" className="text-[10px]">{mins} min</Badge>
+                        </div>
+                        <div className="text-muted-foreground mt-1 truncate">→ {o.dropoff_address}</div>
+                        <div className="text-xs text-muted-foreground">${Number(o.amount_to_collect).toFixed(2)} MXN</div>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button size="sm" variant="outline" disabled={busy} onClick={() => handleUnassign(o.id)}>
+                          <RotateCcw className="h-3 w-3 mr-1" /> Liberar
+                        </Button>
+                        <Button size="sm" variant="destructive" disabled={busy} onClick={() => handleCancel(o.id)}>
+                          <Ban className="h-3 w-3 mr-1" /> Cancelar
+                        </Button>
+                      </div>
+                    </div>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* FINANZAS */}
+        <TabsContent value="finance" className="space-y-4 mt-4">
+          <div className="flex items-center gap-2">
+            {[7, 30, 90].map((d) => (
+              <Button key={d} variant={financeDays === d ? "default" : "outline"} size="sm"
+                onClick={() => { setFinanceDays(d); loadFinance(d); }}>
+                {d} días
+              </Button>
+            ))}
+          </div>
+          {financeLoading || !finance ? (
+            <div className="grid place-items-center py-10"><Loader2 className="h-6 w-6 animate-spin" /></div>
+          ) : (
+            <>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <Card className="p-3">
+                  <div className="text-xs text-muted-foreground flex items-center gap-1"><Package className="h-3 w-3" /> Entregados</div>
+                  <div className="text-2xl font-bold">{finance.totals.ordersDelivered}</div>
+                  <div className="text-[10px] text-muted-foreground">de {finance.totals.ordersCreated} creados</div>
+                </Card>
+                <Card className="p-3">
+                  <div className="text-xs text-muted-foreground flex items-center gap-1"><DollarSign className="h-3 w-3" /> Envíos cobrados</div>
+                  <div className="text-2xl font-bold">${finance.totals.totalShipping.toLocaleString()}</div>
+                </Card>
+                <Card className="p-3">
+                  <div className="text-xs text-muted-foreground flex items-center gap-1"><TrendingUp className="h-3 w-3" /> Comisión PPS</div>
+                  <div className="text-2xl font-bold">${finance.totals.commissionEstimate.toLocaleString()}</div>
+                  <div className="text-[10px] text-muted-foreground">$20 × pedido sin sub</div>
+                </Card>
+                <Card className="p-3">
+                  <div className="text-xs text-muted-foreground flex items-center gap-1"><Users className="h-3 w-3" /> Couriers activos</div>
+                  <div className="text-2xl font-bold">{finance.totals.activeCouriers}</div>
+                  <div className="text-[10px] text-muted-foreground">de {finance.totals.totalCouriers} totales</div>
+                </Card>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <Card className="p-3">
+                  <h3 className="font-semibold text-sm mb-2">Top restaurantes</h3>
+                  {finance.topRestaurants.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">Sin datos</p>
+                  ) : (
+                    <ul className="space-y-1.5 text-sm">
+                      {finance.topRestaurants.map((r) => (
+                        <li key={r.id} className="flex justify-between gap-2">
+                          <span className="truncate">{r.name}</span>
+                          <span className="text-muted-foreground shrink-0">{r.count} · ${r.revenue.toFixed(0)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </Card>
+                <Card className="p-3">
+                  <h3 className="font-semibold text-sm mb-2">Top couriers</h3>
+                  {finance.topCouriers.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">Sin datos</p>
+                  ) : (
+                    <ul className="space-y-1.5 text-sm">
+                      {finance.topCouriers.map((c) => (
+                        <li key={c.id} className="flex justify-between gap-2">
+                          <span className="truncate">{c.name}</span>
+                          <span className="text-muted-foreground shrink-0">
+                            {c.count}{c.score != null && ` · ⭐${c.score}`}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </Card>
+              </div>
+
+              <div className="text-xs text-muted-foreground">
+                Cancelados: {finance.totals.ordersCancelled} · Cobrado al cliente: ${finance.totals.totalCollected.toLocaleString()}
+              </div>
+            </>
+          )}
+        </TabsContent>
+
+        {/* VALIDACIÓN */}
+        <TabsContent value="validation" className="space-y-3 mt-4">
+          <h2 className="font-display text-lg font-semibold">Repartidores pendientes ({list.length})</h2>
 
       {list.length === 0 ? (
         <Card className="p-8 text-center text-muted-foreground">Sin solicitudes pendientes 🎉</Card>
@@ -222,7 +357,8 @@ export function AdminHome() {
           </Card>
         ))
       )}
-      </section>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
