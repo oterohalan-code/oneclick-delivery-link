@@ -17,6 +17,7 @@ import { Route as TTokenRouteImport } from './routes/t.$token'
 import { Route as AuthResetRouteImport } from './routes/auth.reset'
 import { Route as AppWalletRouteImport } from './routes/app.wallet'
 import { Route as AppProfileRouteImport } from './routes/app.profile'
+import { Route as AppInsightsRouteImport } from './routes/app.insights'
 import { Route as AppHistoryRouteImport } from './routes/app.history'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
@@ -61,6 +62,11 @@ const AppProfileRoute = AppProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => AppRoute,
 } as any)
+const AppInsightsRoute = AppInsightsRouteImport.update({
+  id: '/insights',
+  path: '/insights',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppHistoryRoute = AppHistoryRouteImport.update({
   id: '/history',
   path: '/history',
@@ -84,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRouteWithChildren
   '/app/admin': typeof AppAdminRoute
   '/app/history': typeof AppHistoryRoute
+  '/app/insights': typeof AppInsightsRoute
   '/app/profile': typeof AppProfileRoute
   '/app/wallet': typeof AppWalletRoute
   '/auth/reset': typeof AuthResetRoute
@@ -96,6 +103,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRouteWithChildren
   '/app/admin': typeof AppAdminRoute
   '/app/history': typeof AppHistoryRoute
+  '/app/insights': typeof AppInsightsRoute
   '/app/profile': typeof AppProfileRoute
   '/app/wallet': typeof AppWalletRoute
   '/auth/reset': typeof AuthResetRoute
@@ -110,6 +118,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRouteWithChildren
   '/app/admin': typeof AppAdminRoute
   '/app/history': typeof AppHistoryRoute
+  '/app/insights': typeof AppInsightsRoute
   '/app/profile': typeof AppProfileRoute
   '/app/wallet': typeof AppWalletRoute
   '/auth/reset': typeof AuthResetRoute
@@ -125,6 +134,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/app/admin'
     | '/app/history'
+    | '/app/insights'
     | '/app/profile'
     | '/app/wallet'
     | '/auth/reset'
@@ -137,6 +147,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/app/admin'
     | '/app/history'
+    | '/app/insights'
     | '/app/profile'
     | '/app/wallet'
     | '/auth/reset'
@@ -150,6 +161,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/app/admin'
     | '/app/history'
+    | '/app/insights'
     | '/app/profile'
     | '/app/wallet'
     | '/auth/reset'
@@ -224,6 +236,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppProfileRouteImport
       parentRoute: typeof AppRoute
     }
+    '/app/insights': {
+      id: '/app/insights'
+      path: '/insights'
+      fullPath: '/app/insights'
+      preLoaderRoute: typeof AppInsightsRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/app/history': {
       id: '/app/history'
       path: '/history'
@@ -251,6 +270,7 @@ declare module '@tanstack/react-router' {
 interface AppRouteChildren {
   AppAdminRoute: typeof AppAdminRoute
   AppHistoryRoute: typeof AppHistoryRoute
+  AppInsightsRoute: typeof AppInsightsRoute
   AppProfileRoute: typeof AppProfileRoute
   AppWalletRoute: typeof AppWalletRoute
   AppIndexRoute: typeof AppIndexRoute
@@ -259,6 +279,7 @@ interface AppRouteChildren {
 const AppRouteChildren: AppRouteChildren = {
   AppAdminRoute: AppAdminRoute,
   AppHistoryRoute: AppHistoryRoute,
+  AppInsightsRoute: AppInsightsRoute,
   AppProfileRoute: AppProfileRoute,
   AppWalletRoute: AppWalletRoute,
   AppIndexRoute: AppIndexRoute,
