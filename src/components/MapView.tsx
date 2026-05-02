@@ -44,44 +44,102 @@ export function MapView({ pins = [], showRoute, center, zoom = 13, height = "320
   const containerRef = useRef<HTMLDivElement | null>(null);
   const mapRef = useRef<L.Map | null>(null);
   const layerRef = useRef<L.LayerGroup | null>(null);
+  const LRef = useRef<typeof import("leaflet") | null>(null);
   const onRouteInfoRef = useRef(onRouteInfo);
   onRouteInfoRef.current = onRouteInfo;
+  const pinsRef = useRef(pins);
+  pinsRef.current = pins;
+  const showRouteRef = useRef(showRoute);
+  showRouteRef.current = showRoute;
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
 
-  // init
-  useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
-    const map = L.map(containerRef.current, { zoomControl: true }).setView(center ?? CANCUN, zoom);
-    L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
-      attribution: "© OpenStreetMap",
-      maxZoom: 19,
-    }).addTo(map);
-    mapRef.current = map;
-    layerRef.current = L.layerGroup().addTo(map);
+  function renderPins() {
+    const L = LRef.current;
+    if (!L || !mapRef.current || !layerRef.current) return;
+    layerRef.current.clearLayers();
+    const valid = pinsRef.current.filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
+    valid.forEach((p) => {
+      const m = L.marker([p.lat, p.lng]).bindPopup(p.label ?? "");
+      layerRef.current!.addLayer(m);
+    });
 
-    if (onMapClick) {
-      map.on("click", (e) => onMapClick(e.latlng.lat, e.latlng.lng));
-    }
+    const controller = new AbortController();
 
-    // Recalc on container resize / visibility changes
-    let ro: ResizeObserver | null = null;
-    if (typeof ResizeObserver !== "undefined" && containerRef.current) {
-      ro = new ResizeObserver(() => {
-        mapRef.current?.invalidateSize();
+    if (showRouteRef.current && valid.length >= 2) {
+      const straight = L.polyline(valid.map((p) => [p.lat, p.lng]) as [number, number][], {
+        color: "#94a3b8", weight: 3, opacity: 0.6, dashArray: "6 6",
       });
-      ro.observe(containerRef.current);
+      layerRef.current.addLayer(straight);
+
+      fetchRoute({ lat: valid[0].lat, lng: valid[0].lng }, { lat: valid[1].lat, lng: valid[1].lng }, controller.signal)
+        .then((route) => {
+          if (!mapRef.current || !layerRef.current || !LRef.current) return;
+          if (!route) { onRouteInfoRef.current?.(null); return; }
+          layerRef.current.removeLayer(straight);
+          const line = LRef.current.polyline(route.coords, { color: "#22c55e", weight: 5, opacity: 0.9 });
+          layerRef.current.addLayer(line);
+          const bounds = LRef.current.latLngBounds(route.coords);
+          mapRef.current.fitBounds(bounds, { padding: [40, 40] });
+          onRouteInfoRef.current?.({ distanceKm: route.distanceKm, durationMin: route.durationMin });
+        })
+        .catch(() => onRouteInfoRef.current?.(null));
+    } else if (showRouteRef.current) {
+      onRouteInfoRef.current?.(null);
     }
+
+    if (valid.length === 1) {
+      mapRef.current.setView([valid[0].lat, valid[0].lng], Math.max(zoomRef.current, 14));
+    } else if (valid.length >= 2) {
+      const bounds = L.latLngBounds(valid.map((p) => [p.lat, p.lng] as [number, number]));
+      mapRef.current.fitBounds(bounds, { padding: [40, 40] });
+    }
+
+    setTimeout(() => mapRef.current?.invalidateSize(), 0);
+    return () => controller.abort();
+  }
+
+  // init (client-only)
+  useEffect(() => {
+    let cancelled = false;
+    let ro: ResizeObserver | null = null;
+
+    loadLeaflet().then((L) => {
+      if (cancelled || !containerRef.current || mapRef.current) return;
+      LRef.current = L;
+      const map = L.map(containerRef.current, { zoomControl: true }).setView(center ?? CANCUN, zoom);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        attribution: "© OpenStreetMap",
+        maxZoom: 19,
+      }).addTo(map);
+      mapRef.current = map;
+      layerRef.current = L.layerGroup().addTo(map);
+
+      if (onMapClick) {
+        map.on("click", (e) => onMapClick(e.latlng.lat, e.latlng.lng));
+      }
+
+      if (typeof ResizeObserver !== "undefined" && containerRef.current) {
+        ro = new ResizeObserver(() => mapRef.current?.invalidateSize());
+        ro.observe(containerRef.current);
+      }
+
+      renderPins();
+    }).catch(() => {});
 
     return () => {
+      cancelled = true;
       ro?.disconnect();
       try {
-        map.off();
+        mapRef.current?.off();
         layerRef.current?.clearLayers();
-        map.remove();
+        mapRef.current?.remove();
       } catch {
         // ignore
       }
       mapRef.current = null;
       layerRef.current = null;
+      LRef.current = null;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -92,60 +150,9 @@ export function MapView({ pins = [], showRoute, center, zoom = 13, height = "320
     .map((p) => `${p.lat.toFixed(6)},${p.lng.toFixed(6)},${p.label ?? ""}`)
     .join("|");
 
-  // update pins + route
+  // update pins + route on changes
   useEffect(() => {
-    if (!mapRef.current || !layerRef.current) return;
-    layerRef.current.clearLayers();
-    const valid = pins.filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
-    valid.forEach((p) => {
-      const m = L.marker([p.lat, p.lng]).bindPopup(p.label ?? "");
-      layerRef.current!.addLayer(m);
-    });
-
-    let cancelled = false;
-    const controller = new AbortController();
-
-    if (showRoute && valid.length >= 2) {
-      const straight = L.polyline(valid.map((p) => [p.lat, p.lng]) as [number, number][], {
-        color: "#94a3b8", weight: 3, opacity: 0.6, dashArray: "6 6",
-      });
-      layerRef.current.addLayer(straight);
-
-      fetchRoute({ lat: valid[0].lat, lng: valid[0].lng }, { lat: valid[1].lat, lng: valid[1].lng }, controller.signal)
-        .then((route) => {
-          if (cancelled || !mapRef.current || !layerRef.current) return;
-          if (!route) {
-            onRouteInfoRef.current?.(null);
-            return;
-          }
-          layerRef.current.removeLayer(straight);
-          const line = L.polyline(route.coords, { color: "#22c55e", weight: 5, opacity: 0.9 });
-          layerRef.current.addLayer(line);
-          const bounds = L.latLngBounds(route.coords);
-          mapRef.current.fitBounds(bounds, { padding: [40, 40] });
-          onRouteInfoRef.current?.({ distanceKm: route.distanceKm, durationMin: route.durationMin });
-        })
-        .catch(() => {
-          if (!cancelled) onRouteInfoRef.current?.(null);
-        });
-    } else if (showRoute) {
-      onRouteInfoRef.current?.(null);
-    }
-
-    if (valid.length === 1) {
-      mapRef.current.setView([valid[0].lat, valid[0].lng], Math.max(zoom, 14));
-    } else if (valid.length >= 2) {
-      const bounds = L.latLngBounds(valid.map((p) => [p.lat, p.lng] as [number, number]));
-      mapRef.current.fitBounds(bounds, { padding: [40, 40] });
-    }
-
-    // Force size recalc when the map lives inside a Dialog
-    setTimeout(() => mapRef.current?.invalidateSize(), 0);
-
-    return () => {
-      cancelled = true;
-      controller.abort();
-    };
+    return renderPins();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pinsKey, showRoute, zoom]);
 
