@@ -165,6 +165,38 @@ export function RestaurantHome() {
   const chatOrder = chatOrderId ? orders.find((o) => o.id === chatOrderId) : null;
   const chatCourier = chatOrderId ? courierByOrder[chatOrderId] : null;
 
+  const trackingUrl = (token: string) => `${window.location.origin}/t/${token}`;
+
+  const copyTracking = async (token: string) => {
+    try {
+      await navigator.clipboard.writeText(trackingUrl(token));
+      toast.success("Enlace copiado");
+    } catch {
+      toast.error("No se pudo copiar");
+    }
+  };
+
+  const shareTracking = async (o: Order) => {
+    if (!o.tracking_token) return;
+    const url = trackingUrl(o.tracking_token);
+    const text = `Sigue tu pedido en tiempo real: ${url}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Tu pedido", text, url });
+        return;
+      } catch {
+        // user cancelled or unsupported
+      }
+    }
+    // Fallback: WhatsApp if we have customer phone
+    if (o.customer_phone) {
+      const phone = o.customer_phone.replace(/\D/g, "");
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank");
+    } else {
+      copyTracking(o.tracking_token);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
