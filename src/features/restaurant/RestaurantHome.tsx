@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Plus, Loader2, Package, Truck, CheckCircle2, Clock, MessageCircle, Phone, Inbox, Share2, Copy } from "lucide-react";
+import { Plus, Loader2, Package, Truck, CheckCircle2, Clock, MessageCircle, Phone, Inbox, Share2, Copy, Star } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SkeletonList } from "@/components/ui/skeleton";
 import { RestaurantOnboarding } from "./RestaurantOnboarding";
@@ -12,6 +12,7 @@ import { OrderChat } from "@/components/OrderChat";
 import { Badge } from "@/components/ui/badge";
 import { enablePush } from "@/lib/push";
 import { getCourierForOrder } from "@/server/orders.functions";
+import { getCourierStats } from "@/server/intelligence.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 
@@ -31,6 +32,8 @@ interface CourierInfo {
   fullName: string;
   phone: string | null;
   phoneDialCode: string;
+  score?: number;
+  totalDeliveries?: number;
 }
 
 const STATUS_META: Record<string, { label: string; color: string; icon: any }> = {
