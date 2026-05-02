@@ -102,8 +102,9 @@ function AuthPage() {
     setTab("login");
   };
 
-
+  return (
     <div className="relative min-h-screen bg-background text-foreground flex flex-col overflow-hidden">
+
       <MeshBackground />
 
       <header className="px-6 py-5 max-w-md mx-auto w-full flex items-center justify-between">
