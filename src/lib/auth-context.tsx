@@ -42,7 +42,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!email.endsWith(ADMIN_DOMAIN)) return;
     if (!u.email_confirmed_at) return;
     try {
-      const res = await claimAdminRole();
+      const { data: { session: s } } = await supabase.auth.getSession();
+      const token = s?.access_token;
+      if (!token) return;
+      const res = await claimAdminRole({
+        headers: { Authorization: `Bearer ${token}` },
+      } as any);
       if ((res as any)?.promoted) await fetchRole(u.id);
     } catch {
       // silencioso: no bloquea login
