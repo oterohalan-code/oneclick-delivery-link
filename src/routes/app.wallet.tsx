@@ -6,7 +6,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Loader2, Plus, Crown, ArrowDownCircle, ArrowUpCircle, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Loader2, Plus, Crown, ArrowDownCircle, ArrowUpCircle, AlertCircle, CheckCircle2, Receipt } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
 import { toast } from "sonner";
 import { StripeEmbeddedCheckout } from "@/components/StripeEmbeddedCheckout";
 import { PaymentTestModeBanner } from "@/components/PaymentTestModeBanner";
@@ -167,8 +168,15 @@ function WalletPage() {
       </div>
 
       <div>
-        <h3 className="font-display text-lg font-semibold mb-3">Movimientos</h3>
-        {txs.length === 0 ? <p className="text-sm text-muted-foreground">Aún no hay movimientos.</p> : (
+        <h3 className="text-display text-xl font-medium mb-3">Movimientos</h3>
+        {txs.length === 0 ? (
+          <EmptyState
+            icon={Receipt}
+            title="Sin movimientos aún"
+            description="Tus recargas, cobros por entrega y suscripciones aparecerán aquí con detalle completo."
+            variant="subtle"
+          />
+        ) : (
           <div className="space-y-2">
             {txs.map((t) => (
               <Card key={t.id} className="p-3 flex items-center justify-between">
