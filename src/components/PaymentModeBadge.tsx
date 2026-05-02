@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { ShieldCheck, FlaskConical } from "lucide-react";
 
-const clientToken = import.meta.env.VITE_PAYMENTS_CLIENT_TOKEN as string | undefined;
+const clientToken = import.meta.env.VITE_STRIPE_PUBLISHABLE_KEY as string | undefined;
 
 /**
  * Indicador visual del modo de pagos activo.
