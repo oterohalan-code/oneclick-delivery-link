@@ -301,9 +301,60 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
 }) {
   const { session } = useAuth();
   const setOrderStatusRpc = useServerFn(setOrderStatusFn);
+  const updateEtaRpc = useServerFn(updateOrderEtaFn);
   const [busy, setBusy] = useState(false);
   const [proofOpen, setProofOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [eta, setEta] = useState<number | null>(null);
+
+  // Recalcula ETA cada 30s usando la posición del courier hacia el target actual
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) return;
+    const target =
+      order.status === "assigned"
+        ? order.pickup_lat != null && order.pickup_lng != null
+          ? { lat: order.pickup_lat, lng: order.pickup_lng }
+          : null
+        : order.dropoff_lat != null && order.dropoff_lng != null
+          ? { lat: order.dropoff_lat, lng: order.dropoff_lng }
+          : null;
+    if (!target) return;
+    let cancelled = false;
+    const token = session?.access_token;
+
+    const tick = () => {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          if (cancelled) return;
+          const minutes = await fetchEtaMinutes(
+            { lat: pos.coords.latitude, lng: pos.coords.longitude },
+            target,
+          );
+          if (cancelled) return;
+          setEta(minutes);
+          if (token) {
+            try {
+              await updateEtaRpc({
+                headers: { Authorization: `Bearer ${token}` },
+                data: { orderId: order.id, etaMinutes: minutes },
+              });
+            } catch {
+              /* silent */
+            }
+          }
+        },
+        () => {},
+        { enableHighAccuracy: true, maximumAge: 30_000, timeout: 15_000 },
+      );
+    };
+
+    tick();
+    const id = setInterval(tick, 30_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [order.id, order.status, order.pickup_lat, order.pickup_lng, order.dropoff_lat, order.dropoff_lng, session?.access_token, updateEtaRpc]);
 
   const goInTransit = async () => {
     const token = session?.access_token;
