@@ -179,7 +179,39 @@ export function CourierHome() {
   const subActive = courier.subscription_active && courier.subscription_expires_at && new Date(courier.subscription_expires_at) > new Date();
   const canAccept = subActive || courier.wallet_balance >= 5;
 
-  if (active) return <ActiveOrderView order={active} restaurant={restaurants[active.restaurant_id]} courier={courier} onChange={load} />;
+  if (active) {
+    return (
+      <div className="space-y-4">
+        {activeList.length > 1 && (
+          <Card className="p-3">
+            <div className="text-xs text-muted-foreground mb-2">
+              📦 Tienes {activeList.length} pedidos activos · selecciona cuál atender
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {activeList.map((o, i) => {
+                const r = restaurants[o.restaurant_id];
+                const isCurrent = o.id === active.id;
+                return (
+                  <button
+                    key={o.id}
+                    onClick={() => setActive(o)}
+                    className={`shrink-0 px-3 py-2 rounded-lg text-xs font-medium border transition-all ${
+                      isCurrent
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-muted/40 hover:bg-muted border-transparent"
+                    }`}
+                  >
+                    #{i + 1} · {r?.name?.slice(0, 14) ?? "Pedido"}
+                  </button>
+                );
+              })}
+            </div>
+          </Card>
+        )}
+        <ActiveOrderView order={active} restaurant={restaurants[active.restaurant_id]} courier={courier} onChange={load} />
+      </div>
+    );
+  }
 
   // Sort feed by distance from courier (si tiene ubicación)
   const sorted = feed
