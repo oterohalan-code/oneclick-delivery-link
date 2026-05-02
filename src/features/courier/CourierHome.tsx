@@ -41,11 +41,16 @@ interface OrderRow {
 export function CourierHome() {
   const { user, session } = useAuth();
   const acceptOrderRpc = useServerFn(acceptOrderFn);
+  const acceptBatchRpc = useServerFn(acceptOrderBatchFn);
   const [courier, setCourier] = useState<Courier | null>(null);
   const [feed, setFeed] = useState<OrderRow[]>([]);
   const [active, setActive] = useState<OrderRow | null>(null);
+  const [activeList, setActiveList] = useState<OrderRow[]>([]);
   const [restaurants, setRestaurants] = useState<Record<string, { name: string; phone: string; facadeUrl: string | null }>>({});
   const [loading, setLoading] = useState(true);
+  const [batchMode, setBatchMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [batchBusy, setBatchBusy] = useState(false);
 
   // Geolocalización cada 3 min cuando el repartidor está activo
   const { permission: geoPermission, refreshPermission } = useCourierLocationTracker({
