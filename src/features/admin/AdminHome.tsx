@@ -357,7 +357,8 @@ export function AdminHome() {
           </Card>
         ))
       )}
-      </section>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
