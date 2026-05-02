@@ -24,20 +24,21 @@ export const Route = createFileRoute("/")({
 
 function Landing() {
   return (
-    <div className="relative min-h-screen bg-bone text-ink overflow-hidden">
+    <div className="relative min-h-screen bg-background text-foreground overflow-hidden">
       <MeshBackground />
 
       {/* Header */}
       <header className="sticky top-0 z-40">
         <div className="glass-strong border-b border-hairline/60">
-          <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3">
             <Logo size="md" />
             <div className="flex items-center gap-2">
+              <ThemeToggle />
               <Link to="/auth" className="hidden sm:inline-flex">
                 <Button variant="ghost" size="sm">Iniciar sesión</Button>
               </Link>
               <Link to="/auth">
-                <Button variant="default" size="sm">
+                <Button variant="default" size="sm" className="press">
                   Comenzar <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
               </Link>
@@ -46,9 +47,9 @@ function Landing() {
         </div>
       </header>
 
-      <main className="relative px-6 max-w-6xl mx-auto">
+      <main className="relative px-4 sm:px-6 max-w-6xl mx-auto">
         {/* Hero */}
-        <section className="py-20 md:py-32 grid md:grid-cols-[1.1fr_0.9fr] gap-16 items-center">
+        <section className="pt-10 pb-12 md:py-32 grid md:grid-cols-[1.1fr_0.9fr] gap-8 md:gap-16 md:items-center">
           <div className="animate-fade-in">
             <div className="eyebrow mb-6">EST. 2026 · Cancún · Quintana Roo</div>
             <h1 className="text-display text-5xl md:text-7xl font-medium leading-[0.95]">
