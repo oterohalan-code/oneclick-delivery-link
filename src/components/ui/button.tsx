@@ -11,28 +11,29 @@ const buttonVariants = cva(
       variant: {
         // Premium signature — primary pill with shimmer + lift (auto-adapts dark)
         default:
-          "btn-shimmer rounded-full bg-primary text-primary-foreground shadow-button hover:shadow-button-hover hover:-translate-y-0.5 active:translate-y-0",
+          "btn-shimmer rounded-full bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary active:text-primary-foreground shadow-button hover:shadow-button-hover hover:-translate-y-0.5 active:translate-y-0",
         premium:
-          "btn-shimmer rounded-full bg-primary text-primary-foreground shadow-button hover:shadow-button-hover hover:-translate-y-0.5 active:translate-y-0",
-        // Glass / translucent
+          "btn-shimmer rounded-full bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary active:text-primary-foreground shadow-button hover:shadow-button-hover hover:-translate-y-0.5 active:translate-y-0",
+        // Glass / translucent — guarantee contrast in all states
         glass:
-          "rounded-full glass-strong text-foreground hover:-translate-y-0.5 transition border-2 border-foreground/15 hover:border-foreground/30",
-        // Outline elegant
+          "rounded-full glass-strong text-foreground hover:text-foreground active:text-foreground hover:-translate-y-0.5 transition border-2 border-foreground/20 hover:border-foreground/40 hover:bg-[var(--glass-bg-strong)]",
+        // Outline elegant — invert on hover but keep readable on focus/active
         outline:
-          "rounded-full border border-foreground/80 bg-transparent text-foreground hover:bg-foreground hover:text-background",
+          "rounded-full border border-foreground/80 bg-transparent text-foreground hover:bg-foreground hover:text-background active:bg-foreground active:text-background focus-visible:bg-foreground focus-visible:text-background",
         // Subtle / secondary
         secondary:
-          "rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/70",
+          "rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/70 hover:text-secondary-foreground active:text-secondary-foreground",
         // Destructive
         destructive:
-          "rounded-full bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
-        // Ghost minimal
-        ghost: "rounded-full hover:bg-accent hover:text-accent-foreground text-foreground",
+          "rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:text-destructive-foreground active:text-destructive-foreground shadow-sm",
+        // Ghost minimal — keep text legible against hover background
+        ghost:
+          "rounded-full text-foreground hover:bg-accent hover:text-accent-foreground active:bg-accent active:text-accent-foreground",
         // Inline link with animated underline
-        link: "text-foreground underline-offset-4 hover:underline relative",
+        link: "text-foreground underline-offset-4 hover:underline hover:text-foreground active:text-foreground relative",
         // Ember accent — copper warmth, used sparingly
         ember:
-          "btn-shimmer rounded-full bg-ember text-ember-foreground shadow-button hover:shadow-button-hover hover:-translate-y-0.5",
+          "btn-shimmer rounded-full bg-ember text-ember-foreground hover:bg-ember/90 hover:text-ember-foreground active:text-ember-foreground shadow-button hover:shadow-button-hover hover:-translate-y-0.5",
       },
       size: {
         default: "h-10 px-5 py-2",
