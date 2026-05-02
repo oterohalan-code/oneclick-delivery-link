@@ -57,6 +57,21 @@ function AuthPage() {
     toast.success("Te enviamos un correo para restablecer tu contraseña.");
   };
 
+  const onGoogle = async () => {
+    setLoading(true);
+    const result = await lovable.auth.signInWithOAuth("google", {
+      redirect_uri: window.location.origin + "/app",
+    });
+    if (result.error) {
+      setLoading(false);
+      toast.error("No se pudo iniciar sesión con Google");
+      return;
+    }
+    if (result.redirected) return; // browser is redirecting
+    setLoading(false);
+    toast.success("¡Bienvenido!");
+    navigate({ to: "/app" });
+  };
 
 
   return (
