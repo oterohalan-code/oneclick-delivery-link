@@ -4,6 +4,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Loader2, Home, User, Wallet, History, Shield, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
@@ -38,28 +39,39 @@ function AppLayout() {
   ];
 
   return (
-    <div className="relative min-h-screen bg-bone text-ink pb-24">
+    <div className="relative min-h-screen bg-background text-foreground pb-28">
       {/* subtle ambient mesh */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(at_15%_-5%,oklch(0.88_0.06_45/0.35),transparent_50%),radial-gradient(at_92%_8%,oklch(0.92_0.04_80/0.3),transparent_55%)]" />
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(at_15%_-5%,oklch(0.88_0.06_45/0.35),transparent_50%),radial-gradient(at_92%_8%,oklch(0.92_0.04_80/0.3),transparent_55%)] dark:bg-[radial-gradient(at_15%_-5%,oklch(0.45_0.10_45/0.25),transparent_50%),radial-gradient(at_92%_8%,oklch(0.30_0.04_60/0.4),transparent_55%)]" />
 
       <header className="sticky top-0 z-30">
         <div className="glass-strong border-b border-hairline/60">
-          <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-            <Link to="/app">
+          <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+            <Link to="/app" className="press">
               <Logo size="sm" />
             </Link>
-            <Button variant="ghost" size="sm" onClick={() => { signOut(); navigate({ to: "/" }); }}>
-              <LogOut className="h-4 w-4" />
-            </Button>
+            <div className="flex items-center gap-2">
+              <ThemeToggle />
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label="Cerrar sesión"
+                onClick={() => { signOut(); navigate({ to: "/" }); }}
+              >
+                <LogOut className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-6">
+      <main className="max-w-3xl mx-auto px-4 py-6 spring-in">
         <Outlet />
       </main>
 
-      <nav className="fixed bottom-3 inset-x-3 z-40 max-w-3xl mx-auto">
+      <nav
+        className="fixed bottom-3 inset-x-3 z-40 max-w-3xl mx-auto"
+        aria-label="Navegación principal"
+      >
         <div className="glass-strong rounded-full shadow-elegant px-2 py-1.5">
           <div className="grid" style={{ gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))` }}>
             {navItems.map((it) => {
@@ -68,14 +80,15 @@ function AppLayout() {
                 <Link
                   key={it.to}
                   to={it.to}
-                  className={`relative flex flex-col items-center gap-0.5 py-2 text-[10px] font-medium tracking-wider uppercase rounded-full transition ${
-                    active ? "text-bone" : "text-graphite hover:text-ink"
+                  aria-current={active ? "page" : undefined}
+                  className={`relative flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold tracking-wider uppercase rounded-full press transition ${
+                    active ? "text-bone" : "text-foreground/75 hover:text-foreground"
                   }`}
                 >
                   {active && (
-                    <span aria-hidden className="absolute inset-0 rounded-full bg-ink shadow-button" />
+                    <span aria-hidden className="absolute inset-0 rounded-full bg-foreground shadow-button" />
                   )}
-                  <it.icon className={`relative h-4 w-4 ${active ? "" : ""}`} strokeWidth={1.5} />
+                  <it.icon className="relative h-4 w-4" strokeWidth={1.6} />
                   <span className="relative">{it.label}</span>
                 </Link>
               );
