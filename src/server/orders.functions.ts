@@ -152,7 +152,11 @@ export const setOrderStatus = createServerFn({ method: "POST" })
       delivery_proof_url?: string;
       delivered_lat?: number;
       delivered_lng?: number;
+      picked_up_at?: string;
     } = { status: data.status };
+    if (data.status === "in_transit") {
+      update.picked_up_at = new Date().toISOString();
+    }
     if (data.status === "delivered") {
       update.delivered_at = new Date().toISOString();
       if (data.proofUrl) update.delivery_proof_url = data.proofUrl;
