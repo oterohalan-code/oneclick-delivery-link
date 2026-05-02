@@ -386,17 +386,27 @@ export function AdminHome() {
 }
 
 function EmailTester() {
+  const { session } = useAuth();
   const [email, setEmail] = useState("");
   const [sending, setSending] = useState<string | null>(null);
+  const sendTestAuthEmailRpc = useServerFn(sendTestAuthEmail);
 
   const send = async (type: "signup" | "magiclink" | "recovery") => {
     if (!email || !email.includes("@")) {
       toast.error("Ingresa un correo válido");
       return;
     }
+    const token = session?.access_token;
+    if (!token) {
+      toast.error("Sesión expirada");
+      return;
+    }
     setSending(type);
     try {
-      const res = await sendTestAuthEmail({ data: { email, type } });
+      const res = await sendTestAuthEmailRpc({
+        headers: { Authorization: `Bearer ${token}` },
+        data: { email, type },
+      });
       toast.success(`Email de ${type} encolado a ${email}`, {
         description: "Revisa la bandeja en 1-2 minutos. Si no llega, verifica en Cloud → Emails.",
       });
