@@ -313,6 +313,36 @@ export type Database = {
         }
         Relationships: []
       }
+      referrals: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          referred_by_user_id: string | null
+          reward_granted: boolean
+          reward_granted_at: string | null
+          user_id: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          referred_by_user_id?: string | null
+          reward_granted?: boolean
+          reward_granted_at?: string | null
+          user_id: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          referred_by_user_id?: string | null
+          reward_granted?: boolean
+          reward_granted_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       restaurants: {
         Row: {
           address: string
@@ -486,6 +516,62 @@ export type Database = {
           },
         ]
       }
+      support_conversations: {
+        Row: {
+          created_at: string
+          id: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      support_messages: {
+        Row: {
+          content: string
+          conversation_id: string
+          created_at: string
+          id: string
+          role: string
+        }
+        Insert: {
+          content: string
+          conversation_id: string
+          created_at?: string
+          id?: string
+          role: string
+        }
+        Update: {
+          content?: string
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          role?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "support_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -560,6 +646,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_referral_code: { Args: never; Returns: string }
       get_courier_stats: {
         Args: { _courier_id: string }
         Returns: {
