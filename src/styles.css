@@ -286,6 +286,21 @@
   border-radius: 6px;
 }
 
+/* Safety net: button text must always render above shimmer/decoration layers
+   and never collapse to invisible-on-invisible during browser default
+   :active / :focus styles on mobile and desktop. */
+button, [role="button"] {
+  -webkit-tap-highlight-color: transparent;
+}
+button > *, [role="button"] > * {
+  position: relative;
+  z-index: 1;
+}
+.btn-shimmer::before { z-index: 0; }
+button:active, button:focus, [role="button"]:active, [role="button"]:focus {
+  color: inherit;
+}
+
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
