@@ -646,6 +646,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      calculate_shipping_fee: {
+        Args: { _distance_km: number; _requested_at?: string }
+        Returns: {
+          base_fee: number
+          surge_multiplier: number
+          surge_reason: string
+          total_fee: number
+        }[]
+      }
       generate_referral_code: { Args: never; Returns: string }
       get_courier_stats: {
         Args: { _courier_id: string }
