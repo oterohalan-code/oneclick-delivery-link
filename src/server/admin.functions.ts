@@ -187,49 +187,4 @@ export const sendTestAuthEmail = createServerFn({ method: "POST" })
     return { ok: true, type: data.type, action_link: link?.properties?.action_link ?? null };
   });
 
-const ADMIN_DOMAIN = "@punchingsolutions.com.mx";
-
-/**
- * Promueve al usuario autenticado a admin si:
- *  - su email termina en @punchingsolutions.com.mx
- *  - su correo está confirmado
- *  - aún no tiene rol asignado
- * Recibe el access_token explícitamente para evitar problemas de
- * propagación de headers en llamadas fuera de componentes React.
- */
-export const claimAdminRole = createServerFn({ method: "POST" })
-  .inputValidator((data: { accessToken: string }) =>
-    z.object({ accessToken: z.string().min(10) }).parse(data),
-  )
-  .handler(async ({ data }) => {
-    // Validar token y obtener user
-    const { data: userRes, error: uErr } = await supabaseAdmin.auth.getUser(data.accessToken);
-    if (uErr || !userRes?.user) return { promoted: false, reason: "invalid_token" };
-
-    const userId = userRes.user.id;
-    const email = (userRes.user.email ?? "").toLowerCase().trim();
-    const confirmed = !!userRes.user.email_confirmed_at;
-
-    if (!email.endsWith(ADMIN_DOMAIN)) {
-      return { promoted: false, reason: "domain_not_allowed" };
-    }
-    if (!confirmed) {
-      return { promoted: false, reason: "email_not_confirmed" };
-    }
-
-    const { data: existing } = await supabaseAdmin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", userId)
-      .eq("role", "admin")
-      .maybeSingle();
-    if (existing) return { promoted: true, reason: "already_admin" };
-
-    const { error: insErr } = await supabaseAdmin
-      .from("user_roles")
-      .insert({ user_id: userId, role: "admin" });
-    if (insErr) return { promoted: false, reason: insErr.message };
-
-    return { promoted: true };
-  });
 
