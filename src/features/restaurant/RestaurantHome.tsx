@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Plus, Loader2, Package, Truck, CheckCircle2, Clock, MessageCircle, Phone, Inbox, Share2, Copy } from "lucide-react";
+import { Plus, Loader2, Package, Truck, CheckCircle2, Clock, MessageCircle, Phone, Inbox, Share2, Copy, Star } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SkeletonList } from "@/components/ui/skeleton";
 import { RestaurantOnboarding } from "./RestaurantOnboarding";
@@ -12,6 +12,7 @@ import { OrderChat } from "@/components/OrderChat";
 import { Badge } from "@/components/ui/badge";
 import { enablePush } from "@/lib/push";
 import { getCourierForOrder } from "@/server/orders.functions";
+import { getCourierStats } from "@/server/intelligence.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 
@@ -31,6 +32,8 @@ interface CourierInfo {
   fullName: string;
   phone: string | null;
   phoneDialCode: string;
+  score?: number;
+  totalDeliveries?: number;
 }
 
 const STATUS_META: Record<string, { label: string; color: string; icon: any }> = {
@@ -50,6 +53,7 @@ export function RestaurantHome() {
   const [chatOrderId, setChatOrderId] = useState<string | null>(null);
   const [courierByOrder, setCourierByOrder] = useState<Record<string, CourierInfo>>({});
   const getCourierForOrderRpc = useServerFn(getCourierForOrder);
+  const getCourierStatsRpc = useServerFn(getCourierStats);
 
   const load = async () => {
     if (!user) return;
@@ -96,6 +100,25 @@ export function RestaurantHome() {
               ...prev,
               [o.id]: { fullName: res.fullName, phone: res.phone, phoneDialCode: res.phoneDialCode },
             }));
+            // Cargar stats en paralelo (best-effort)
+            if (res.courierId) {
+              getCourierStatsRpc({
+                headers: { Authorization: `Bearer ${token}` },
+                data: { courierId: res.courierId },
+              })
+                .then((stats: any) => {
+                  if (cancelled || !stats?.ok) return;
+                  setCourierByOrder((prev) => ({
+                    ...prev,
+                    [o.id]: {
+                      ...prev[o.id],
+                      score: stats.score,
+                      totalDeliveries: stats.totalDeliveries,
+                    },
+                  }));
+                })
+                .catch(() => {});
+            }
           }
         } catch (e) {
           console.warn("getCourierForOrder failed", e);
@@ -268,6 +291,15 @@ export function RestaurantHome() {
                         <div className="min-w-0">
                           <div className="text-xs text-muted-foreground">Repartidor</div>
                           <div className="font-medium truncate">🛵 {c?.fullName ?? "Cargando..."}</div>
+                          {c?.score != null && (
+                            <div className="flex items-center gap-1.5 mt-0.5 text-xs">
+                              <Star className="h-3 w-3 fill-warning text-warning" />
+                              <span className="font-semibold">{c.score.toFixed(1)}</span>
+                              <span className="text-muted-foreground">
+                                · {c.totalDeliveries ?? 0} entregas
+                              </span>
+                            </div>
+                          )}
                         </div>
                         {c?.phone && (
                           <a

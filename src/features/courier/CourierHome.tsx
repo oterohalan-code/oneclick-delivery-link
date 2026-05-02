@@ -14,9 +14,11 @@ import { DeliveryProofDialog } from "./DeliveryProofDialog";
 import { MapView, haversine } from "@/components/MapView";
 import { OrderChat } from "@/components/OrderChat";
 import { acceptOrder as acceptOrderFn, setOrderStatus as setOrderStatusFn } from "@/server/orders.functions";
+import { updateOrderEta as updateOrderEtaFn, acceptOrderBatch as acceptOrderBatchFn } from "@/server/intelligence.functions";
 import { useCourierLocationTracker } from "@/hooks/useCourierLocationTracker";
 import { LocationPermissionGate } from "@/components/LocationPermissionGate";
 import { enablePush } from "@/lib/push";
+import { fetchEtaMinutes, formatEta } from "@/lib/eta";
 import { toast } from "sonner";
 
 interface Courier {
@@ -39,11 +41,16 @@ interface OrderRow {
 export function CourierHome() {
   const { user, session } = useAuth();
   const acceptOrderRpc = useServerFn(acceptOrderFn);
+  const acceptBatchRpc = useServerFn(acceptOrderBatchFn);
   const [courier, setCourier] = useState<Courier | null>(null);
   const [feed, setFeed] = useState<OrderRow[]>([]);
   const [active, setActive] = useState<OrderRow | null>(null);
+  const [activeList, setActiveList] = useState<OrderRow[]>([]);
   const [restaurants, setRestaurants] = useState<Record<string, { name: string; phone: string; facadeUrl: string | null }>>({});
   const [loading, setLoading] = useState(true);
+  const [batchMode, setBatchMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [batchBusy, setBatchBusy] = useState(false);
 
   // Geolocalización cada 3 min cuando el repartidor está activo
   const { permission: geoPermission, refreshPermission } = useCourierLocationTracker({
@@ -57,16 +64,18 @@ export function CourierHome() {
     setCourier(c as any);
 
     if (c && (c as any).status === "active") {
-      const { data: a } = await supabase.from("orders").select("*")
+      const { data: actives } = await supabase.from("orders").select("*")
         .eq("courier_id", (c as any).id).in("status", ["assigned", "in_transit"])
-        .order("accepted_at", { ascending: false }).limit(1).maybeSingle();
-      setActive(a as any);
+        .order("accepted_at", { ascending: false });
+      const list = (actives as any) ?? [];
+      setActiveList(list);
+      setActive(list[0] ?? null);
 
       const { data: pend } = await supabase.from("orders").select("*")
         .eq("status", "pending").order("created_at", { ascending: false }).limit(30);
       setFeed((pend as any) ?? []);
 
-      const ids = Array.from(new Set([...(pend ?? []).map((o: any) => o.restaurant_id), ...(a ? [(a as any).restaurant_id] : [])]));
+      const ids = Array.from(new Set([...(pend ?? []).map((o: any) => o.restaurant_id), ...list.map((o: any) => o.restaurant_id)]));
       if (ids.length) {
         const { data: rs } = await supabase.from("restaurants").select("id,name,phone,facade_url").in("id", ids);
         const map: Record<string, { name: string; phone: string; facadeUrl: string | null }> = {};
@@ -170,7 +179,39 @@ export function CourierHome() {
   const subActive = courier.subscription_active && courier.subscription_expires_at && new Date(courier.subscription_expires_at) > new Date();
   const canAccept = subActive || courier.wallet_balance >= 5;
 
-  if (active) return <ActiveOrderView order={active} restaurant={restaurants[active.restaurant_id]} courier={courier} onChange={load} />;
+  if (active) {
+    return (
+      <div className="space-y-4">
+        {activeList.length > 1 && (
+          <Card className="p-3">
+            <div className="text-xs text-muted-foreground mb-2">
+              📦 Tienes {activeList.length} pedidos activos · selecciona cuál atender
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1">
+              {activeList.map((o, i) => {
+                const r = restaurants[o.restaurant_id];
+                const isCurrent = o.id === active.id;
+                return (
+                  <button
+                    key={o.id}
+                    onClick={() => setActive(o)}
+                    className={`shrink-0 px-3 py-2 rounded-lg text-xs font-medium border transition-all ${
+                      isCurrent
+                        ? "bg-primary text-primary-foreground border-primary"
+                        : "bg-muted/40 hover:bg-muted border-transparent"
+                    }`}
+                  >
+                    #{i + 1} · {r?.name?.slice(0, 14) ?? "Pedido"}
+                  </button>
+                );
+              })}
+            </div>
+          </Card>
+        )}
+        <ActiveOrderView order={active} restaurant={restaurants[active.restaurant_id]} courier={courier} onChange={load} />
+      </div>
+    );
+  }
 
   // Sort feed by distance from courier (si tiene ubicación)
   const sorted = feed
@@ -190,9 +231,20 @@ export function CourierHome() {
           <p className="text-xs text-muted-foreground">Saldo monedero</p>
           <p className="font-display text-2xl font-bold">${Number(courier.wallet_balance).toFixed(2)}</p>
         </div>
-        <Badge className={subActive ? "bg-success/20 text-success-foreground" : "bg-accent text-accent-foreground"}>
-          {subActive ? "Suscripción activa" : "Plan PPS"}
-        </Badge>
+        <div className="flex flex-col items-end gap-1">
+          <Badge className={subActive ? "bg-success/20 text-success-foreground" : "bg-accent text-accent-foreground"}>
+            {subActive ? "Suscripción activa" : "Plan PPS"}
+          </Badge>
+          {(courier as any).stats_total_deliveries > 0 && (
+            <div className="text-xs text-muted-foreground flex items-center gap-1">
+              <span>⭐</span>
+              <span className="font-semibold text-foreground">
+                {Number((courier as any).stats_score ?? 100).toFixed(1)}
+              </span>
+              <span>· {(courier as any).stats_total_deliveries} entregas</span>
+            </div>
+          )}
+        </div>
       </Card>
 
       {geoPermission !== "granted" && (
@@ -223,7 +275,21 @@ export function CourierHome() {
         </Card>
       ) : (
         <div>
-          <h3 className="text-display text-xl font-medium mb-3">Pedidos disponibles ({sorted.length})</h3>
+          <div className="flex items-center justify-between mb-3">
+            <h3 className="text-display text-xl font-medium">Pedidos disponibles ({sorted.length})</h3>
+            {sorted.length >= 2 && (
+              <Button
+                variant={batchMode ? "default" : "outline"}
+                size="sm"
+                onClick={() => {
+                  setBatchMode((v) => !v);
+                  setSelected(new Set());
+                }}
+              >
+                {batchMode ? "Cancelar" : "Tomar varios"}
+              </Button>
+            )}
+          </div>
           {sorted.length === 0 ? (
             <EmptyState
               icon={Inbox}
@@ -231,13 +297,38 @@ export function CourierHome() {
               description="Mantén la app abierta. Te notificaremos al instante cuando haya un pedido cerca de ti."
             />
           ) : (
-            <div className="space-y-3">
+            <div className="space-y-3 pb-24">
               {sorted.map(({ o, dist }) => {
                 const r = restaurants[o.restaurant_id];
+                const isSelected = selected.has(o.id);
+                const toggleSelect = () => {
+                  setSelected((prev) => {
+                    const next = new Set(prev);
+                    if (next.has(o.id)) next.delete(o.id);
+                    else if (next.size < 3) next.add(o.id);
+                    else toast.info("Máximo 3 pedidos por batch.");
+                    return next;
+                  });
+                };
                 return (
-                <Card key={o.id} className="p-4">
+                <Card
+                  key={o.id}
+                  className={`p-4 transition-all ${batchMode ? "cursor-pointer" : ""} ${
+                    isSelected ? "ring-2 ring-primary border-primary" : ""
+                  }`}
+                  onClick={() => batchMode && toggleSelect()}
+                >
                   <div className="flex items-start justify-between gap-2 mb-2">
                     <div className="flex items-center gap-3 min-w-0">
+                      {batchMode && (
+                        <div
+                          className={`h-6 w-6 rounded-full border-2 flex items-center justify-center shrink-0 ${
+                            isSelected ? "bg-primary border-primary text-primary-foreground" : "border-muted-foreground/40"
+                          }`}
+                        >
+                          {isSelected && <CheckCircle2 className="h-4 w-4" />}
+                        </div>
+                      )}
                       {r?.facadeUrl ? (
                         <img src={r.facadeUrl} alt={r.name} className="h-12 w-12 rounded-lg object-cover border" loading="lazy" />
                       ) : (
@@ -259,19 +350,69 @@ export function CourierHome() {
                         <DollarSign className="h-5 w-5" />{Number(o.shipping_fee).toFixed(0)}
                       </div>
                     </div>
-                    <Button size="sm" className="h-11" onClick={() => onAccept(o.id)}>
-                      Aceptar
-                    </Button>
+                    {!batchMode && (
+                      <Button size="sm" className="h-11" onClick={() => onAccept(o.id)}>
+                        Aceptar
+                      </Button>
+                    )}
                   </div>
                 </Card>
                 );
               })}
             </div>
           )}
+
+          {/* Barra fija inferior cuando hay pedidos seleccionados en modo batch */}
+          {batchMode && selected.size >= 2 && (
+            <div className="fixed bottom-20 left-0 right-0 px-4 z-30 pointer-events-none">
+              <Card className="max-w-md mx-auto p-3 shadow-2xl border-primary pointer-events-auto bg-paper/95 backdrop-blur">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <div className="text-xs text-muted-foreground">{selected.size} pedidos seleccionados</div>
+                    <div className="font-display text-lg font-bold text-success">
+                      Ganas ${sorted
+                        .filter((s) => selected.has(s.o.id))
+                        .reduce((sum, s) => sum + Number(s.o.shipping_fee), 0)
+                        .toFixed(0)}
+                    </div>
+                  </div>
+                  <Button onClick={onAcceptBatch} disabled={batchBusy} className="h-11">
+                    {batchBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : `Aceptar ${selected.size}`}
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          )}
         </div>
       )}
     </div>
   );
+
+  function onAcceptBatch() {
+    const token = session?.access_token;
+    if (!token) { toast.error("Sesión expirada."); return; }
+    if (selected.size < 2) return;
+    setBatchBusy(true);
+    acceptBatchRpc({
+      headers: { Authorization: `Bearer ${token}` },
+      data: { orderIds: Array.from(selected) },
+    })
+      .then((res: any) => {
+        if (!res?.ok) {
+          toast.error(res?.message ?? "No se pudo aceptar el batch.");
+          return;
+        }
+        toast.success(res.partial ? res.message : `¡${res.assigned} pedidos asignados!`);
+        setBatchMode(false);
+        setSelected(new Set());
+        load();
+      })
+      .catch(async (e: any) => {
+        const msg = e instanceof Response ? await e.text().catch(() => "Error") : (e?.message ?? "Error");
+        toast.error(msg);
+      })
+      .finally(() => setBatchBusy(false));
+  }
 
   function onAccept(orderId: string) {
     const token = session?.access_token;
@@ -299,9 +440,60 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
 }) {
   const { session } = useAuth();
   const setOrderStatusRpc = useServerFn(setOrderStatusFn);
+  const updateEtaRpc = useServerFn(updateOrderEtaFn);
   const [busy, setBusy] = useState(false);
   const [proofOpen, setProofOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
+  const [eta, setEta] = useState<number | null>(null);
+
+  // Recalcula ETA cada 30s usando la posición del courier hacia el target actual
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) return;
+    const target =
+      order.status === "assigned"
+        ? order.pickup_lat != null && order.pickup_lng != null
+          ? { lat: order.pickup_lat, lng: order.pickup_lng }
+          : null
+        : order.dropoff_lat != null && order.dropoff_lng != null
+          ? { lat: order.dropoff_lat, lng: order.dropoff_lng }
+          : null;
+    if (!target) return;
+    let cancelled = false;
+    const token = session?.access_token;
+
+    const tick = () => {
+      navigator.geolocation.getCurrentPosition(
+        async (pos) => {
+          if (cancelled) return;
+          const minutes = await fetchEtaMinutes(
+            { lat: pos.coords.latitude, lng: pos.coords.longitude },
+            target,
+          );
+          if (cancelled) return;
+          setEta(minutes);
+          if (token) {
+            try {
+              await updateEtaRpc({
+                headers: { Authorization: `Bearer ${token}` },
+                data: { orderId: order.id, etaMinutes: minutes },
+              });
+            } catch {
+              /* silent */
+            }
+          }
+        },
+        () => {},
+        { enableHighAccuracy: true, maximumAge: 30_000, timeout: 15_000 },
+      );
+    };
+
+    tick();
+    const id = setInterval(tick, 30_000);
+    return () => {
+      cancelled = true;
+      clearInterval(id);
+    };
+  }, [order.id, order.status, order.pickup_lat, order.pickup_lng, order.dropoff_lat, order.dropoff_lng, session?.access_token, updateEtaRpc]);
 
   const goInTransit = async () => {
     const token = session?.access_token;
@@ -370,9 +562,16 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
 
   return (
     <div className="space-y-4">
-      <Badge className="bg-primary text-primary-foreground">
-        {goingToPickup ? "En camino al restaurante" : "Pedido activo"}
-      </Badge>
+      <div className="flex items-center justify-between gap-2">
+        <Badge className="bg-primary text-primary-foreground">
+          {goingToPickup ? "En camino al restaurante" : "Pedido activo"}
+        </Badge>
+        {eta != null && (
+          <Badge variant="secondary" className="font-mono">
+            ⏱ ETA {formatEta(eta)}
+          </Badge>
+        )}
+      </div>
       <Card className="p-4 space-y-2">
         <div className="flex items-start justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0">
