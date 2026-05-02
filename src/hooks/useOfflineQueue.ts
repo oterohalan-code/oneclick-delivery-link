@@ -14,7 +14,7 @@ type QueuedAction =
   | {
       kind: "order_status";
       orderId: string;
-      status: "picked_up" | "delivered";
+      status: "in_transit" | "delivered";
       extra?: Record<string, unknown>;
       ts: number;
     };
@@ -52,11 +52,11 @@ async function flushAction(a: QueuedAction): Promise<boolean> {
     }
     if (a.kind === "order_status") {
       const patch: {
-        status: "picked_up" | "delivered";
+        status: "in_transit" | "delivered";
         picked_up_at?: string;
         delivered_at?: string;
       } = { status: a.status };
-      if (a.status === "picked_up") patch.picked_up_at = new Date(a.ts).toISOString();
+      if (a.status === "in_transit") patch.picked_up_at = new Date(a.ts).toISOString();
       if (a.status === "delivered") patch.delivered_at = new Date(a.ts).toISOString();
       const { error } = await supabase
         .from("orders")
