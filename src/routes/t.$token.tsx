@@ -178,6 +178,38 @@ function TrackingContent({ data }: { data: Tracking }) {
         </div>
       </GlassCard>
 
+      {/* ETA + Courier card — solo cuando hay courier asignado y no entregado */}
+      {!isDelivered && stepIndex >= 1 && (data.courier_name || data.eta_minutes != null) && (
+        <GlassCard variant="strong" className="p-5 spring-in">
+          <div className="flex items-center justify-between gap-4">
+            <div className="min-w-0 flex-1">
+              <p className="text-xs uppercase tracking-widest text-muted-foreground">Tu courier</p>
+              <p className="font-semibold mt-1 truncate">🛵 {data.courier_name ?? "En camino"}</p>
+              {data.courier_score != null && data.courier_score > 0 && (
+                <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
+                  <Star className="h-3 w-3 fill-warning text-warning" />
+                  <span className="font-medium text-foreground">{Number(data.courier_score).toFixed(1)}</span>
+                  <span>/ 100</span>
+                </div>
+              )}
+              <p className="text-[10px] text-muted-foreground mt-1">
+                Última señal {timeAgo(data.location_updated_at)}
+              </p>
+            </div>
+            {data.eta_minutes != null && (
+              <div className="text-right shrink-0">
+                <div className="flex items-center justify-end gap-1 text-xs text-muted-foreground">
+                  <Timer className="h-3 w-3" /> ETA
+                </div>
+                <p className="font-display text-2xl font-bold text-primary leading-tight mt-0.5">
+                  {formatEta(data.eta_minutes)}
+                </p>
+              </div>
+            )}
+          </div>
+        </GlassCard>
+      )}
+
       <GlassCard variant="strong" className="p-2 overflow-hidden">
         <MapView pins={pins} showRoute={pins.length >= 2} height="320px" />
       </GlassCard>
