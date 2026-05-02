@@ -141,3 +141,48 @@ export const adminUnassignOrder = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+export const sendTestAuthEmail = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { email: string; type: "signup" | "magiclink" | "recovery" }) =>
+    z.object({
+      email: z.string().email(),
+      type: z.enum(["signup", "magiclink", "recovery"]),
+    }).parse(data),
+  )
+  .handler(async ({ data, context }) => {
+    await assertAdmin(context.userId);
+
+    const siteUrl = process.env.VITE_SUPABASE_URL ? undefined : undefined;
+    const redirectTo = process.env.PUBLIC_SITE_URL || undefined;
+
+    if (data.type === "signup") {
+      // Genera enlace de invitación (envía email de confirmación tipo signup)
+      const { data: link, error } = await supabaseAdmin.auth.admin.generateLink({
+        type: "invite",
+        email: data.email,
+        options: redirectTo ? { redirectTo } : undefined,
+      });
+      if (error) throw new Error(`signup: ${error.message}`);
+      return { ok: true, type: data.type, action_link: link?.properties?.action_link ?? null };
+    }
+
+    if (data.type === "magiclink") {
+      const { data: link, error } = await supabaseAdmin.auth.admin.generateLink({
+        type: "magiclink",
+        email: data.email,
+        options: redirectTo ? { redirectTo } : undefined,
+      });
+      if (error) throw new Error(`magiclink: ${error.message}`);
+      return { ok: true, type: data.type, action_link: link?.properties?.action_link ?? null };
+    }
+
+    // recovery
+    const { data: link, error } = await supabaseAdmin.auth.admin.generateLink({
+      type: "recovery",
+      email: data.email,
+      options: redirectTo ? { redirectTo } : undefined,
+    });
+    if (error) throw new Error(`recovery: ${error.message}`);
+    return { ok: true, type: data.type, action_link: link?.properties?.action_link ?? null };
+  });

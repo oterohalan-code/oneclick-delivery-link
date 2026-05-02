@@ -6,7 +6,8 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, CheckCircle2, XCircle, ExternalLink, AlertTriangle, Clock, DollarSign, Package, Users, TrendingUp, Ban, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
-import { getAdminFinance, adminCancelOrder, adminUnassignOrder } from "@/server/admin.functions";
+import { getAdminFinance, adminCancelOrder, adminUnassignOrder, sendTestAuthEmail } from "@/server/admin.functions";
+import { Input } from "@/components/ui/input";
 
 interface StaleOrder {
   id: string;
@@ -147,10 +148,11 @@ export function AdminHome() {
       </div>
 
       <Tabs defaultValue="ops" onValueChange={(v) => { if (v === "finance" && !finance) loadFinance(financeDays); }}>
-        <TabsList className="grid grid-cols-3 w-full">
+        <TabsList className="grid grid-cols-4 w-full">
           <TabsTrigger value="ops">Incidencias</TabsTrigger>
           <TabsTrigger value="validation">Validación ({list.length})</TabsTrigger>
           <TabsTrigger value="finance">Finanzas</TabsTrigger>
+          <TabsTrigger value="emails">Emails</TabsTrigger>
         </TabsList>
 
         {/* INCIDENCIAS */}
@@ -358,7 +360,94 @@ export function AdminHome() {
         ))
       )}
         </TabsContent>
+        <TabsContent value="emails" className="space-y-3 mt-4">
+          <EmailTester />
+        </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+function EmailTester() {
+  const [email, setEmail] = useState("");
+  const [sending, setSending] = useState<string | null>(null);
+
+  const send = async (type: "signup" | "magiclink" | "recovery") => {
+    if (!email || !email.includes("@")) {
+      toast.error("Ingresa un correo válido");
+      return;
+    }
+    setSending(type);
+    try {
+      const res = await sendTestAuthEmail({ data: { email, type } });
+      toast.success(`Email de ${type} encolado a ${email}`, {
+        description: "Revisa la bandeja en 1-2 minutos. Si no llega, verifica en Cloud → Emails.",
+      });
+      // eslint-disable-next-line no-console
+      console.log("test email result", res);
+    } catch (e: any) {
+      toast.error(e?.message ?? "Error enviando");
+    } finally {
+      setSending(null);
+    }
+  };
+
+  return (
+    <Card className="p-4 space-y-4">
+      <div>
+        <h2 className="font-display text-lg font-semibold">Probar entregabilidad</h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          Envía emails de auth reales (signup, magic link, recuperación) usando las plantillas configuradas.
+        </p>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">Correo destino</label>
+        <Input
+          type="email"
+          placeholder="tu@correo.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          autoComplete="email"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+        <Button
+          onClick={() => send("signup")}
+          disabled={!!sending}
+          variant="outline"
+        >
+          {sending === "signup" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+          Signup / Confirmación
+        </Button>
+        <Button
+          onClick={() => send("magiclink")}
+          disabled={!!sending}
+          variant="outline"
+        >
+          {sending === "magiclink" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+          Magic Link
+        </Button>
+        <Button
+          onClick={() => send("recovery")}
+          disabled={!!sending}
+          variant="outline"
+        >
+          {sending === "recovery" ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+          Recuperación
+        </Button>
+      </div>
+
+      <div className="text-xs text-muted-foreground border-t pt-3">
+        <p><strong>Notas:</strong></p>
+        <ul className="list-disc pl-5 space-y-1 mt-1">
+          <li>Signup usa el flujo de invitación (genera y envía link de confirmación).</li>
+          <li>Magic link y recuperación funcionan con cualquier correo registrado.</li>
+          <li>Si el correo no existe, Supabase puede no enviar magic link / recovery por seguridad.</li>
+          <li>El estado y errores aparecen en <strong>Cloud → Emails</strong>.</li>
+        </ul>
+      </div>
+    </Card>
   );
 }
