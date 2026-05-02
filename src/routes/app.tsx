@@ -5,6 +5,7 @@ import { Loader2, Home, User, Wallet, History, Shield, LogOut, BarChart3, Gift }
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
+import { SupportChat } from "@/components/SupportChat";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
