@@ -291,6 +291,15 @@ export function RestaurantHome() {
                         <div className="min-w-0">
                           <div className="text-xs text-muted-foreground">Repartidor</div>
                           <div className="font-medium truncate">🛵 {c?.fullName ?? "Cargando..."}</div>
+                          {c?.score != null && (
+                            <div className="flex items-center gap-1.5 mt-0.5 text-xs">
+                              <Star className="h-3 w-3 fill-warning text-warning" />
+                              <span className="font-semibold">{c.score.toFixed(1)}</span>
+                              <span className="text-muted-foreground">
+                                · {c.totalDeliveries ?? 0} entregas
+                              </span>
+                            </div>
+                          )}
                         </div>
                         {c?.phone && (
                           <a
