@@ -125,6 +125,7 @@ export const getCourierForOrder = createServerFn({ method: "POST" })
 
     return {
       ok: true as const,
+      courierId: order.courier_id as string,
       fullName: profile?.full_name ?? "Repartidor",
       phone: profile?.phone ?? null,
       phoneDialCode: profile?.phone_dial_code ?? "+52",
