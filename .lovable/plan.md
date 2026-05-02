@@ -1,83 +1,107 @@
-## Rediseño 1Click — Obsidian Glass
+## Objetivo
+Aplicar los 4 fixes del diagnóstico **y** habilitar un flujo de auto-registro de administradores limitado al dominio corporativo `@punchingsolutions.com.mx` con confirmación por correo.
 
-Dirección: monocromo sofisticado (negro tinta + crema) con acentos cálidos sutiles, capas de **glassmorphism** (blur + transparencias), bordes refinados y botones premium con micro-interacciones.
+---
 
-### 1. Logo "1Click" (nuevo)
+## Parte A — Fixes del diagnóstico
 
-Generaré un logo SVG vectorial — sin verde, basado en un **monograma "1●"** (uno + punto/click) en disco negro tinta sobre fondo crema, con tipografía sans serif moderna. Un solo trazo, escalable, funciona en favicon y en hero.
+### 1. Hardening + parche de funciones (migración SQL)
+- **`generate_referral_code`** y **`set_tracking_token`**: reemplazar `gen_random_bytes(...)` por `extensions.gen_random_bytes(...)` (o usar `gen_random_uuid()` como fuente entrópica). Esto elimina el error `function gen_random_bytes(integer) does not exist` que aparece en logs.
+- **Search path mutable** (4 funciones marcadas por el linter): añadir `SET search_path = public` a las funciones que aún no lo tienen.
+- **SECURITY DEFINER públicas**: revocar `EXECUTE ... FROM PUBLIC, anon` en las funciones SECURITY DEFINER y otorgar solo a `authenticated` (las funciones siguen siendo seguras porque internamente filtran por `auth.uid()`/RLS, pero deja de exponerse al rol anónimo).
 
-Variantes producidas:
-- `src/assets/logo-1click.svg` — logo horizontal completo
-- `src/assets/logo-mark.svg` — solo el monograma para favicon/avatar
-- `public/favicon.ico` reemplazado
+### 2. Asignar admin inicial
+Insertar manualmente el primer administrador para `oteroalan299@gmail.com` (única cuenta corporativa identificada del owner) en `public.user_roles` con rol `admin`. Esto desbloquea el panel `/app/admin` y el `EmailTester` ya existente.
 
-### 2. Sistema de diseño (`src/styles.css`)
+### 3. Verificación de entregabilidad
+Una vez creado el admin, podrás entrar a **Admin → Emails** y enviar los 3 correos de prueba (signup, magic link, recovery) al correo que quieras. (Ya está implementado, no requiere código nuevo.)
 
-Reemplazo total de tokens — adiós al verde:
+---
 
-```text
-Paleta:
-  ink (negro)        oklch(0.15 0.01 60)   ← brand / botones / texto
-  bone (crema)       oklch(0.97 0.008 80)  ← background
-  paper (off-white)  oklch(0.99 0.004 80)  ← cards
-  ember (acento)     oklch(0.62 0.14 45)   ← cobre cálido sutil
-  graphite           oklch(0.45 0.01 60)   ← muted text
-  hairline           oklch(0.88 0.005 60)  ← bordes finos
+## Parte B — Auto-registro de administradores corporativos
+
+### Flujo de usuario
+1. En `/auth` aparece una nueva pestaña/sección **"Administrador"** (junto a Restaurante / Repartidor).
+2. El formulario pide nombre, correo y contraseña.
+3. Se valida en cliente y servidor que el correo termine en **`@punchingsolutions.com.mx`** (case-insensitive, trim).
+4. Al enviar:
+   - Se hace `supabase.auth.signUp` con `emailRedirectTo` apuntando a `/auth` y metadata `{ role: "admin_pending" }`.
+   - Supabase enviará automáticamente el correo de confirmación usando las plantillas ya configuradas (Lovable Emails sobre `notify.oneclick.punchingsolutions.com.mx`).
+5. El usuario hace clic en el enlace de confirmación → su email queda verificado.
+6. La promoción a `admin` ocurre automáticamente (ver lógica server-side abajo).
+
+### Lógica server-side (segura)
+- **Trigger DB `handle_new_user`** (ya existe): se modificará para que cuando `raw_user_meta_data->>'role' = 'admin_pending'` **NO** asigne ningún rol todavía (no insertar fila en `user_roles`). Esto evita que un correo no confirmado obtenga privilegios.
+- **Nuevo server function `claimAdminRole`** (`createServerFn` con `requireSupabaseAuth`):
+  - Se llama desde el cliente la primera vez que el usuario entra autenticado a `/app` o tras confirmar.
+  - Verifica server-side: (a) email del usuario termina en `@punchingsolutions.com.mx`, (b) `email_confirmed_at` no es null, (c) aún no tiene rol asignado.
+  - Si todo OK → inserta `(user_id, 'admin')` en `user_roles` usando `supabaseAdmin`.
+  - Si el correo no es del dominio → no asigna nada y retorna error claro.
+- El `AuthContext` invocará `claimAdminRole()` automáticamente tras login si el usuario no tiene rol todavía y su email es corporativo.
+
+### Por qué este enfoque es seguro
+- La validación del dominio se hace **dos veces**: cliente (UX) y servidor (autoritativo).
+- El rol admin nunca se otorga sin `email_confirmed_at`, evitando que alguien registre un correo ajeno.
+- Cualquier correo no corporativo que use `role: admin_pending` simplemente queda sin rol (puede luego registrarse como restaurant/courier desde la app).
+
+---
+
+## Parte C — UI
+
+### `src/routes/auth.tsx`
+- Añadir una tercera opción de rol en el selector: `Administrador` (visible solo en la pestaña "Crear cuenta").
+- Cuando el rol seleccionado es admin, mostrar un formulario simple (nombre, correo, contraseña) en lugar del wizard de courier/restaurant.
+- Validar dominio al escribir y al enviar; mostrar mensaje claro: *"El registro de administradores está restringido a correos @punchingsolutions.com.mx"*.
+
+### `src/lib/auth-context.tsx` (mínima edición)
+- Después de cada login exitoso, si el usuario aún no tiene rol y su email es corporativo, llamar `claimAdminRole()` silenciosamente y refrescar el rol en contexto.
+
+---
+
+## Detalles técnicos (resumen para revisión)
+
+### Migración SQL
+```sql
+-- Parche gen_random_bytes
+CREATE OR REPLACE FUNCTION public.generate_referral_code() ...
+  USES extensions.gen_random_bytes(6) ...
+
+CREATE OR REPLACE FUNCTION public.set_tracking_token() ...
+  USES extensions.gen_random_bytes(8) ...
+
+-- Hardening SECURITY DEFINER
+REVOKE EXECUTE ON FUNCTION public.has_role, restaurant_owns_order_for_courier,
+  is_order_participant, get_courier_stats, find_zone_for_point,
+  get_public_tracking, recalc_courier_stats, grant_referral_reward,
+  handle_new_user FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION ... TO authenticated;
+
+-- Trigger handle_new_user actualizado: NO asignar rol si role='admin_pending'
+
+-- Insertar primer admin
+INSERT INTO public.user_roles (user_id, role)
+VALUES ('0ea9c103-95b6-4f58-9a0a-916cd99775af', 'admin')
+ON CONFLICT DO NOTHING;
 ```
 
-Nuevos tokens:
-- `--glass-bg`, `--glass-border`, `--glass-blur` para superficies vidrio
-- `--shadow-soft`, `--shadow-elegant`, `--shadow-button` (sombras escalonadas)
-- `--gradient-mesh` (fondo decorativo con manchas suaves cobre/marfil)
+### Nuevo server function
+- `src/server/admin.functions.ts` → agregar `claimAdminRole`:
+  - middleware: `requireSupabaseAuth`
+  - lee `auth.users` vía `supabaseAdmin` para obtener `email` y `email_confirmed_at`
+  - valida dominio y confirmación
+  - inserta en `user_roles`
 
-Tipografía:
-- Display: **Fraunces** (serif moderno con itálica elegante para énfasis)
-- Sans: **Inter Tight** (refinado, mejor que Inter para premium)
+### Archivos tocados
+- `supabase/migrations/<timestamp>_admin_signup_and_hardening.sql` (nuevo)
+- `src/server/admin.functions.ts` (agregar `claimAdminRole`)
+- `src/routes/auth.tsx` (agregar opción Administrador)
+- `src/lib/auth-context.tsx` (auto-claim tras login)
 
-### 3. Componentes nuevos / actualizados
+---
 
-**`GlassCard`** (nuevo, `src/components/ui/glass-card.tsx`)
-- `backdrop-blur-xl bg-white/60 border border-white/40 shadow-elegant`
-- Variantes: `default`, `dark` (sobre hero), `subtle`
-
-**Botones premium** (`src/components/ui/button.tsx` — extiendo variantes)
-- `premium`: ink sólido + sombra elevada + hover lift + shimmer al hover
-- `glass`: vidrio translúcido con borde 1px + blur
-- `ghost-elegant`: subrayado animado al hover
-- Pill shape (rounded-full) para CTAs principales
-
-**`MeshBackground`** (nuevo)
-- Capa fija con manchas radiales cobre/crema desenfocadas
-- Grano sutil overlay para textura premium
-
-**`AppHeader`** (refactor del header en `app.tsx`)
-- Sticky glass: `backdrop-blur-xl bg-paper/70 border-b border-hairline`
-
-### 4. Páginas a rediseñar
-
-| Ruta | Cambios |
-|---|---|
-| `/` (Landing) | Hero con monograma grande, mesh background, glass cards de features, badge "EST. 2026", CTAs pill |
-| `/auth` | Card glass centrada sobre mesh, logo arriba, tabs elegantes |
-| `/app` (layout) | Header glass sticky, sidebar/tab bar refinada |
-| `/app` (home) | Glass cards para acciones rápidas, métricas tipográficas grandes |
-| `/app/wallet` | Cards glass, números display grandes, divisores hairline |
-| `/app/history` | Lista con bordes hairline, sin fondos pesados |
-| `/app/profile` | Form refinado, secciones con divisores |
-| `/app/admin` | Tablas con tipografía cuidada |
-
-### 5. Detalles premium
-
-- Bordes `1px hairline` en lugar de `border-2`
-- Espaciado más generoso (py-20+ en hero, gap-8 en grids)
-- Animaciones `fade-in` + `scale-in` al montar
-- Hover lift (`translate-y-[-2px]`) en cards/botones
-- Pequeños labels uppercase tracking-widest cobre como acentos
-
-### Notas técnicas
-
-- No se toca lógica de Stripe, auth, mapas ni server functions
-- `src/integrations/supabase/*` intacto
-- Cambio puramente visual + un nuevo componente (`GlassCard`, `MeshBackground`) y una variante extra de `Button`
-- Fuentes vía Google Fonts en `__root.tsx`
-- Logo SVG generado a mano (no AI image) para nitidez vectorial perfecta
+## Resultado esperado
+- ✅ Tu cuenta queda como admin inmediatamente (sin pasar por el flujo de registro).
+- ✅ Cualquier persona con correo `@punchingsolutions.com.mx` puede auto-registrarse, confirmar por correo y ser promovida a admin automáticamente.
+- ✅ El error `gen_random_bytes` desaparece de los logs.
+- ✅ El linter baja de 27 a ~3-4 warnings (queda el de "Extension in Public", que requiere mover pgmq y es invasivo — se documentará pero no se mueve).
+- ✅ Puedes probar entregabilidad de los 3 emails desde el panel.
