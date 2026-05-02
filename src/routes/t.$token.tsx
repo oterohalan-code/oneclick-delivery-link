@@ -6,7 +6,8 @@ import { GlassCard } from "@/components/ui/glass-card";
 import { MeshBackground } from "@/components/MeshBackground";
 import { Logo } from "@/components/Logo";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle2, MapPin, Package, Bike, Clock } from "lucide-react";
+import { CheckCircle2, MapPin, Package, Bike, Clock, Star, Timer } from "lucide-react";
+import { formatEta, timeAgo } from "@/lib/eta";
 
 export const Route = createFileRoute("/t/$token")({
   head: () => ({
@@ -32,13 +33,18 @@ type Tracking = {
   restaurant_name: string | null;
   created_at: string;
   accepted_at: string | null;
+  picked_up_at: string | null;
   delivered_at: string | null;
+  eta_minutes: number | null;
+  location_updated_at: string | null;
+  courier_name: string | null;
+  courier_score: number | null;
 };
 
 const STATUS_STEPS = [
   { key: "pending", label: "Pedido recibido", icon: Package },
-  { key: "accepted", label: "Courier asignado", icon: Bike },
-  { key: "picked_up", label: "En camino", icon: MapPin },
+  { key: "assigned", label: "Courier asignado", icon: Bike },
+  { key: "in_transit", label: "En camino", icon: MapPin },
   { key: "delivered", label: "Entregado", icon: CheckCircle2 },
 ] as const;
 
