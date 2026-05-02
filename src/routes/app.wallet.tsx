@@ -103,56 +103,65 @@ function WalletPage() {
         </Card>
       )}
 
-      <Card className="p-6 bg-gradient-to-br from-brand to-sidebar-accent text-brand-foreground border-0">
-        <p className="text-xs opacity-70 uppercase tracking-wider">Saldo disponible</p>
-        <p className="font-display text-4xl font-bold mt-1">${Number(courier.wallet_balance).toFixed(2)}</p>
-        <p className="text-xs opacity-60 mt-1">MXN</p>
-        <div className="mt-3">
-          {subActive ? (
-            <Badge className="bg-primary text-primary-foreground"><Crown className="h-3 w-3 mr-1" /> Suscripción hasta {new Date(courier.subscription_expires_at!).toLocaleDateString()}</Badge>
-          ) : (
-            <Badge className="bg-secondary text-secondary-foreground">Plan PPS · $5 por entrega</Badge>
-          )}
+      <div className="relative rounded-3xl glass-dark text-bone p-7 overflow-hidden grain shadow-elegant">
+        <div aria-hidden className="absolute inset-0 bg-[radial-gradient(at_85%_15%,oklch(0.62_0.13_45/0.4),transparent_55%)]" />
+        <div className="relative">
+          <p className="eyebrow" style={{ color: "oklch(0.78 0.12 45)" }}>Saldo disponible</p>
+          <p className="text-display text-5xl font-medium mt-2 text-mono-tight">
+            ${Number(courier.wallet_balance).toFixed(2)}
+            <span className="text-base font-normal text-bone/60 ml-2">MXN</span>
+          </p>
+          <div className="mt-4">
+            {subActive ? (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-ember/90 text-bone px-3 py-1 text-xs font-medium">
+                <Crown className="h-3 w-3" /> Suscripción hasta {new Date(courier.subscription_expires_at!).toLocaleDateString()}
+              </span>
+            ) : (
+              <span className="inline-flex items-center rounded-full bg-bone/15 text-bone px-3 py-1 text-xs font-medium">
+                Plan PPS · $5 por entrega
+              </span>
+            )}
+          </div>
         </div>
-      </Card>
+      </div>
 
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-display text-lg font-semibold">Recargar monedero</h3>
+          <h3 className="text-display text-xl font-medium">Recargar monedero</h3>
           <PaymentModeBadge />
         </div>
         <div className="grid grid-cols-4 gap-2">
           {TOPUPS.map((t) => (
             <Button
               key={t.amount}
-              variant="secondary"
+              variant="glass"
               onClick={() => setCheckout({ priceId: t.priceId, purpose: "wallet_topup" })}
             >
               <Plus className="h-3 w-3 mr-1" />${t.amount}
             </Button>
           ))}
         </div>
-        <p className="text-xs text-muted-foreground mt-2">Pago seguro con tarjeta vía Stripe.</p>
+        <p className="text-xs text-graphite mt-2">Pago seguro con tarjeta vía Stripe.</p>
       </div>
 
       <div>
-        <h3 className="font-display text-lg font-semibold mb-3">Plan</h3>
-        <div className="grid grid-cols-2 gap-2">
+        <h3 className="text-display text-xl font-medium mb-3">Plan</h3>
+        <div className="grid grid-cols-2 gap-3">
           <button
             disabled
-            className={`rounded-xl p-4 border-2 text-left ${courier.plan === "pps" ? "border-primary bg-primary/5" : "border-border opacity-70"}`}
+            className={`rounded-2xl p-5 border text-left transition ${courier.plan === "pps" ? "border-ink bg-paper" : "border-hairline opacity-60"}`}
           >
-            <div className="font-semibold">PPS</div>
-            <div className="text-xs text-muted-foreground">$5 por entrega</div>
+            <div className="text-display text-xl font-medium">PPS</div>
+            <div className="text-xs text-graphite mt-1">$5 por entrega</div>
           </button>
           <button
             onClick={() => setCheckout({ priceId: SUB_PRICE_ID, purpose: "subscription" })}
             disabled={!!subActive}
-            className={`rounded-xl p-4 border-2 text-left ${subActive ? "border-primary bg-primary/5" : "border-border"}`}
+            className={`rounded-2xl p-5 border text-left transition lift ${subActive ? "border-ember bg-ember/10" : "border-hairline bg-paper hover:border-ink"}`}
           >
-            <div className="font-semibold">Suscripción</div>
-            <div className="text-xs text-muted-foreground">${SUB_PRICE}/mes ilimitado</div>
-            {subActive && <div className="text-xs text-success mt-1">Activa</div>}
+            <div className="text-display text-xl font-medium">Suscripción</div>
+            <div className="text-xs text-graphite mt-1">${SUB_PRICE}/mes ilimitado</div>
+            {subActive && <div className="text-xs text-ember font-medium mt-1">Activa</div>}
           </button>
         </div>
       </div>

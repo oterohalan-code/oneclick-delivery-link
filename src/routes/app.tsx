@@ -1,8 +1,9 @@
 import { createFileRoute, Outlet, Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { Loader2, Home, User, Wallet, History, Shield, LogOut, Zap } from "lucide-react";
+import { Loader2, Home, User, Wallet, History, Shield, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Logo } from "@/components/Logo";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
@@ -19,8 +20,8 @@ function AppLayout() {
 
   if (loading || !user) {
     return (
-      <div className="min-h-screen grid place-items-center bg-background">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      <div className="min-h-screen grid place-items-center bg-bone">
+        <Loader2 className="h-8 w-8 animate-spin text-ink" />
       </div>
     );
   }
@@ -37,33 +38,49 @@ function AppLayout() {
   ];
 
   return (
-    <div className="min-h-screen bg-background pb-20">
-      <header className="sticky top-0 z-30 bg-brand text-brand-foreground border-b border-sidebar-border">
-        <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
-          <Link to="/app" className="flex items-center gap-2 font-display text-lg font-bold">
-            <Zap className="h-5 w-5 text-primary" fill="currentColor" /> 1-Click
-          </Link>
-          <Button variant="ghost" size="sm" onClick={() => { signOut(); navigate({ to: "/" }); }} className="text-brand-foreground hover:bg-sidebar-accent">
-            <LogOut className="h-4 w-4" />
-          </Button>
+    <div className="relative min-h-screen bg-bone text-ink pb-24">
+      {/* subtle ambient mesh */}
+      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(at_15%_-5%,oklch(0.88_0.06_45/0.35),transparent_50%),radial-gradient(at_92%_8%,oklch(0.92_0.04_80/0.3),transparent_55%)]" />
+
+      <header className="sticky top-0 z-30">
+        <div className="glass-strong border-b border-hairline/60">
+          <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between">
+            <Link to="/app">
+              <Logo size="sm" />
+            </Link>
+            <Button variant="ghost" size="sm" onClick={() => { signOut(); navigate({ to: "/" }); }}>
+              <LogOut className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-5">
+      <main className="max-w-3xl mx-auto px-4 py-6">
         <Outlet />
       </main>
 
-      <nav className="fixed bottom-0 inset-x-0 z-40 bg-card border-t border-border">
-        <div className="max-w-3xl mx-auto grid" style={{ gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))` }}>
-          {navItems.map((it) => {
-            const active = it.exact ? loc.pathname === it.to : loc.pathname.startsWith(it.to);
-            return (
-              <Link key={it.to} to={it.to} className={`flex flex-col items-center gap-1 py-3 text-xs ${active ? "text-primary" : "text-muted-foreground"}`}>
-                <it.icon className="h-5 w-5" />
-                {it.label}
-              </Link>
-            );
-          })}
+      <nav className="fixed bottom-3 inset-x-3 z-40 max-w-3xl mx-auto">
+        <div className="glass-strong rounded-full shadow-elegant px-2 py-1.5">
+          <div className="grid" style={{ gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))` }}>
+            {navItems.map((it) => {
+              const active = it.exact ? loc.pathname === it.to : loc.pathname.startsWith(it.to);
+              return (
+                <Link
+                  key={it.to}
+                  to={it.to}
+                  className={`relative flex flex-col items-center gap-0.5 py-2 text-[10px] font-medium tracking-wider uppercase rounded-full transition ${
+                    active ? "text-bone" : "text-graphite hover:text-ink"
+                  }`}
+                >
+                  {active && (
+                    <span aria-hidden className="absolute inset-0 rounded-full bg-ink shadow-button" />
+                  )}
+                  <it.icon className={`relative h-4 w-4 ${active ? "" : ""}`} strokeWidth={1.5} />
+                  <span className="relative">{it.label}</span>
+                </Link>
+              );
+            })}
+          </div>
         </div>
       </nav>
     </div>
