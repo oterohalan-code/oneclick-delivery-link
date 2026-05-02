@@ -4,7 +4,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Loader2, Home, User, Wallet, History, Shield, LogOut, BarChart3, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
-import { ThemeToggle } from "@/components/ThemeToggle";
+
 import { SupportChat } from "@/components/SupportChat";
 
 export const Route = createFileRoute("/app")({
@@ -54,7 +54,7 @@ function AppLayout() {
               <Logo size="sm" />
             </Link>
             <div className="flex items-center gap-2">
-              <ThemeToggle />
+              
               <Button
                 variant="ghost"
                 size="sm"

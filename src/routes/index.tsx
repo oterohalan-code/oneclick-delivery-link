@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/glass-card";
 import { MeshBackground } from "@/components/MeshBackground";
 import { Logo } from "@/components/Logo";
-import { ThemeToggle } from "@/components/ThemeToggle";
+
 import { supabase } from "@/integrations/supabase/client";
 import heroCourier from "@/assets/hero-courier.jpg";
 
@@ -39,7 +39,7 @@ function Landing() {
           <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3">
             <Logo size="md" />
             <div className="flex items-center gap-2">
-              <ThemeToggle />
+              
               <Link to="/auth" className="hidden sm:inline-flex">
                 <Button variant="ghost" size="sm">Iniciar sesión</Button>
               </Link>
