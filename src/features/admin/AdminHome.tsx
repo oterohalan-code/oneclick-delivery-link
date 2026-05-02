@@ -31,6 +31,7 @@ interface Pending {
 }
 
 export function AdminHome() {
+  const { session } = useAuth();
   const [list, setList] = useState<Pending[]>([]);
   const [loading, setLoading] = useState(true);
   const [signedUrls, setSignedUrls] = useState<Record<string, string>>({});
@@ -39,11 +40,21 @@ export function AdminHome() {
   const [financeLoading, setFinanceLoading] = useState(false);
   const [financeDays, setFinanceDays] = useState(30);
   const [actingId, setActingId] = useState<string | null>(null);
+  const getAdminFinanceRpc = useServerFn(getAdminFinance);
+  const adminCancelOrderRpc = useServerFn(adminCancelOrder);
+  const adminUnassignOrderRpc = useServerFn(adminUnassignOrder);
+
+  const authHeaders = () => {
+    const token = session?.access_token;
+    return token ? { Authorization: `Bearer ${token}` } : undefined;
+  };
 
   const loadFinance = async (days: number) => {
+    const headers = authHeaders();
+    if (!headers) return;
     setFinanceLoading(true);
     try {
-      const r = await getAdminFinance({ data: { days } });
+      const r = await getAdminFinanceRpc({ headers, data: { days } });
       setFinance(r);
     } catch (e: any) {
       toast.error(e?.message ?? "Error al cargar finanzas");
@@ -55,9 +66,11 @@ export function AdminHome() {
   const handleCancel = async (orderId: string) => {
     const reason = window.prompt("Motivo de cancelación:");
     if (!reason || reason.trim().length < 3) return;
+    const headers = authHeaders();
+    if (!headers) return toast.error("Sesión expirada");
     setActingId(orderId);
     try {
-      await adminCancelOrder({ data: { orderId, reason: reason.trim() } });
+      await adminCancelOrderRpc({ headers, data: { orderId, reason: reason.trim() } });
       toast.success("Pedido cancelado");
       loadStale();
     } catch (e: any) { toast.error(e?.message ?? "Error"); }
@@ -66,9 +79,11 @@ export function AdminHome() {
 
   const handleUnassign = async (orderId: string) => {
     if (!window.confirm("¿Liberar este pedido para reasignación?")) return;
+    const headers = authHeaders();
+    if (!headers) return toast.error("Sesión expirada");
     setActingId(orderId);
     try {
-      await adminUnassignOrder({ data: { orderId } });
+      await adminUnassignOrderRpc({ headers, data: { orderId } });
       toast.success("Pedido liberado — visible para couriers");
       loadStale();
     } catch (e: any) { toast.error(e?.message ?? "Error"); }
