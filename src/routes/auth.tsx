@@ -20,7 +20,7 @@ const ADMIN_DOMAIN = "@punchingsolutions.com.mx";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (s: Record<string, unknown>): { role?: RoleParam } => ({
-    role: s.role === "courier" ? "courier" : s.role === "restaurant" ? "restaurant" : undefined,
+    role: s.role === "courier" ? "courier" : s.role === "admin" ? "admin" : s.role === "restaurant" ? "restaurant" : undefined,
   }),
   component: AuthPage,
   head: () => ({ meta: [{ title: "Entrar — 1-Click" }] }),
