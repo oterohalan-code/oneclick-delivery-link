@@ -9,7 +9,13 @@ import { supabase } from "@/integrations/supabase/client";
 import heroCourier from "@/assets/hero-courier.jpg";
 
 export const Route = createFileRoute("/")({
-  beforeLoad: async () => {
+  validateSearch: (s: Record<string, unknown>): { ref?: string } => ({
+    ref: typeof s.ref === "string" ? s.ref : undefined,
+  }),
+  beforeLoad: async ({ search }) => {
+    if (typeof window !== "undefined" && search.ref) {
+      try { localStorage.setItem("pending_ref_code", search.ref.toUpperCase()); } catch {}
+    }
     const { data: { session } } = await supabase.auth.getSession();
     if (session) throw redirect({ to: "/app" });
   },
