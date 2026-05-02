@@ -1,8 +1,11 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
+import { claimAdminRole } from "@/server/admin.functions";
 
 export type AppRole = "restaurant" | "courier" | "admin";
+
+const ADMIN_DOMAIN = "@punchingsolutions.com.mx";
 
 interface AuthCtx {
   user: User | null;
@@ -21,7 +24,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [role, setRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
 
-  const fetchRole = async (uid: string) => {
+  const fetchRole = async (uid: string): Promise<AppRole | null> => {
     const { data } = await supabase
       .from("user_roles")
       .select("role")
@@ -29,7 +32,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .order("role", { ascending: true })
       .limit(1)
       .maybeSingle();
-    setRole((data?.role as AppRole) ?? null);
+    const r = (data?.role as AppRole) ?? null;
+    setRole(r);
+    return r;
+  };
+
+  const maybeClaimAdmin = async (u: User) => {
+    const email = (u.email ?? "").toLowerCase().trim();
+    if (!email.endsWith(ADMIN_DOMAIN)) return;
+    if (!u.email_confirmed_at) return;
+    try {
+      const res = await claimAdminRole();
+      if ((res as any)?.promoted) await fetchRole(u.id);
+    } catch {
+      // silencioso: no bloquea login
+    }
   };
 
   useEffect(() => {
@@ -37,7 +54,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
-        setTimeout(() => fetchRole(s.user.id), 0);
+        setTimeout(async () => {
+          const current = await fetchRole(s.user.id);
+          if (!current) await maybeClaimAdmin(s.user);
+        }, 0);
       } else {
         setRole(null);
       }
@@ -46,8 +66,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     supabase.auth.getSession().then(({ data: { session: s } }) => {
       setSession(s);
       setUser(s?.user ?? null);
-      if (s?.user) fetchRole(s.user.id).finally(() => setLoading(false));
-      else setLoading(false);
+      if (s?.user) {
+        fetchRole(s.user.id)
+          .then(async (current) => {
+            if (!current && s?.user) await maybeClaimAdmin(s.user);
+          })
+          .finally(() => setLoading(false));
+      } else setLoading(false);
     });
 
     return () => sub.subscription.unsubscribe();

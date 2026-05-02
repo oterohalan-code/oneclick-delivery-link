@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { Bike, Store, ArrowLeft } from "lucide-react";
+import { Bike, Store, ArrowLeft, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,11 +14,13 @@ import { toast } from "sonner";
 import { CourierSignupWizard } from "@/features/courier/CourierSignupWizard";
 import { RestaurantSignupWizard } from "@/features/restaurant/RestaurantSignupWizard";
 
-type RoleParam = "restaurant" | "courier";
+type RoleParam = "restaurant" | "courier" | "admin";
+
+const ADMIN_DOMAIN = "@punchingsolutions.com.mx";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (s: Record<string, unknown>): { role?: RoleParam } => ({
-    role: s.role === "courier" ? "courier" : s.role === "restaurant" ? "restaurant" : undefined,
+    role: s.role === "courier" ? "courier" : s.role === "admin" ? "admin" : s.role === "restaurant" ? "restaurant" : undefined,
   }),
   component: AuthPage,
   head: () => ({ meta: [{ title: "Entrar — 1-Click" }] }),
@@ -73,9 +75,36 @@ function AuthPage() {
     navigate({ to: "/app" });
   };
 
+  const onAdminSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const email = form.email.trim().toLowerCase();
+    if (!email.endsWith(ADMIN_DOMAIN)) {
+      return toast.error(`Solo correos ${ADMIN_DOMAIN} pueden registrarse como administradores.`);
+    }
+    if (!form.password || form.password.length < 6) {
+      return toast.error("La contraseña debe tener al menos 6 caracteres.");
+    }
+    if (!form.fullName.trim()) {
+      return toast.error("Escribe tu nombre completo.");
+    }
+    setLoading(true);
+    const { error } = await supabase.auth.signUp({
+      email,
+      password: form.password,
+      options: {
+        emailRedirectTo: `${window.location.origin}/auth`,
+        data: { full_name: form.fullName.trim(), role: "admin_pending" },
+      },
+    });
+    setLoading(false);
+    if (error) return toast.error(error.message);
+    toast.success("Cuenta creada. Revisa tu correo para confirmar tu acceso de administrador.");
+    setTab("login");
+  };
 
   return (
     <div className="relative min-h-screen bg-background text-foreground flex flex-col overflow-hidden">
+
       <MeshBackground />
 
       <header className="px-6 py-5 max-w-md mx-auto w-full flex items-center justify-between">
@@ -142,19 +171,52 @@ function AuthPage() {
             <TabsContent value="signup" className="mt-6 space-y-5">
               <div>
                 <Label className="mb-2 block text-xs uppercase tracking-wider text-muted-foreground">Soy</Label>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <button type="button" onClick={() => setRole("restaurant")}
-                    className={`rounded-xl p-4 border transition flex flex-col items-center gap-1.5 ${role === "restaurant" ? "border-primary bg-primary text-primary-foreground shadow-button" : "border-hairline bg-card/60 text-foreground hover:border-primary/50"}`}>
-                    <Store className="h-5 w-5" strokeWidth={1.5} /> <span className="text-sm font-medium">Restaurante</span>
+                    className={`rounded-xl p-3 border transition flex flex-col items-center gap-1.5 ${role === "restaurant" ? "border-primary bg-primary text-primary-foreground shadow-button" : "border-hairline bg-card/60 text-foreground hover:border-primary/50"}`}>
+                    <Store className="h-5 w-5" strokeWidth={1.5} /> <span className="text-xs font-medium">Restaurante</span>
                   </button>
                   <button type="button" onClick={() => setRole("courier")}
-                    className={`rounded-xl p-4 border transition flex flex-col items-center gap-1.5 ${role === "courier" ? "border-primary bg-primary text-primary-foreground shadow-button" : "border-hairline bg-card/60 text-foreground hover:border-primary/50"}`}>
-                    <Bike className="h-5 w-5" strokeWidth={1.5} /> <span className="text-sm font-medium">Repartidor</span>
+                    className={`rounded-xl p-3 border transition flex flex-col items-center gap-1.5 ${role === "courier" ? "border-primary bg-primary text-primary-foreground shadow-button" : "border-hairline bg-card/60 text-foreground hover:border-primary/50"}`}>
+                    <Bike className="h-5 w-5" strokeWidth={1.5} /> <span className="text-xs font-medium">Repartidor</span>
+                  </button>
+                  <button type="button" onClick={() => setRole("admin")}
+                    className={`rounded-xl p-3 border transition flex flex-col items-center gap-1.5 ${role === "admin" ? "border-primary bg-primary text-primary-foreground shadow-button" : "border-hairline bg-card/60 text-foreground hover:border-primary/50"}`}>
+                    <ShieldCheck className="h-5 w-5" strokeWidth={1.5} /> <span className="text-xs font-medium">Admin</span>
                   </button>
                 </div>
               </div>
 
-              {role === "courier" ? <CourierSignupWizard /> : <RestaurantSignupWizard />}
+              {role === "admin" ? (
+                <form onSubmit={onAdminSignup} className="space-y-4">
+                  <p className="text-xs text-muted-foreground bg-muted/40 border border-hairline rounded-lg p-3">
+                    Solo correos <strong className="text-foreground">{ADMIN_DOMAIN}</strong> pueden registrarse como administradores. Recibirás un correo de confirmación.
+                  </p>
+                  <div>
+                    <Label htmlFor="an" className="text-xs uppercase tracking-wider text-muted-foreground">Nombre completo</Label>
+                    <Input id="an" required value={form.fullName}
+                      className="mt-1.5 h-11 rounded-xl border-hairline bg-card/70"
+                      onChange={(e) => setForm({ ...form, fullName: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label htmlFor="ae" className="text-xs uppercase tracking-wider text-muted-foreground">Email corporativo</Label>
+                    <Input id="ae" type="email" required value={form.email}
+                      placeholder={`tu-correo${ADMIN_DOMAIN}`}
+                      className="mt-1.5 h-11 rounded-xl border-hairline bg-card/70"
+                      onChange={(e) => setForm({ ...form, email: e.target.value })} />
+                  </div>
+                  <div>
+                    <Label htmlFor="ap" className="text-xs uppercase tracking-wider text-muted-foreground">Contraseña</Label>
+                    <Input id="ap" type="password" required minLength={6} value={form.password}
+                      className="mt-1.5 h-11 rounded-xl border-hairline bg-card/70"
+                      onChange={(e) => setForm({ ...form, password: e.target.value })} />
+                  </div>
+                  <Button type="submit" disabled={loading} variant="default" size="lg" className="w-full mt-2">
+                    Crear cuenta de administrador
+                  </Button>
+                </form>
+              ) : role === "courier" ? <CourierSignupWizard /> : <RestaurantSignupWizard />}
+
             </TabsContent>
           </Tabs>
         </GlassCard>
