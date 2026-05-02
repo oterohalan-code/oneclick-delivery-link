@@ -227,7 +227,7 @@ export const claimAdminRole = createServerFn({ method: "POST" })
 
     const { error: insErr } = await supabaseAdmin
       .from("user_roles")
-      .insert({ user_id: userId, role: "admin" });
+      .upsert({ user_id: userId, role: "admin" }, { onConflict: "user_id,role", ignoreDuplicates: true });
     if (insErr) return { promoted: false, reason: insErr.message };
 
     return { promoted: true };
