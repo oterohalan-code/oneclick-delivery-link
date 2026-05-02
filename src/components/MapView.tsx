@@ -8,7 +8,7 @@ async function loadLeaflet() {
   if (!leafletPromise) {
     leafletPromise = (async () => {
       const mod = await import("leaflet");
-      await import("leaflet/dist/leaflet.css" as string).catch(() => {});
+      // CSS is loaded globally via src/styles.css
       const [iconUrl, iconRetina, shadowUrl] = await Promise.all([
         import("leaflet/dist/images/marker-icon.png").then((m) => m.default),
         import("leaflet/dist/images/marker-icon-2x.png").then((m) => m.default),
