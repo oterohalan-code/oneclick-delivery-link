@@ -5,6 +5,7 @@ import { GlassCard } from "@/components/ui/glass-card";
 import { MeshBackground } from "@/components/MeshBackground";
 import { Logo } from "@/components/Logo";
 import { supabase } from "@/integrations/supabase/client";
+import heroCourier from "@/assets/hero-courier.jpg";
 
 export const Route = createFileRoute("/")({
   beforeLoad: async () => {
@@ -72,13 +73,22 @@ function Landing() {
             </div>
           </div>
 
-          {/* Logo art piece */}
+          {/* Hero image */}
           <div className="relative animate-scale-in">
-            <GlassCard variant="strong" className="aspect-square p-10 flex items-center justify-center grain">
-              <div className="absolute top-6 left-6 eyebrow">01 — Marca</div>
-              <div className="absolute bottom-6 right-6 text-[10px] tracking-[0.25em] uppercase text-graphite">Premium service</div>
-              <Logo size="xl" showWordmark={false} />
-              <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-display italic text-7xl font-light text-ink/90 hidden md:block" style={{ marginBottom: "-0.5rem" }} />
+            <GlassCard variant="strong" className="aspect-square p-3 overflow-hidden">
+              <div className="relative h-full w-full rounded-xl overflow-hidden">
+                <img
+                  src={heroCourier}
+                  alt="Repartidor profesional 1Click en Cancún al atardecer"
+                  width={1024}
+                  height={1024}
+                  className="h-full w-full object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-ink/60 via-transparent to-transparent" />
+                <div className="absolute top-5 left-5 eyebrow text-bone/90">01 — Red verificada</div>
+                <div className="absolute bottom-5 right-5 text-[10px] tracking-[0.25em] uppercase text-bone/80">Premium service</div>
+                <div className="absolute bottom-5 left-5 text-display italic text-2xl font-light text-bone">Cancún · Q.Roo</div>
+              </div>
             </GlassCard>
           </div>
         </section>
