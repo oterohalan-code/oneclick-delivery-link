@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
 import { claimAdminRole } from "@/server/admin.functions";
@@ -23,6 +23,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [role, setRole] = useState<AppRole | null>(null);
   const [loading, setLoading] = useState(true);
+  const adminClaimInFlight = useRef(false);
 
   const fetchRole = async (uid: string): Promise<AppRole | null> => {
     const { data } = await supabase
@@ -41,14 +42,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const email = (u.email ?? "").toLowerCase().trim();
     if (!email.endsWith(ADMIN_DOMAIN)) return;
     if (!u.email_confirmed_at) return;
+    if (adminClaimInFlight.current) return;
+    adminClaimInFlight.current = true;
     try {
       const { data: { session: s } } = await supabase.auth.getSession();
       const token = s?.access_token;
       if (!token) return;
-      const res = await claimAdminRole({ data: { accessToken: token } });
+      const res = await claimAdminRole({
+        data: { accessToken: token },
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if ((res as any)?.promoted) await fetchRole(u.id);
     } catch {
       // silencioso: no bloquea login
+    } finally {
+      adminClaimInFlight.current = false;
     }
   };
 
