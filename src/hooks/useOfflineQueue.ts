@@ -15,7 +15,6 @@ type QueuedAction =
       kind: "order_status";
       orderId: string;
       status: "in_transit" | "delivered";
-      extra?: Record<string, unknown>;
       ts: number;
     };
 
