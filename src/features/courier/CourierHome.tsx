@@ -192,9 +192,20 @@ export function CourierHome() {
           <p className="text-xs text-muted-foreground">Saldo monedero</p>
           <p className="font-display text-2xl font-bold">${Number(courier.wallet_balance).toFixed(2)}</p>
         </div>
-        <Badge className={subActive ? "bg-success/20 text-success-foreground" : "bg-accent text-accent-foreground"}>
-          {subActive ? "Suscripción activa" : "Plan PPS"}
-        </Badge>
+        <div className="flex flex-col items-end gap-1">
+          <Badge className={subActive ? "bg-success/20 text-success-foreground" : "bg-accent text-accent-foreground"}>
+            {subActive ? "Suscripción activa" : "Plan PPS"}
+          </Badge>
+          {(courier as any).stats_total_deliveries > 0 && (
+            <div className="text-xs text-muted-foreground flex items-center gap-1">
+              <span>⭐</span>
+              <span className="font-semibold text-foreground">
+                {Number((courier as any).stats_score ?? 100).toFixed(1)}
+              </span>
+              <span>· {(courier as any).stats_total_deliveries} entregas</span>
+            </div>
+          )}
+        </div>
       </Card>
 
       {geoPermission !== "granted" && (
