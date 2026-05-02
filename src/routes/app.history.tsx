@@ -4,7 +4,9 @@ import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Loader2 } from "lucide-react";
+import { SkeletonList, SkeletonStat } from "@/components/ui/skeleton";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Inbox } from "lucide-react";
 
 export const Route = createFileRoute("/app/history")({
   component: HistoryPage,
@@ -59,25 +61,43 @@ function HistoryPage() {
     })();
   }, [user?.id, role]);
 
-  if (loading) return <div className="grid place-items-center py-20"><Loader2 className="h-6 w-6 animate-spin" /></div>;
+  if (loading) {
+    return (
+      <div className="space-y-5">
+        <div className="h-7 w-32 rounded-md bg-muted/60 animate-pulse" />
+        <div className="grid grid-cols-2 gap-3">
+          <SkeletonStat />
+          <SkeletonStat />
+        </div>
+        <SkeletonList count={4} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-5">
-      <h1 className="font-display text-2xl font-bold">Historial</h1>
+      <h1 className="text-display text-3xl font-medium">Historial</h1>
 
       <div className="grid grid-cols-2 gap-3">
-        <Card className="p-4">
-          <p className="text-xs text-muted-foreground">Entregas</p>
-          <p className="font-display text-2xl font-bold">{stats.count}</p>
+        <Card className="p-4 border-hairline bg-paper/70">
+          <p className="eyebrow text-graphite" style={{ color: "var(--graphite)" }}>Entregas</p>
+          <p className="text-display text-3xl font-medium text-mono-tight mt-1">{stats.count}</p>
         </Card>
-        <Card className="p-4">
-          <p className="text-xs text-muted-foreground">{role === "courier" ? "Cobrado a clientes" : "Total entregado"}</p>
-          <p className="font-display text-2xl font-bold">${stats.total.toFixed(2)}</p>
+        <Card className="p-4 border-hairline bg-paper/70">
+          <p className="eyebrow text-graphite" style={{ color: "var(--graphite)" }}>{role === "courier" ? "Cobrado" : "Total"}</p>
+          <p className="text-display text-3xl font-medium text-mono-tight mt-1">${stats.total.toFixed(0)}</p>
         </Card>
       </div>
 
       {orders.length === 0 ? (
-        <Card className="p-8 text-center text-muted-foreground">Aún no hay pedidos.</Card>
+        <EmptyState
+          icon={Inbox}
+          title="Aún no hay pedidos"
+          description={role === "restaurant"
+            ? "Cuando solicites tu primer repartidor aparecerá aquí."
+            : "Cuando aceptes tu primera entrega quedará registrada aquí."
+          }
+        />
       ) : (
         <div className="space-y-2">
           {orders.map((o) => (

@@ -6,7 +6,9 @@ import { useAuth } from "@/lib/auth-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, MapPin, DollarSign, AlertCircle, Truck, CheckCircle2, Wallet, Crown, MessageCircle } from "lucide-react";
+import { Loader2, MapPin, DollarSign, AlertCircle, Truck, CheckCircle2, Wallet, Crown, MessageCircle, Inbox } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SkeletonList } from "@/components/ui/skeleton";
 import { CourierOnboarding } from "./CourierOnboarding";
 import { DeliveryProofDialog } from "./DeliveryProofDialog";
 import { MapView, haversine } from "@/components/MapView";
@@ -125,7 +127,14 @@ export function CourierHome() {
     return () => { supabase.removeChannel(ch); };
   }, [user?.id]);
 
-  if (loading) return <div className="grid place-items-center py-20"><Loader2 className="h-6 w-6 animate-spin" /></div>;
+  if (loading) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-2xl border border-hairline bg-paper/60 p-4 h-[88px] animate-pulse" />
+        <SkeletonList count={3} />
+      </div>
+    );
+  }
   if (!courier) return <div className="grid place-items-center py-20"><Loader2 className="h-6 w-6 animate-spin" /></div>;
 
   // 1) Si fue rechazado, dejarlo volver a subir documentos
@@ -214,9 +223,13 @@ export function CourierHome() {
         </Card>
       ) : (
         <div>
-          <h3 className="font-display text-lg font-semibold mb-3">Pedidos disponibles ({sorted.length})</h3>
+          <h3 className="text-display text-xl font-medium mb-3">Pedidos disponibles ({sorted.length})</h3>
           {sorted.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No hay pedidos por ahora. Te avisaremos al instante.</p>
+            <EmptyState
+              icon={Inbox}
+              title="Sin pedidos por ahora"
+              description="Mantén la app abierta. Te notificaremos al instante cuando haya un pedido cerca de ti."
+            />
           ) : (
             <div className="space-y-3">
               {sorted.map(({ o, dist }) => {

@@ -3,7 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Plus, Loader2, Package, Truck, CheckCircle2, Clock, MessageCircle, Phone } from "lucide-react";
+import { Plus, Loader2, Package, Truck, CheckCircle2, Clock, MessageCircle, Phone, Inbox } from "lucide-react";
+import { EmptyState } from "@/components/ui/empty-state";
+import { SkeletonList } from "@/components/ui/skeleton";
 import { RestaurantOnboarding } from "./RestaurantOnboarding";
 import { CreateOrderDialog } from "./CreateOrderDialog";
 import { OrderChat } from "@/components/OrderChat";
@@ -144,7 +146,18 @@ export function RestaurantHome() {
     return () => { supabase.removeChannel(ch); };
   }, [user?.id, rest?.id, chatOrderId]);
 
-  if (loading) return <div className="grid place-items-center py-20"><Loader2 className="h-6 w-6 animate-spin" /></div>;
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <div className="h-3 w-24 rounded bg-muted/60 animate-pulse" />
+          <div className="h-7 w-48 rounded bg-muted/60 animate-pulse" />
+        </div>
+        <div className="rounded-2xl bg-muted/40 h-32 animate-pulse" />
+        <SkeletonList count={2} />
+      </div>
+    );
+  }
   if (!rest) return <RestaurantOnboarding onDone={load} />;
 
   const active = orders.filter((o) => !["delivered", "cancelled"].includes(o.status));
@@ -167,9 +180,14 @@ export function RestaurantHome() {
       </Card>
 
       <div>
-        <h3 className="font-display text-lg font-semibold mb-3">Pedidos activos</h3>
+        <h3 className="text-display text-xl font-medium mb-3">Pedidos activos</h3>
         {active.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Sin pedidos activos.</p>
+          <EmptyState
+            icon={Inbox}
+            title="Sin pedidos activos"
+            description="Cuando solicites un repartidor, podrás seguir el estado en tiempo real desde aquí."
+            variant="subtle"
+          />
         ) : (
           <div className="space-y-3">
             {active.map((o) => {

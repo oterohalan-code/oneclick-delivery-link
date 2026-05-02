@@ -9,27 +9,27 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        // Premium signature — black ink pill with shimmer + lift
+        // Premium signature — primary pill with shimmer + lift (auto-adapts dark)
         default:
-          "btn-shimmer rounded-full bg-ink text-bone shadow-button hover:shadow-button-hover hover:-translate-y-0.5 active:translate-y-0",
+          "btn-shimmer rounded-full bg-primary text-primary-foreground shadow-button hover:shadow-button-hover hover:-translate-y-0.5 active:translate-y-0",
         premium:
-          "btn-shimmer rounded-full bg-ink text-bone shadow-button hover:shadow-button-hover hover:-translate-y-0.5 active:translate-y-0",
+          "btn-shimmer rounded-full bg-primary text-primary-foreground shadow-button hover:shadow-button-hover hover:-translate-y-0.5 active:translate-y-0",
         // Glass / translucent
         glass:
-          "rounded-full glass-strong text-ink hover:bg-white/85 hover:-translate-y-0.5 transition",
+          "rounded-full glass-strong text-foreground hover:-translate-y-0.5 transition border-2 border-foreground/15 hover:border-foreground/30",
         // Outline elegant
         outline:
-          "rounded-full border border-ink/80 bg-transparent text-ink hover:bg-ink hover:text-bone",
-        // Subtle / secondary on light bg
+          "rounded-full border border-foreground/80 bg-transparent text-foreground hover:bg-foreground hover:text-background",
+        // Subtle / secondary
         secondary:
           "rounded-full bg-secondary text-secondary-foreground hover:bg-secondary/70",
         // Destructive
         destructive:
           "rounded-full bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
         // Ghost minimal
-        ghost: "rounded-full hover:bg-accent hover:text-accent-foreground",
+        ghost: "rounded-full hover:bg-accent hover:text-accent-foreground text-foreground",
         // Inline link with animated underline
-        link: "text-ink underline-offset-4 hover:underline relative",
+        link: "text-foreground underline-offset-4 hover:underline relative",
         // Ember accent — copper warmth, used sparingly
         ember:
           "btn-shimmer rounded-full bg-ember text-ember-foreground shadow-button hover:shadow-button-hover hover:-translate-y-0.5",

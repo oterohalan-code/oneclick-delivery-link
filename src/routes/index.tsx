@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { GlassCard } from "@/components/ui/glass-card";
 import { MeshBackground } from "@/components/MeshBackground";
 import { Logo } from "@/components/Logo";
+import { ThemeToggle } from "@/components/ThemeToggle";
 import { supabase } from "@/integrations/supabase/client";
 import heroCourier from "@/assets/hero-courier.jpg";
 
@@ -23,20 +24,21 @@ export const Route = createFileRoute("/")({
 
 function Landing() {
   return (
-    <div className="relative min-h-screen bg-bone text-ink overflow-hidden">
+    <div className="relative min-h-screen bg-background text-foreground overflow-hidden">
       <MeshBackground />
 
       {/* Header */}
       <header className="sticky top-0 z-40">
         <div className="glass-strong border-b border-hairline/60">
-          <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3">
             <Logo size="md" />
             <div className="flex items-center gap-2">
+              <ThemeToggle />
               <Link to="/auth" className="hidden sm:inline-flex">
                 <Button variant="ghost" size="sm">Iniciar sesión</Button>
               </Link>
               <Link to="/auth">
-                <Button variant="default" size="sm">
+                <Button variant="default" size="sm" className="press">
                   Comenzar <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
               </Link>
@@ -45,40 +47,41 @@ function Landing() {
         </div>
       </header>
 
-      <main className="relative px-6 max-w-6xl mx-auto">
+      <main className="relative px-4 sm:px-6 max-w-6xl mx-auto">
         {/* Hero */}
-        <section className="py-20 md:py-32 grid md:grid-cols-[1.1fr_0.9fr] gap-16 items-center">
-          <div className="animate-fade-in">
-            <div className="eyebrow mb-6">EST. 2026 · Cancún · Quintana Roo</div>
-            <h1 className="text-display text-5xl md:text-7xl font-medium leading-[0.95]">
+        <section className="pt-6 md:pt-32 pb-12 md:pb-32 grid md:grid-cols-[1.1fr_0.9fr] gap-8 md:gap-16 md:items-center">
+          {/* Mobile: image first (compact), Desktop: text first */}
+          <div className="md:order-1 order-2 spring-in">
+            <div className="eyebrow mb-4 md:mb-6">EST. 2026 · Cancún · Quintana Roo</div>
+            <h1 className="text-display text-[2.5rem] sm:text-5xl md:text-7xl font-medium leading-[0.95]">
               Un click.<br />
               <span className="italic font-light text-graphite">Tu repartidor</span><br />
               <span className="italic font-light text-graphite">en camino.</span>
             </h1>
-            <p className="mt-8 text-base md:text-lg text-graphite max-w-md leading-relaxed">
+            <p className="mt-6 md:mt-8 text-base md:text-lg text-graphite max-w-md leading-relaxed">
               Cero apps complicadas. Cero grupos de WhatsApp. Solo logística profesional para restaurantes que valoran su tiempo y reputación.
             </p>
-            <div className="mt-10 flex flex-col sm:flex-row gap-3">
+            <div className="mt-8 md:mt-10 flex flex-col sm:flex-row gap-3">
               <Link to="/auth" search={{ role: "restaurant" } as any}>
-                <Button size="lg" variant="default" className="w-full sm:w-auto">
+                <Button size="lg" variant="default" className="w-full sm:w-auto press">
                   <Store className="h-4 w-4" /> Soy Restaurante
                   <ArrowRight className="h-3.5 w-3.5" />
                 </Button>
               </Link>
               <Link to="/auth" search={{ role: "courier" } as any}>
-                <Button size="lg" variant="glass" className="w-full sm:w-auto">
+                <Button size="lg" variant="glass" className="w-full sm:w-auto press">
                   <Bike className="h-4 w-4" /> Soy Repartidor
                 </Button>
               </Link>
             </div>
           </div>
 
-          {/* Hero image with glass overlays */}
-          <div className="relative animate-scale-in">
+          {/* Hero image with glass overlays — compacto en mobile */}
+          <div className="md:order-2 order-1 relative spring-in">
             {/* Decorative glow halo */}
-            <div className="absolute -inset-8 -z-10 rounded-[2rem] opacity-70 blur-3xl"
+            <div className="absolute -inset-6 md:-inset-8 -z-10 rounded-[2rem] opacity-70 blur-3xl"
                  style={{ background: "radial-gradient(60% 60% at 70% 30%, oklch(0.72 0.16 45 / 0.45), transparent 60%), radial-gradient(50% 50% at 20% 80%, oklch(0.55 0.14 25 / 0.35), transparent 65%)" }} />
-            <GlassCard variant="strong" className="aspect-square p-2.5 overflow-hidden">
+            <GlassCard variant="strong" className="aspect-[4/3] md:aspect-square p-2 md:p-2.5 overflow-hidden">
               <div className="relative h-full w-full rounded-2xl overflow-hidden">
                 <img
                   src={heroCourier}
@@ -88,38 +91,38 @@ function Landing() {
                   className="h-full w-full object-cover scale-105"
                 />
                 {/* Color grade overlays */}
-                <div className="absolute inset-0 bg-gradient-to-t from-ink/85 via-ink/20 to-transparent" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/10" />
                 <div className="absolute inset-0 mix-blend-overlay opacity-40"
                      style={{ background: "linear-gradient(135deg, oklch(0.72 0.16 45 / 0.5), transparent 50%, oklch(0.55 0.14 25 / 0.4))" }} />
 
-                {/* Top eyebrow chip */}
-                <div className="absolute top-4 left-4 right-4 flex items-center justify-between">
-                  <div className="px-3 py-1.5 rounded-full backdrop-blur-xl bg-white/10 border border-white/20 eyebrow text-bone/95">
-                    01 — Red verificada
+                {/* Top chip — bg oscuro para contraste WCAG */}
+                <div className="absolute top-3 md:top-4 left-3 md:left-4 right-3 md:right-4 flex items-center justify-between">
+                  <div className="px-3 py-1.5 rounded-full backdrop-blur-xl bg-black/40 border border-white/20 text-[10px] font-semibold tracking-[0.22em] uppercase text-white">
+                    Red verificada
                   </div>
-                  <div className="h-2 w-2 rounded-full bg-ember shadow-[0_0_12px_oklch(0.72_0.16_45)]" />
+                  <div className="h-2 w-2 rounded-full bg-ember pulse-ember" />
                 </div>
 
                 {/* Bottom glass info bar */}
-                <div className="absolute bottom-3 left-3 right-3 rounded-2xl backdrop-blur-2xl bg-white/10 border border-white/20 p-4 shadow-[0_8px_32px_rgb(0_0_0/0.3)]">
+                <div className="absolute bottom-2.5 md:bottom-3 left-2.5 md:left-3 right-2.5 md:right-3 rounded-xl md:rounded-2xl backdrop-blur-2xl bg-black/30 border border-white/20 p-3 md:p-4 shadow-[0_8px_32px_rgb(0_0_0/0.4)]">
                   <div className="flex items-end justify-between gap-3">
                     <div>
-                      <div className="text-[10px] tracking-[0.25em] uppercase text-bone/70">Premium service</div>
-                      <div className="text-display italic text-2xl font-light text-bone leading-tight mt-1">
+                      <div className="text-[9px] md:text-[10px] tracking-[0.25em] uppercase text-white/70">Premium service</div>
+                      <div className="text-display italic text-lg md:text-2xl font-light text-white leading-tight mt-0.5 md:mt-1">
                         Cancún · Q.Roo
                       </div>
                     </div>
                     <div className="text-right">
-                      <div className="text-[10px] tracking-[0.25em] uppercase text-bone/70">ETA</div>
-                      <div className="text-display text-xl font-medium text-bone">&lt; 30s</div>
+                      <div className="text-[9px] md:text-[10px] tracking-[0.25em] uppercase text-white/70">ETA</div>
+                      <div className="text-display text-base md:text-xl font-medium text-white">&lt; 30s</div>
                     </div>
                   </div>
                 </div>
 
                 {/* Floating stat chip */}
-                <div className="hidden md:flex absolute top-1/2 -left-4 -translate-y-1/2 items-center gap-2 px-3 py-2 rounded-full backdrop-blur-xl bg-white/15 border border-white/25 shadow-[0_8px_24px_rgb(0_0_0/0.25)]">
-                  <div className="h-1.5 w-1.5 rounded-full bg-ember animate-pulse" />
-                  <span className="text-[10px] tracking-[0.2em] uppercase text-bone">En vivo</span>
+                <div className="hidden md:flex absolute top-1/2 -left-4 -translate-y-1/2 items-center gap-2 px-3 py-2 rounded-full backdrop-blur-xl bg-black/40 border border-white/25 shadow-[0_8px_24px_rgb(0_0_0/0.25)]">
+                  <div className="h-1.5 w-1.5 rounded-full bg-ember pulse-ember" />
+                  <span className="text-[10px] font-semibold tracking-[0.2em] uppercase text-white">En vivo</span>
                 </div>
               </div>
             </GlassCard>
