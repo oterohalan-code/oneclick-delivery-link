@@ -1,21 +1,43 @@
-## Problema
+## Contexto
 
-En la vista móvil del repartidor, al pulsar "Finalizar entrega" el popup aparece pero el mapa Leaflet se sobrepone, impidiendo subir la foto y confirmar.
+Tu cuenta Stripe ya está 100% activada para pagos reales (los 5 pasos de Go-Live completados). Las claves live están configuradas en el proyecto. **No necesitas cambiar ninguna API key manualmente.**
 
-## Causa
+Lo que falta es asegurar que el flujo en producción esté limpio y verificable.
 
-Leaflet aplica z-index muy altos a sus panes y controles internos (hasta `z-index: 1000` en zoom controls y `700` en popups), mientras que el componente `Dialog` de shadcn usa `z-50` (= z-index 50). En desktop suele no notarse, pero en móvil al ocupar todo el viewport el mapa queda visualmente encima.
+## Cambios a realizar
 
-## Solución
+### 1. Reforzar el banner de modo Test (`PaymentTestModeBanner.tsx`)
+Asegurar que el banner naranja "Pagos en modo prueba" sólo aparezca en preview/sandbox y nunca en `oneclick-delivery-link.lovable.app` (producción). Ya está implementado correctamente — solo verificar.
 
-Subir el z-index del `DialogOverlay` y `DialogContent` en `src/components/ui/dialog.tsx` de `z-50` a `z-[2000]`, garantizando que cualquier dialog (incluido el de finalizar entrega) quede siempre por encima del mapa Leaflet y sus controles.
+### 2. Añadir indicador discreto de modo en la pantalla de Wallet
+En `src/routes/app.wallet.tsx`, mostrar un badge pequeño:
+- **"Modo prueba"** (naranja) cuando se use `pk_test_`
+- **"Pagos reales"** (verde) cuando se use `pk_live_`
 
-Esto es una corrección global y consistente: todos los modales del proyecto se beneficiarán y no romperá ningún z-index existente porque ningún otro elemento del proyecto usa valores tan altos.
+Esto te ayuda a identificar visualmente en qué entorno estás operando.
 
-## Cambios
+### 3. Verificar configuración de webhooks live
+Confirmar mediante consulta a Supabase que las tablas `stripe_subscriptions` y `wallet_transactions` están listas para recibir eventos del webhook live (`?env=live`). Probablemente ya lo están, pero validamos.
 
-**`src/components/ui/dialog.tsx`**
-- `DialogOverlay`: `z-50` → `z-[2000]`
-- `DialogContent`: `z-50` → `z-[2000]`
+### 4. Documentar cómo cambiar de cuenta Stripe en el futuro (si algún día lo necesitas)
+Si en el futuro quieres conectar **otra cuenta Stripe distinta** (no la actual de Punching Solutions), las opciones son:
 
-No se requieren cambios en `DeliveryProofDialog.tsx`, `MapView.tsx` ni en la BD.
+- **Opción A (recomendada)**: Contactar soporte de Lovable para reasignar la integración nativa a otra cuenta.
+- **Opción B (BYOK)**: Migrar a la integración Bring-Your-Own-Key con tu propia `sk_live_...`. Esto requiere:
+  - Desconectar la integración nativa actual
+  - Reconfigurar webhooks manualmente en el dashboard de Stripe
+  - Añadir secret `STRIPE_SECRET_KEY`
+  - Reescribir `src/lib/stripe.server.ts` para usar el SDK directo en lugar del gateway
+  - Recrear todos los productos en la nueva cuenta
+
+Esta opción **no se ejecutará** en este plan — solo queda documentada por si la necesitas más adelante.
+
+## Lo que NO se va a hacer
+
+- ❌ Cambiar/rotar las API keys actuales (ya están correctas y activas)
+- ❌ Migrar a BYOK Stripe (la integración nativa es superior)
+- ❌ Recrear productos (ya existen y se sincronizan auto a live)
+
+## Pregunta para ti
+
+¿Es esto lo que necesitas, o tu intención era específicamente **conectar una cuenta Stripe DISTINTA** a la de Punching Solutions que ya está activa? Si es lo segundo, dime y ajustamos el plan hacia la Opción A o B descritas arriba.
