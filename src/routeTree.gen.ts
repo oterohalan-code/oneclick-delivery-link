@@ -13,6 +13,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
+import { Route as TTokenRouteImport } from './routes/t.$token'
 import { Route as AuthResetRouteImport } from './routes/auth.reset'
 import { Route as AppWalletRouteImport } from './routes/app.wallet'
 import { Route as AppProfileRouteImport } from './routes/app.profile'
@@ -39,6 +40,11 @@ const AppIndexRoute = AppIndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => AppRoute,
+} as any)
+const TTokenRoute = TTokenRouteImport.update({
+  id: '/t/$token',
+  path: '/t/$token',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const AuthResetRoute = AuthResetRouteImport.update({
   id: '/reset',
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/app/profile': typeof AppProfileRoute
   '/app/wallet': typeof AppWalletRoute
   '/auth/reset': typeof AuthResetRoute
+  '/t/$token': typeof TTokenRoute
   '/app/': typeof AppIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
@@ -92,6 +99,7 @@ export interface FileRoutesByTo {
   '/app/profile': typeof AppProfileRoute
   '/app/wallet': typeof AppWalletRoute
   '/auth/reset': typeof AuthResetRoute
+  '/t/$token': typeof TTokenRoute
   '/app': typeof AppIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
@@ -105,6 +113,7 @@ export interface FileRoutesById {
   '/app/profile': typeof AppProfileRoute
   '/app/wallet': typeof AppWalletRoute
   '/auth/reset': typeof AuthResetRoute
+  '/t/$token': typeof TTokenRoute
   '/app/': typeof AppIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
 }
@@ -119,6 +128,7 @@ export interface FileRouteTypes {
     | '/app/profile'
     | '/app/wallet'
     | '/auth/reset'
+    | '/t/$token'
     | '/app/'
     | '/api/public/payments/webhook'
   fileRoutesByTo: FileRoutesByTo
@@ -130,6 +140,7 @@ export interface FileRouteTypes {
     | '/app/profile'
     | '/app/wallet'
     | '/auth/reset'
+    | '/t/$token'
     | '/app'
     | '/api/public/payments/webhook'
   id:
@@ -142,6 +153,7 @@ export interface FileRouteTypes {
     | '/app/profile'
     | '/app/wallet'
     | '/auth/reset'
+    | '/t/$token'
     | '/app/'
     | '/api/public/payments/webhook'
   fileRoutesById: FileRoutesById
@@ -150,6 +162,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
+  TTokenRoute: typeof TTokenRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
 }
 
@@ -182,6 +195,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/app/'
       preLoaderRoute: typeof AppIndexRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/t/$token': {
+      id: '/t/$token'
+      path: '/t/$token'
+      fullPath: '/t/$token'
+      preLoaderRoute: typeof TTokenRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/auth/reset': {
       id: '/auth/reset'
@@ -260,6 +280,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
+  TTokenRoute: TTokenRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
 }
 export const routeTree = rootRouteImport
