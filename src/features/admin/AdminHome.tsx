@@ -147,10 +147,11 @@ export function AdminHome() {
       </div>
 
       <Tabs defaultValue="ops" onValueChange={(v) => { if (v === "finance" && !finance) loadFinance(financeDays); }}>
-        <TabsList className="grid grid-cols-3 w-full">
+        <TabsList className="grid grid-cols-4 w-full">
           <TabsTrigger value="ops">Incidencias</TabsTrigger>
           <TabsTrigger value="validation">Validación ({list.length})</TabsTrigger>
           <TabsTrigger value="finance">Finanzas</TabsTrigger>
+          <TabsTrigger value="emails">Emails</TabsTrigger>
         </TabsList>
 
         {/* INCIDENCIAS */}
