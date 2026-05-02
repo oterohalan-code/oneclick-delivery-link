@@ -302,6 +302,19 @@ export function RestaurantHome() {
                     </div>
                   )}
 
+                  {(o.status === "pending" || o.status === "assigned") && (
+                    <div className="mt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                        onClick={() => cancelOrder(o)}
+                      >
+                        <Ban className="h-3.5 w-3.5 mr-1.5" /> Cancelar envío
+                      </Button>
+                    </div>
+                  )}
+
                   {o.courier_id && (o.status === "assigned" || o.status === "in_transit") && (
                     <div className="mt-3 pt-3 border-t space-y-2">
                       <div className="flex items-center justify-between gap-2">
