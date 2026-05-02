@@ -14,9 +14,11 @@ import { DeliveryProofDialog } from "./DeliveryProofDialog";
 import { MapView, haversine } from "@/components/MapView";
 import { OrderChat } from "@/components/OrderChat";
 import { acceptOrder as acceptOrderFn, setOrderStatus as setOrderStatusFn } from "@/server/orders.functions";
+import { updateOrderEta as updateOrderEtaFn, acceptOrderBatch as acceptOrderBatchFn } from "@/server/intelligence.functions";
 import { useCourierLocationTracker } from "@/hooks/useCourierLocationTracker";
 import { LocationPermissionGate } from "@/components/LocationPermissionGate";
 import { enablePush } from "@/lib/push";
+import { fetchEtaMinutes, formatEta } from "@/lib/eta";
 import { toast } from "sonner";
 
 interface Courier {
