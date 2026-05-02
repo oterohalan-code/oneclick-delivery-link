@@ -64,16 +64,18 @@ export function CourierHome() {
     setCourier(c as any);
 
     if (c && (c as any).status === "active") {
-      const { data: a } = await supabase.from("orders").select("*")
+      const { data: actives } = await supabase.from("orders").select("*")
         .eq("courier_id", (c as any).id).in("status", ["assigned", "in_transit"])
-        .order("accepted_at", { ascending: false }).limit(1).maybeSingle();
-      setActive(a as any);
+        .order("accepted_at", { ascending: false });
+      const list = (actives as any) ?? [];
+      setActiveList(list);
+      setActive(list[0] ?? null);
 
       const { data: pend } = await supabase.from("orders").select("*")
         .eq("status", "pending").order("created_at", { ascending: false }).limit(30);
       setFeed((pend as any) ?? []);
 
-      const ids = Array.from(new Set([...(pend ?? []).map((o: any) => o.restaurant_id), ...(a ? [(a as any).restaurant_id] : [])]));
+      const ids = Array.from(new Set([...(pend ?? []).map((o: any) => o.restaurant_id), ...list.map((o: any) => o.restaurant_id)]));
       if (ids.length) {
         const { data: rs } = await supabase.from("restaurants").select("id,name,phone,facade_url").in("id", ids);
         const map: Record<string, { name: string; phone: string; facadeUrl: string | null }> = {};
