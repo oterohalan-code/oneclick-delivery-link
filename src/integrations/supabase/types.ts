@@ -46,6 +46,7 @@ export type Database = {
           user_id: string
           wallet_balance: number
           willing_to_get_backpack: boolean
+          zone_id: string | null
         }
         Insert: {
           address?: string | null
@@ -78,6 +79,7 @@ export type Database = {
           user_id: string
           wallet_balance?: number
           willing_to_get_backpack?: boolean
+          zone_id?: string | null
         }
         Update: {
           address?: string | null
@@ -110,6 +112,63 @@ export type Database = {
           user_id?: string
           wallet_balance?: number
           willing_to_get_backpack?: boolean
+          zone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "couriers_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "operational_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      operational_zones: {
+        Row: {
+          active: boolean
+          base_fee_multiplier: number
+          bbox_max_lat: number
+          bbox_max_lng: number
+          bbox_min_lat: number
+          bbox_min_lng: number
+          city: string
+          country_code: string
+          created_at: string
+          id: string
+          name: string
+          timezone: string
+          updated_at: string
+        }
+        Insert: {
+          active?: boolean
+          base_fee_multiplier?: number
+          bbox_max_lat: number
+          bbox_max_lng: number
+          bbox_min_lat: number
+          bbox_min_lng: number
+          city: string
+          country_code?: string
+          created_at?: string
+          id?: string
+          name: string
+          timezone?: string
+          updated_at?: string
+        }
+        Update: {
+          active?: boolean
+          base_fee_multiplier?: number
+          bbox_max_lat?: number
+          bbox_max_lng?: number
+          bbox_min_lat?: number
+          bbox_min_lng?: number
+          city?: string
+          country_code?: string
+          created_at?: string
+          id?: string
+          name?: string
+          timezone?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -174,10 +233,12 @@ export type Database = {
           pickup_address: string
           pickup_lat: number | null
           pickup_lng: number | null
+          pos_integration_id: string | null
           restaurant_id: string
           shipping_fee: number
           status: Database["public"]["Enums"]["order_status"]
           tracking_token: string | null
+          zone_id: string | null
         }
         Insert: {
           accepted_at?: string | null
@@ -204,10 +265,12 @@ export type Database = {
           pickup_address: string
           pickup_lat?: number | null
           pickup_lng?: number | null
+          pos_integration_id?: string | null
           restaurant_id: string
           shipping_fee?: number
           status?: Database["public"]["Enums"]["order_status"]
           tracking_token?: string | null
+          zone_id?: string | null
         }
         Update: {
           accepted_at?: string | null
@@ -234,10 +297,12 @@ export type Database = {
           pickup_address?: string
           pickup_lat?: number | null
           pickup_lng?: number | null
+          pos_integration_id?: string | null
           restaurant_id?: string
           shipping_fee?: number
           status?: Database["public"]["Enums"]["order_status"]
           tracking_token?: string | null
+          zone_id?: string | null
         }
         Relationships: [
           {
@@ -248,7 +313,59 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "orders_pos_integration_id_fkey"
+            columns: ["pos_integration_id"]
+            isOneToOne: false
+            referencedRelation: "pos_integrations"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "orders_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "operational_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      pos_integrations: {
+        Row: {
+          active: boolean
+          api_key_hash: string
+          created_at: string
+          id: string
+          last_used_at: string | null
+          name: string
+          restaurant_id: string
+        }
+        Insert: {
+          active?: boolean
+          api_key_hash: string
+          created_at?: string
+          id?: string
+          last_used_at?: string | null
+          name?: string
+          restaurant_id: string
+        }
+        Update: {
+          active?: boolean
+          api_key_hash?: string
+          created_at?: string
+          id?: string
+          last_used_at?: string | null
+          name?: string
+          restaurant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pos_integrations_restaurant_id_fkey"
             columns: ["restaurant_id"]
             isOneToOne: false
             referencedRelation: "restaurants"
@@ -356,6 +473,7 @@ export type Database = {
           phone: string
           updated_at: string
           user_id: string
+          zone_id: string | null
         }
         Insert: {
           address: string
@@ -369,6 +487,7 @@ export type Database = {
           phone: string
           updated_at?: string
           user_id: string
+          zone_id?: string | null
         }
         Update: {
           address?: string
@@ -382,8 +501,17 @@ export type Database = {
           phone?: string
           updated_at?: string
           user_id?: string
+          zone_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "restaurants_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "operational_zones"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       stripe_checkout_sessions: {
         Row: {
@@ -654,6 +782,10 @@ export type Database = {
           surge_reason: string
           total_fee: number
         }[]
+      }
+      find_zone_for_point: {
+        Args: { _lat: number; _lng: number }
+        Returns: string
       }
       generate_referral_code: { Args: never; Returns: string }
       get_courier_stats: {
