@@ -1,16 +1,25 @@
 import { useEffect, useRef } from "react";
-import L from "leaflet";
+import type L from "leaflet";
 
-// Fix default Leaflet icon paths for bundlers (no-op if already fixed)
-import iconUrl from "leaflet/dist/images/marker-icon.png";
-import iconRetina from "leaflet/dist/images/marker-icon-2x.png";
-import shadowUrl from "leaflet/dist/images/marker-shadow.png";
-
-L.Icon.Default.mergeOptions({
-  iconUrl,
-  iconRetinaUrl: iconRetina,
-  shadowUrl,
-});
+// Leaflet is browser-only — load lazily on the client to avoid SSR `window is not defined`.
+let leafletPromise: Promise<typeof import("leaflet")> | null = null;
+async function loadLeaflet() {
+  if (typeof window === "undefined") throw new Error("Leaflet requires a browser");
+  if (!leafletPromise) {
+    leafletPromise = (async () => {
+      const mod = await import("leaflet");
+      await import("leaflet/dist/leaflet.css" as string).catch(() => {});
+      const [iconUrl, iconRetina, shadowUrl] = await Promise.all([
+        import("leaflet/dist/images/marker-icon.png").then((m) => m.default),
+        import("leaflet/dist/images/marker-icon-2x.png").then((m) => m.default),
+        import("leaflet/dist/images/marker-shadow.png").then((m) => m.default),
+      ]);
+      mod.Icon.Default.mergeOptions({ iconUrl, iconRetinaUrl: iconRetina, shadowUrl });
+      return mod;
+    })();
+  }
+  return leafletPromise;
+}
 
 interface Pin {
   lat: number;
