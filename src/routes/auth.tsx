@@ -100,6 +100,20 @@ function AuthPage() {
             </TabsList>
 
             <TabsContent value="login" className="mt-6">
+              <Button
+                type="button"
+                variant="outline"
+                size="lg"
+                className="w-full mb-4 h-11 rounded-xl"
+                onClick={onGoogle}
+                disabled={loading}
+              >
+                <GoogleIcon className="mr-2 h-4 w-4" /> Continuar con Google
+              </Button>
+              <div className="relative my-4">
+                <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-hairline" /></div>
+                <div className="relative flex justify-center"><span className="bg-paper px-2 text-[10px] uppercase tracking-widest text-graphite">o con email</span></div>
+              </div>
               <form onSubmit={onLogin} className="space-y-4">
                 <div>
                   <Label htmlFor="le" className="text-xs uppercase tracking-wider text-graphite">Email</Label>
