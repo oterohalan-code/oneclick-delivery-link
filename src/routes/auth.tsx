@@ -9,6 +9,7 @@ import { GlassCard } from "@/components/ui/glass-card";
 import { MeshBackground } from "@/components/MeshBackground";
 import { Logo } from "@/components/Logo";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import { CourierSignupWizard } from "@/features/courier/CourierSignupWizard";
 import { RestaurantSignupWizard } from "@/features/restaurant/RestaurantSignupWizard";
