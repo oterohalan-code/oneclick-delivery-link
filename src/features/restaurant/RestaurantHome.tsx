@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Plus, Loader2, Package, Truck, CheckCircle2, Clock, MessageCircle, Phone, Inbox } from "lucide-react";
+import { Plus, Loader2, Package, Truck, CheckCircle2, Clock, MessageCircle, Phone, Inbox, Share2, Copy } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SkeletonList } from "@/components/ui/skeleton";
 import { RestaurantOnboarding } from "./RestaurantOnboarding";
@@ -24,6 +24,7 @@ interface Order {
   amount_to_collect: number; external_order_id: string | null;
   customer_name: string | null; customer_phone: string | null;
   created_at: string; courier_id: string | null;
+  tracking_token: string | null;
 }
 
 interface CourierInfo {
@@ -164,6 +165,38 @@ export function RestaurantHome() {
   const chatOrder = chatOrderId ? orders.find((o) => o.id === chatOrderId) : null;
   const chatCourier = chatOrderId ? courierByOrder[chatOrderId] : null;
 
+  const trackingUrl = (token: string) => `${window.location.origin}/t/${token}`;
+
+  const copyTracking = async (token: string) => {
+    try {
+      await navigator.clipboard.writeText(trackingUrl(token));
+      toast.success("Enlace copiado");
+    } catch {
+      toast.error("No se pudo copiar");
+    }
+  };
+
+  const shareTracking = async (o: Order) => {
+    if (!o.tracking_token) return;
+    const url = trackingUrl(o.tracking_token);
+    const text = `Sigue tu pedido en tiempo real: ${url}`;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Tu pedido", text, url });
+        return;
+      } catch {
+        // user cancelled or unsupported
+      }
+    }
+    // Fallback: WhatsApp if we have customer phone
+    if (o.customer_phone) {
+      const phone = o.customer_phone.replace(/\D/g, "");
+      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank");
+    } else {
+      copyTracking(o.tracking_token);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -207,6 +240,27 @@ export function RestaurantHome() {
                     </div>
                     <Badge className={m.color}><Icon className="h-3 w-3 mr-1" />{m.label}</Badge>
                   </div>
+
+                  {o.tracking_token && (
+                    <div className="mt-3 flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => shareTracking(o)}
+                      >
+                        <Share2 className="h-3.5 w-3.5 mr-1.5" /> Enviar a cliente
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => copyTracking(o.tracking_token!)}
+                        title="Copiar enlace"
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  )}
 
                   {o.courier_id && (o.status === "assigned" || o.status === "in_transit") && (
                     <div className="mt-3 pt-3 border-t space-y-2">
