@@ -3,8 +3,10 @@ import { supabase } from "@/integrations/supabase/client";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, CheckCircle2, XCircle, ExternalLink, AlertTriangle, Clock } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Loader2, CheckCircle2, XCircle, ExternalLink, AlertTriangle, Clock, DollarSign, Package, Users, TrendingUp, Ban, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
+import { getAdminFinance, adminCancelOrder, adminUnassignOrder } from "@/server/admin.functions";
 
 interface StaleOrder {
   id: string;
