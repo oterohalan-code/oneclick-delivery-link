@@ -88,9 +88,9 @@
   --popover: var(--paper);
   --popover-foreground: var(--ink);
 
-  --primary: var(--ink);
-  --primary-foreground: var(--bone);
-  --primary-glow: oklch(0.28 0.01 60);
+  --primary: var(--ember);
+  --primary-foreground: var(--ember-foreground);
+  --primary-glow: oklch(0.72 0.14 45);
 
   --secondary: oklch(0.94 0.005 60);
   --secondary-foreground: var(--ink);
