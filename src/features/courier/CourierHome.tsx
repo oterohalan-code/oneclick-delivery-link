@@ -228,6 +228,19 @@ export function CourierHome() {
 
   return (
     <div className="space-y-4">
+      {(!online || pending > 0) && (
+        <div className="flex items-center gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-foreground">
+          <WifiOff className="h-4 w-4 text-warning" />
+          <span className="font-medium">
+            {!online ? "Sin conexión" : "Sincronizando…"}
+          </span>
+          {pending > 0 && (
+            <Badge variant="secondary" className="ml-auto">
+              {pending} pendiente{pending === 1 ? "" : "s"}
+            </Badge>
+          )}
+        </div>
+      )}
       <Card className="p-4 flex items-center justify-between">
         <div>
           <p className="text-xs text-muted-foreground">Saldo monedero</p>
