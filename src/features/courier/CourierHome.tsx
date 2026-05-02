@@ -6,7 +6,8 @@ import { useAuth } from "@/lib/auth-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, MapPin, DollarSign, AlertCircle, Truck, CheckCircle2, Wallet, Crown, MessageCircle, Inbox } from "lucide-react";
+import { Loader2, MapPin, DollarSign, AlertCircle, Truck, CheckCircle2, Wallet, Crown, MessageCircle, Inbox, WifiOff } from "lucide-react";
+import { useOfflineQueue } from "@/hooks/useOfflineQueue";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SkeletonList } from "@/components/ui/skeleton";
 import { CourierOnboarding } from "./CourierOnboarding";
@@ -42,6 +43,7 @@ export function CourierHome() {
   const { user, session } = useAuth();
   const acceptOrderRpc = useServerFn(acceptOrderFn);
   const acceptBatchRpc = useServerFn(acceptOrderBatchFn);
+  const { online, pending } = useOfflineQueue();
   const [courier, setCourier] = useState<Courier | null>(null);
   const [feed, setFeed] = useState<OrderRow[]>([]);
   const [active, setActive] = useState<OrderRow | null>(null);
@@ -226,6 +228,19 @@ export function CourierHome() {
 
   return (
     <div className="space-y-4">
+      {(!online || pending > 0) && (
+        <div className="flex items-center gap-2 rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-foreground">
+          <WifiOff className="h-4 w-4 text-warning" />
+          <span className="font-medium">
+            {!online ? "Sin conexión" : "Sincronizando…"}
+          </span>
+          {pending > 0 && (
+            <Badge variant="secondary" className="ml-auto">
+              {pending} pendiente{pending === 1 ? "" : "s"}
+            </Badge>
+          )}
+        </div>
+      )}
       <Card className="p-4 flex items-center justify-between">
         <div>
           <p className="text-xs text-muted-foreground">Saldo monedero</p>

@@ -21,6 +21,7 @@ import { Route as AppProfileRouteImport } from './routes/app.profile'
 import { Route as AppInsightsRouteImport } from './routes/app.insights'
 import { Route as AppHistoryRouteImport } from './routes/app.history'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
+import { Route as ApiPublicPosOrdersRouteImport } from './routes/api/public/pos/orders'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 
 const AuthRoute = AuthRouteImport.update({
@@ -83,6 +84,11 @@ const AppAdminRoute = AppAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AppRoute,
 } as any)
+const ApiPublicPosOrdersRoute = ApiPublicPosOrdersRouteImport.update({
+  id: '/api/public/pos/orders',
+  path: '/api/public/pos/orders',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPaymentsWebhookRoute =
   ApiPublicPaymentsWebhookRouteImport.update({
     id: '/api/public/payments/webhook',
@@ -104,6 +110,7 @@ export interface FileRoutesByFullPath {
   '/t/$token': typeof TTokenRoute
   '/app/': typeof AppIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/pos/orders': typeof ApiPublicPosOrdersRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByTo {
   '/t/$token': typeof TTokenRoute
   '/app': typeof AppIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/pos/orders': typeof ApiPublicPosOrdersRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -134,6 +142,7 @@ export interface FileRoutesById {
   '/t/$token': typeof TTokenRoute
   '/app/': typeof AppIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
+  '/api/public/pos/orders': typeof ApiPublicPosOrdersRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -151,6 +160,7 @@ export interface FileRouteTypes {
     | '/t/$token'
     | '/app/'
     | '/api/public/payments/webhook'
+    | '/api/public/pos/orders'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -165,6 +175,7 @@ export interface FileRouteTypes {
     | '/t/$token'
     | '/app'
     | '/api/public/payments/webhook'
+    | '/api/public/pos/orders'
   id:
     | '__root__'
     | '/'
@@ -180,6 +191,7 @@ export interface FileRouteTypes {
     | '/t/$token'
     | '/app/'
     | '/api/public/payments/webhook'
+    | '/api/public/pos/orders'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -188,6 +200,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRouteWithChildren
   TTokenRoute: typeof TTokenRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
+  ApiPublicPosOrdersRoute: typeof ApiPublicPosOrdersRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -276,6 +289,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminRouteImport
       parentRoute: typeof AppRoute
     }
+    '/api/public/pos/orders': {
+      id: '/api/public/pos/orders'
+      path: '/api/public/pos/orders'
+      fullPath: '/api/public/pos/orders'
+      preLoaderRoute: typeof ApiPublicPosOrdersRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/payments/webhook': {
       id: '/api/public/payments/webhook'
       path: '/api/public/payments/webhook'
@@ -324,6 +344,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRouteWithChildren,
   TTokenRoute: TTokenRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
+  ApiPublicPosOrdersRoute: ApiPublicPosOrdersRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
