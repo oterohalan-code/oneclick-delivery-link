@@ -156,6 +156,7 @@ export type Database = {
           restaurant_id: string
           shipping_fee: number
           status: Database["public"]["Enums"]["order_status"]
+          tracking_token: string | null
         }
         Insert: {
           accepted_at?: string | null
@@ -182,6 +183,7 @@ export type Database = {
           restaurant_id: string
           shipping_fee?: number
           status?: Database["public"]["Enums"]["order_status"]
+          tracking_token?: string | null
         }
         Update: {
           accepted_at?: string | null
@@ -208,6 +210,7 @@ export type Database = {
           restaurant_id?: string
           shipping_fee?: number
           status?: Database["public"]["Enums"]["order_status"]
+          tracking_token?: string | null
         }
         Relationships: [
           {
@@ -530,6 +533,24 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_public_tracking: {
+        Args: { _token: string }
+        Returns: {
+          accepted_at: string
+          courier_lat: number
+          courier_lng: number
+          created_at: string
+          delivered_at: string
+          dropoff_address: string
+          dropoff_lat: number
+          dropoff_lng: number
+          pickup_address: string
+          pickup_lat: number
+          pickup_lng: number
+          restaurant_name: string
+          status: Database["public"]["Enums"]["order_status"]
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
