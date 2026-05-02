@@ -180,9 +180,14 @@ export function RestaurantHome() {
       </Card>
 
       <div>
-        <h3 className="font-display text-lg font-semibold mb-3">Pedidos activos</h3>
+        <h3 className="text-display text-xl font-medium mb-3">Pedidos activos</h3>
         {active.length === 0 ? (
-          <p className="text-sm text-muted-foreground">Sin pedidos activos.</p>
+          <EmptyState
+            icon={Inbox}
+            title="Sin pedidos activos"
+            description="Cuando solicites un repartidor, podrás seguir el estado en tiempo real desde aquí."
+            variant="subtle"
+          />
         ) : (
           <div className="space-y-3">
             {active.map((o) => {
