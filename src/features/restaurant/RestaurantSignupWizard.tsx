@@ -79,6 +79,7 @@ export function RestaurantSignupWizard() {
     e.preventDefault();
     const parsed = step1Schema.safeParse({ name, phone, email, password });
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
+    if (!acceptedTerms) return toast.error("Debes aceptar los Términos y la Política de Privacidad");
 
     setSubmitting(true);
     const { data, error } = await supabase.auth.signUp({
