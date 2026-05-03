@@ -14,6 +14,8 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppIndexRouteImport } from './routes/app.index'
 import { Route as TTokenRouteImport } from './routes/t.$token'
+import { Route as LegalTermsRouteImport } from './routes/legal.terms'
+import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
 import { Route as AuthResetRouteImport } from './routes/auth.reset'
 import { Route as AppWalletRouteImport } from './routes/app.wallet'
 import { Route as AppReferRouteImport } from './routes/app.refer'
@@ -50,6 +52,16 @@ const AppIndexRoute = AppIndexRouteImport.update({
 const TTokenRoute = TTokenRouteImport.update({
   id: '/t/$token',
   path: '/t/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalTermsRoute = LegalTermsRouteImport.update({
+  id: '/legal/terms',
+  path: '/legal/terms',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LegalPrivacyRoute = LegalPrivacyRouteImport.update({
+  id: '/legal/privacy',
+  path: '/legal/privacy',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthResetRoute = AuthResetRouteImport.update({
@@ -126,6 +138,8 @@ export interface FileRoutesByFullPath {
   '/app/refer': typeof AppReferRoute
   '/app/wallet': typeof AppWalletRoute
   '/auth/reset': typeof AuthResetRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/terms': typeof LegalTermsRoute
   '/t/$token': typeof TTokenRoute
   '/app/': typeof AppIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -144,6 +158,8 @@ export interface FileRoutesByTo {
   '/app/refer': typeof AppReferRoute
   '/app/wallet': typeof AppWalletRoute
   '/auth/reset': typeof AuthResetRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/terms': typeof LegalTermsRoute
   '/t/$token': typeof TTokenRoute
   '/app': typeof AppIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -164,6 +180,8 @@ export interface FileRoutesById {
   '/app/refer': typeof AppReferRoute
   '/app/wallet': typeof AppWalletRoute
   '/auth/reset': typeof AuthResetRoute
+  '/legal/privacy': typeof LegalPrivacyRoute
+  '/legal/terms': typeof LegalTermsRoute
   '/t/$token': typeof TTokenRoute
   '/app/': typeof AppIndexRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -185,6 +203,8 @@ export interface FileRouteTypes {
     | '/app/refer'
     | '/app/wallet'
     | '/auth/reset'
+    | '/legal/privacy'
+    | '/legal/terms'
     | '/t/$token'
     | '/app/'
     | '/api/public/payments/webhook'
@@ -203,6 +223,8 @@ export interface FileRouteTypes {
     | '/app/refer'
     | '/app/wallet'
     | '/auth/reset'
+    | '/legal/privacy'
+    | '/legal/terms'
     | '/t/$token'
     | '/app'
     | '/api/public/payments/webhook'
@@ -222,6 +244,8 @@ export interface FileRouteTypes {
     | '/app/refer'
     | '/app/wallet'
     | '/auth/reset'
+    | '/legal/privacy'
+    | '/legal/terms'
     | '/t/$token'
     | '/app/'
     | '/api/public/payments/webhook'
@@ -235,6 +259,8 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
+  LegalPrivacyRoute: typeof LegalPrivacyRoute
+  LegalTermsRoute: typeof LegalTermsRoute
   TTokenRoute: typeof TTokenRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicPosOrdersRoute: typeof ApiPublicPosOrdersRoute
@@ -278,6 +304,20 @@ declare module '@tanstack/react-router' {
       path: '/t/$token'
       fullPath: '/t/$token'
       preLoaderRoute: typeof TTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/terms': {
+      id: '/legal/terms'
+      path: '/legal/terms'
+      fullPath: '/legal/terms'
+      preLoaderRoute: typeof LegalTermsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/legal/privacy': {
+      id: '/legal/privacy'
+      path: '/legal/privacy'
+      fullPath: '/legal/privacy'
+      preLoaderRoute: typeof LegalPrivacyRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/reset': {
@@ -403,6 +443,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
+  LegalPrivacyRoute: LegalPrivacyRoute,
+  LegalTermsRoute: LegalTermsRoute,
   TTokenRoute: TTokenRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicPosOrdersRoute: ApiPublicPosOrdersRoute,

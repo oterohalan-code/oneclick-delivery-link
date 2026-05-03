@@ -24,6 +24,10 @@ export const Route = createRootRoute({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
+      { httpEquiv: "Strict-Transport-Security", content: "max-age=31536000; includeSubDomains" },
+      { httpEquiv: "X-Content-Type-Options", content: "nosniff" },
+      { name: "referrer", content: "strict-origin-when-cross-origin" },
+      { httpEquiv: "Permissions-Policy", content: "geolocation=(self), camera=(self), microphone=(), payment=(self)" },
       { title: "1-Click — Logística Cancún" },
       { name: "description", content: "Conecta restaurantes con repartidores en Cancún. Pedidos en vivo, monedero digital y red de motociclistas verificados." },
       { name: "theme-color", content: "#171615" },
