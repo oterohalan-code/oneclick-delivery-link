@@ -1,8 +1,9 @@
 import { useRef, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { PhoneInput } from "@/components/PhoneInput";
 import { AddressSearch } from "@/components/AddressSearch";
