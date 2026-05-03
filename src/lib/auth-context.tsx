@@ -49,7 +49,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const token = s?.access_token;
       if (!token) return;
       const res = await claimAdminRole({
-        data: { accessToken: token },
         headers: { Authorization: `Bearer ${token}` },
       });
       if ((res as any)?.promoted) await fetchRole(u.id);
