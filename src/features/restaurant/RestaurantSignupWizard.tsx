@@ -43,6 +43,7 @@ export function RestaurantSignupWizard() {
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [needsEmailConfirm, setNeedsEmailConfirm] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   // Paso 1
   const [name, setName] = useState("");
