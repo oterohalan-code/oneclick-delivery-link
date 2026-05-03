@@ -164,7 +164,22 @@ export function CourierSignupWizard() {
             />
           </div>
 
-          <Button type="submit" disabled={submitting} className="w-full h-14 text-base">
+          <div className="flex items-start gap-3 rounded-lg border border-hairline bg-card/40 p-3">
+            <Checkbox
+              id="cw-terms"
+              checked={acceptedTerms}
+              onCheckedChange={(v) => setAcceptedTerms(v === true)}
+              className="mt-0.5"
+            />
+            <Label htmlFor="cw-terms" className="text-xs text-muted-foreground font-normal leading-relaxed cursor-pointer">
+              He leído y acepto los{" "}
+              <Link to="/legal/terms" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:no-underline">Términos y Condiciones</Link>
+              {" "}y la{" "}
+              <Link to="/legal/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:no-underline">Política de Privacidad</Link>.
+            </Label>
+          </div>
+
+          <Button type="submit" disabled={submitting || !acceptedTerms} className="w-full h-14 text-base">
             {submitting ? (
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
