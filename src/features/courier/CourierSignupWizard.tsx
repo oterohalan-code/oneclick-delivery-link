@@ -27,6 +27,7 @@ export function CourierSignupWizard() {
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [needsEmailConfirm, setNeedsEmailConfirm] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   const [fullName, setFullName] = useState("");
   const [phone, setPhone] = useState("");
