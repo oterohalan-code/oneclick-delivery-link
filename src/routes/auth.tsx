@@ -89,6 +89,9 @@ function AuthPage() {
     if (!form.fullName.trim()) {
       return toast.error("Escribe tu nombre completo.");
     }
+    if (!adminAcceptedTerms) {
+      return toast.error("Debes aceptar los Términos y la Política de Privacidad.");
+    }
     setLoading(true);
     const { error } = await supabase.auth.signUp({
       email,
