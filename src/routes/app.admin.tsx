@@ -1,14 +1,18 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { useAuth } from "@/lib/auth-context";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
 import { AdminHome } from "@/features/admin/AdminHome";
-import { Card } from "@/components/ui/card";
 
 export const Route = createFileRoute("/app/admin")({
-  component: AdminPage,
+  beforeLoad: async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user) throw redirect({ to: "/auth" });
+    const { data } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", session.user.id)
+      .eq("role", "admin")
+      .maybeSingle();
+    if (!data) throw redirect({ to: "/app" });
+  },
+  component: AdminHome,
 });
-
-function AdminPage() {
-  const { role } = useAuth();
-  if (role !== "admin") return <Card className="p-6 text-center text-muted-foreground">Acceso restringido.</Card>;
-  return <AdminHome />;
-}

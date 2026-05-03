@@ -147,6 +147,24 @@ export const setOrderStatus = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
 
+    // Verificar que el usuario es el courier asignado al pedido
+    const { data: orderCheck } = await supabaseAdmin
+      .from("orders")
+      .select("courier_id, status")
+      .eq("id", data.orderId)
+      .maybeSingle();
+    if (!orderCheck) return { ok: false as const, message: "Pedido no encontrado." };
+    if (!orderCheck.courier_id) return { ok: false as const, message: "Pedido sin repartidor asignado." };
+
+    const { data: ownerCheck } = await supabaseAdmin
+      .from("couriers")
+      .select("user_id")
+      .eq("id", orderCheck.courier_id)
+      .maybeSingle();
+    if (!ownerCheck || ownerCheck.user_id !== userId) {
+      return { ok: false as const, message: "No autorizado: este pedido no es tuyo." };
+    }
+
     const update: {
       status: "in_transit" | "delivered";
       delivered_at?: string;

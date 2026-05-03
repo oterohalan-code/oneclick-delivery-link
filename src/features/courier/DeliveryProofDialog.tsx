@@ -83,7 +83,7 @@ export function DeliveryProofDialog({ open, onOpenChange, order, courierId, onDe
     setBusy(true);
     try {
       const ext = photo.name.split(".").pop()?.toLowerCase() || "jpg";
-      const path = `${courierId}/${order.id}.${ext}`;
+      const path = `${order.id}/${courierId}-${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage
         .from("delivery-proofs")
         .upload(path, photo, { upsert: true, contentType: photo.type || "image/jpeg" });
