@@ -73,9 +73,11 @@ export function CourierHome() {
       setActiveList(list);
       setActive(list[0] ?? null);
 
-      const { data: pend } = await supabase.from("orders").select("*")
-        .eq("status", "pending").order("created_at", { ascending: false }).limit(30);
-      setFeed((pend as any) ?? []);
+      const { data: pend } = await supabase.rpc("get_available_orders", { _limit: 30 });
+      // RPC no devuelve PII (customer_name/phone, notes, amount_to_collect): se carga al aceptar.
+      setFeed(((pend as any) ?? []).map((o: any) => ({
+        ...o, customer_name: null, customer_phone: null, notes: null, amount_to_collect: 0,
+      })));
 
       const ids = Array.from(new Set([...(pend ?? []).map((o: any) => o.restaurant_id), ...list.map((o: any) => o.restaurant_id)]));
       if (ids.length) {
