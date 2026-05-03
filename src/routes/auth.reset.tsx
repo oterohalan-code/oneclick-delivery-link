@@ -105,7 +105,14 @@ function ResetPage() {
           <h1 className="font-display text-2xl font-bold">Nueva contraseña</h1>
           <p className="text-sm text-muted-foreground">Define una contraseña para tu cuenta.</p>
 
-          {!ready ? (
+          {error ? (
+            <p className="mt-6 text-sm text-destructive">
+              {error}{" "}
+              <Link to="/auth" className="text-primary underline">
+                Volver
+              </Link>
+            </p>
+          ) : !ready ? (
             <p className="mt-6 text-sm text-muted-foreground">
               Validando enlace… Si llegaste aquí sin un correo de recuperación,{" "}
               <Link to="/auth" className="text-primary underline">
