@@ -1,45 +1,85 @@
-## Generar 4 logos premium minimalistas para 1Click
+# Plan de remediación pre-lanzamiento
 
-Diseño en línea con el branding actual del proyecto (paleta `ink`/`bone`/`graphite` + acento cobre `#B8693A`, tipografía Inter Tight, estética Apple/Linear ya presente en `Logo.tsx` y la landing).
+Voy a arreglar los 7 bloqueadores rojos detectados en la auditoría, en una sola tanda. No se añaden funciones nuevas: solo se cierra el riesgo.
 
-### Concepto
-Cuatro variaciones monocromáticas que mantienen la identidad existente (disco oscuro + "1" + punto cobre = "click") pero exploran distintas referencias a la naturaleza logística de la app:
+## 1. RLS de `orders` (fuga de PII de clientes)
+La política actual permite que **cualquier courier activo** vea TODOS los pedidos `pending` con nombre, teléfono y dirección del cliente final.
 
-1. **Variante A — Click clásico refinado**
-   Evolución del logo actual: disco `ink`, "1" en `bone`, punto cobre desplazado como cursor/click. Tipografía geométrica más ajustada.
+- Migración SQL: reemplazar `orders_select_restaurant_owner` para que los couriers en estado `pending` vean solo columnas operativas vía una **vista** `public.available_orders` (sin `customer_name`, `customer_phone`, `notes`, `amount_to_collect`).
+- Actualizar `CourierHome.tsx` y `orders.functions.ts` para leer de la vista al listar disponibles, y solo cargar PII al **aceptar** el pedido (cuando `courier_id = auth.uid()`).
 
-2. **Variante B — 1 + Pin de ubicación**
-   El "1" se transforma sutilmente en un pin de mapa (base puntiaguda). Punto cobre como marcador GPS. Refuerza la idea de delivery/ubicación.
+## 2. RLS de `referrals` (enumeración de códigos)
+`USING (true)` permite a cualquier autenticado leer TODOS los códigos y `referred_by_user_id` de otros.
 
-3. **Variante C — 1 + Trayectoria**
-   El "1" acompañado de una línea de movimiento/ruta arqueada que termina en el punto cobre. Sugiere velocidad y entrega ("< 30s").
+- Migración: política `SELECT` solo si `auth.uid() = user_id` o `auth.uid() = referred_by_user_id`.
+- Crear función SECURITY DEFINER `public.lookup_referral_code(_code text)` que devuelva solo `{ valid: boolean }` para validar códigos en signup sin filtrar datos.
+- Actualizar el componente que valida el código de referido para usar la RPC.
 
-4. **Variante D — Monograma circular**
-   "1C" entrelazados dentro del disco, punto cobre como remate. Más corporativo, ideal para favicon/avatar.
+## 3. RLS de `order_messages` y GPS realtime
+Actualmente `is_order_participant` está bien para mensajes, pero la **publicación realtime** de `couriers` (lat/lng) no filtra: cualquier suscriptor puede ver ubicación de todos los couriers.
 
-Cada variante se entrega en:
-- **SVG vectorial** (editable, escalable, ligero) en `src/assets/logos/`
-- **PNG 1024×1024** preview en `/mnt/documents/` para comparar visualmente
+- Migración: revisar `ALTER PUBLICATION supabase_realtime` y quitar `couriers` si está; reemplazar por una tabla `courier_locations_public` poblada por trigger solo cuando el courier tiene un pedido activo, con RLS que solo permita ver al restaurante/cliente del pedido vigente.
+- Actualizar `useCourierLocationTracker.ts` para escribir también en esa tabla.
+- Ajustar `MapView.tsx` para suscribirse a la nueva tabla.
 
-### Implementación técnica
+## 4. `claimAdminRole` sin validar token server-side
+Hoy el server function recibe el `accessToken` por input y confía en él. Si el token es de otro usuario lo promovería.
 
-1. **Generar 4 SVGs a mano** (no IA) siguiendo el patrón del actual `logo-mark.svg`:
-   - `src/assets/logos/logo-1click-a-click.svg`
-   - `src/assets/logos/logo-1click-b-pin.svg`
-   - `src/assets/logos/logo-1click-c-route.svg`
-   - `src/assets/logos/logo-1click-d-monogram.svg`
-   - Versión con wordmark "1Click" para cada uno (variante `-wordmark.svg`)
+- Cambiar `admin-claim.functions.ts` para usar el middleware `requireSupabaseAuth` y leer `context.userId` + email desde el JWT verificado, **eliminando** el parámetro `accessToken` del input.
+- `admin-claim.server.ts` recibirá solo `userId` y consultará el email vía `supabaseAdmin.auth.admin.getUserById`.
 
-2. **Renderizar PNGs preview** con un script Node usando `sharp` (o convertir vía `librsvg`/`rsvg-convert` disponible en el sandbox) sobre fondo `bone` (#F5F2EB) para que se aprecien correctamente. Salida en `/mnt/documents/1click-logos/`.
+## 5. `markOrderPickedUp` sin verificar propiedad
+- En `orders.functions.ts`, añadir middleware `requireSupabaseAuth` y verificar que `order.courier_id` corresponde al `couriers.id` cuyo `user_id = context.userId` antes de cualquier UPDATE de estado (`accepted`, `picked_up`, `delivered`).
 
-3. **Crear hoja comparativa** (`/mnt/documents/1click-logos/comparison.png`) con las 4 opciones lado a lado, cada una etiquetada (A/B/C/D) y mostrada en dos tonos (sobre `bone` y sobre `ink`) para evaluar contraste.
+## 6. Claves VAPID hardcodeadas
+- Mover `VAPID_PRIVATE_KEY` y `VAPID_PUBLIC_KEY` a secretos: `VAPID_PRIVATE_KEY`, `VAPID_PUBLIC_KEY`, `VAPID_SUBJECT`.
+- Pediré los 3 secretos con `add_secret` (las claves actuales se pueden reusar, solo se mueven de código a secretos).
+- `push.server.ts` los lee de `process.env`. `push.functions.ts` (`getVapidPublicKey`) sigue exponiendo solo la pública.
 
-4. **NO modificar** `src/components/Logo.tsx` ni reemplazar el logo actual todavía — primero eliges, luego en el siguiente turno lo integro al sistema (Logo component, favicon, manifest, og:image).
+## 7. RLS rota de `delivery-proofs` (storage)
+La policy compara `delivery_proof_url` con `restaurant.name` (sin sentido).
 
-### Entregables
-- 4 archivos SVG (mark) + 4 SVG (con wordmark) en `src/assets/logos/`
-- 8 PNGs individuales + 1 hoja comparativa en `/mnt/documents/1click-logos/`
-- Tags `<lov-artifact>` para previsualizar y descargar
+- Migración storage: política sobre `storage.objects` bucket `delivery-proofs`:
+  - INSERT: solo el courier dueño del order (`courier.user_id = auth.uid()`).
+  - SELECT: el restaurante dueño del pedido, el courier que lo entregó, o admin. Match por path: convención `{order_id}/{filename}`.
+- Actualizar `DeliveryProofDialog.tsx` para subir con el path nuevo.
 
-### Después de tu elección
-Cuando me digas "quiero la opción X", reemplazo `src/assets/logo-mark.svg` y `src/assets/logo-1click.svg`, actualizo `public/manifest.json`, favicon y referencias.
+## 8. Extras que se incluyen
+- **Protección server-side de `/app/admin`**: `beforeLoad` en `app.admin.tsx` hace `getUser()` + RPC `has_role(_, 'admin')`; redirige a `/app` si falla.
+- **Headers de seguridad**: añadir CSP básica + `Strict-Transport-Security`, `X-Content-Type-Options`, `Referrer-Policy` en `__root.tsx` head() y en respuestas de `/api/public/*`.
+- **Páginas legales mínimas**: `src/routes/legal.terms.tsx` y `src/routes/legal.privacy.tsx` con plantilla en español para Cancún/MX. Link en footer del landing y checkbox obligatorio en signup.
+
+## Diagrama de cambios
+
+```text
+DB migrations (1 batch)
+ ├─ orders RLS + view available_orders
+ ├─ referrals RLS + RPC lookup_referral_code
+ ├─ courier_locations_public + trigger + RLS
+ └─ storage delivery-proofs RLS
+
+Server functions
+ ├─ admin-claim.functions.ts   (middleware auth)
+ ├─ orders.functions.ts        (ownership checks)
+ └─ push.server.ts             (env vars)
+
+Client
+ ├─ CourierHome / MapView / DeliveryProofDialog
+ ├─ auth-context (sin pasar accessToken)
+ └─ app.admin.tsx beforeLoad
+
+Nuevo
+ ├─ src/routes/legal.terms.tsx
+ ├─ src/routes/legal.privacy.tsx
+ └─ headers de seguridad
+```
+
+## Secretos que pediré
+- `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (puedes pegar las que ya están en el código; luego rotamos).
+
+## Lo que NO toco
+- Stripe (ya validado en live).
+- Onboardings, UI principal, lógica de tarifas, AdminHome.
+- Sistema de roles (ya correcto).
+
+¿Apruebas y entro a build mode?
