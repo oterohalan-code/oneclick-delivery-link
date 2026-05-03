@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_audit_log: {
+        Row: {
+          action: string
+          admin_user_id: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          target_id: string | null
+          target_type: string | null
+        }
+        Insert: {
+          action: string
+          admin_user_id: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Update: {
+          action?: string
+          admin_user_id?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Relationships: []
+      }
       couriers: {
         Row: {
           address: string | null
@@ -907,6 +937,23 @@ export type Database = {
         Returns: string
       }
       generate_referral_code: { Args: never; Returns: string }
+      get_available_orders: {
+        Args: { _limit?: number }
+        Returns: {
+          created_at: string
+          distance_km: number
+          dropoff_address: string
+          dropoff_lat: number
+          dropoff_lng: number
+          id: string
+          pickup_address: string
+          pickup_lat: number
+          pickup_lng: number
+          restaurant_id: string
+          shipping_fee: number
+          status: Database["public"]["Enums"]["order_status"]
+        }[]
+      }
       get_courier_stats: {
         Args: { _courier_id: string }
         Returns: {
@@ -972,6 +1019,7 @@ export type Database = {
         Args: { _courier_id: string; _user_id: string }
         Returns: boolean
       }
+      validate_referral_code: { Args: { _code: string }; Returns: boolean }
     }
     Enums: {
       app_role: "restaurant" | "courier" | "admin"
