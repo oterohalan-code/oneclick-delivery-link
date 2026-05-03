@@ -74,9 +74,27 @@ export const acceptOrder = createServerFn({ method: "POST" })
           body: `${prof?.full_name ?? "Un repartidor"} viene por tu pedido.`,
           url: "/app",
         });
+        // Email best-effort
+        try {
+          const { data: userRow } = await supabaseAdmin.auth.admin.getUserById(rest.user_id);
+          const email = userRow?.user?.email;
+          if (email) {
+            const { enqueueTransactionalEmail } = await import("./email.server");
+            await enqueueTransactionalEmail({
+              templateName: "order-accepted",
+              recipientEmail: email,
+              idempotencyKey: `order-accepted-${updated.id}`,
+              templateData: {
+                restaurantName: rest.name,
+                courierName: prof?.full_name ?? "Un repartidor",
+                orderShortId: String(updated.id).slice(0, 6).toUpperCase(),
+              },
+            });
+          }
+        } catch (e) { console.warn("[acceptOrder] email failed", e); }
       }
     } catch (e) {
-      console.warn("[acceptOrder] push failed", e);
+      console.warn("[acceptOrder] notify failed", e);
     }
 
     return { ok: true as const, orderId: updated.id };
