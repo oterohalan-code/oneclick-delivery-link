@@ -34,6 +34,7 @@ function AuthPage() {
   const [role, setRole] = useState<RoleParam>(roleParam ?? "restaurant");
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ email: "", password: "", fullName: "", phone: "" });
+  const [adminAcceptedTerms, setAdminAcceptedTerms] = useState(false);
 
   const onLogin = async (e: React.FormEvent) => {
     e.preventDefault();
