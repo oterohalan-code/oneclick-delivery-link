@@ -19,16 +19,66 @@ function ResetPage() {
   const [confirm, setConfirm] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // The recovery link from the email creates a temporary session.
-  // We wait until Supabase finishes processing the URL hash before showing the form.
+  const [error, setError] = useState<string | null>(null);
+
+  // The recovery link can arrive in three formats:
+  //  - PKCE flow: ?code=... (needs exchangeCodeForSession)
+  //  - Implicit flow: #access_token=...&type=recovery (auto-handled by detectSessionInUrl)
+  //  - token_hash flow: ?token_hash=...&type=recovery (needs verifyOtp)
   useEffect(() => {
+    let cancelled = false;
+
+    const init = async () => {
+      try {
+        const url = new URL(window.location.href);
+        const code = url.searchParams.get("code");
+        const tokenHash = url.searchParams.get("token_hash");
+        const type = url.searchParams.get("type");
+        const errDesc = url.searchParams.get("error_description") || url.hash.match(/error_description=([^&]+)/)?.[1];
+
+        if (errDesc) {
+          setError(decodeURIComponent(errDesc));
+          return;
+        }
+
+        if (code) {
+          const { error } = await supabase.auth.exchangeCodeForSession(code);
+          if (error) throw error;
+          if (!cancelled) {
+            setReady(true);
+            window.history.replaceState({}, "", "/auth/reset");
+          }
+          return;
+        }
+
+        if (tokenHash && (type === "recovery" || !type)) {
+          const { error } = await supabase.auth.verifyOtp({ type: "recovery", token_hash: tokenHash });
+          if (error) throw error;
+          if (!cancelled) {
+            setReady(true);
+            window.history.replaceState({}, "", "/auth/reset");
+          }
+          return;
+        }
+
+        // Fallback: implicit flow / existing session
+        const { data } = await supabase.auth.getSession();
+        if (data.session && !cancelled) setReady(true);
+      } catch (e: any) {
+        if (!cancelled) setError(e?.message || "El enlace de recuperación no es válido o ha expirado.");
+      }
+    };
+
     const { data: sub } = supabase.auth.onAuthStateChange((event) => {
       if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN") setReady(true);
     });
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) setReady(true);
-    });
-    return () => sub.subscription.unsubscribe();
+
+    init();
+
+    return () => {
+      cancelled = true;
+      sub.subscription.unsubscribe();
+    };
   }, []);
 
   const onSubmit = async (e: React.FormEvent) => {
