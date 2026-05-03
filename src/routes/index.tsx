@@ -231,6 +231,10 @@ function Landing() {
       <footer className="border-t border-hairline">
         <div className="max-w-6xl mx-auto px-6 py-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <Logo size="sm" />
+          <nav className="flex items-center gap-5 text-xs tracking-wider uppercase">
+            <Link to="/legal/terms" className="text-graphite hover:text-foreground transition">Términos</Link>
+            <Link to="/legal/privacy" className="text-graphite hover:text-foreground transition">Privacidad</Link>
+          </nav>
           <p className="text-xs text-graphite tracking-wider uppercase">© 2026 1Click · Cancún, México</p>
         </div>
       </footer>

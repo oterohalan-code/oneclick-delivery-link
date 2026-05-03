@@ -1,8 +1,9 @@
 import { useRef, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { PhoneInput } from "@/components/PhoneInput";
 import { AddressSearch } from "@/components/AddressSearch";
@@ -42,6 +43,7 @@ export function RestaurantSignupWizard() {
   const [step, setStep] = useState(1);
   const [submitting, setSubmitting] = useState(false);
   const [needsEmailConfirm, setNeedsEmailConfirm] = useState(false);
+  const [acceptedTerms, setAcceptedTerms] = useState(false);
 
   // Paso 1
   const [name, setName] = useState("");
@@ -77,6 +79,7 @@ export function RestaurantSignupWizard() {
     e.preventDefault();
     const parsed = step1Schema.safeParse({ name, phone, email, password });
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
+    if (!acceptedTerms) return toast.error("Debes aceptar los Términos y la Política de Privacidad");
 
     setSubmitting(true);
     const { data, error } = await supabase.auth.signUp({
@@ -242,7 +245,22 @@ export function RestaurantSignupWizard() {
             />
           </div>
 
-          <Button type="submit" disabled={submitting} className="w-full h-14 text-base">
+          <div className="flex items-start gap-3 rounded-lg border border-hairline bg-card/40 p-3">
+            <Checkbox
+              id="rw-terms"
+              checked={acceptedTerms}
+              onCheckedChange={(v) => setAcceptedTerms(v === true)}
+              className="mt-0.5"
+            />
+            <Label htmlFor="rw-terms" className="text-xs text-muted-foreground font-normal leading-relaxed cursor-pointer">
+              He leído y acepto los{" "}
+              <Link to="/legal/terms" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:no-underline">Términos y Condiciones</Link>
+              {" "}y la{" "}
+              <Link to="/legal/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:no-underline">Política de Privacidad</Link>.
+            </Label>
+          </div>
+
+          <Button type="submit" disabled={submitting || !acceptedTerms} className="w-full h-14 text-base">
             {submitting ? (
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : (

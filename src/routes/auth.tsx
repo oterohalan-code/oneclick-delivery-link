@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { GlassCard } from "@/components/ui/glass-card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { MeshBackground } from "@/components/MeshBackground";
 import { Logo } from "@/components/Logo";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +34,7 @@ function AuthPage() {
   const [role, setRole] = useState<RoleParam>(roleParam ?? "restaurant");
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({ email: "", password: "", fullName: "", phone: "" });
+  const [adminAcceptedTerms, setAdminAcceptedTerms] = useState(false);
 
   const onLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -86,6 +88,9 @@ function AuthPage() {
     }
     if (!form.fullName.trim()) {
       return toast.error("Escribe tu nombre completo.");
+    }
+    if (!adminAcceptedTerms) {
+      return toast.error("Debes aceptar los Términos y la Política de Privacidad.");
     }
     setLoading(true);
     const { error } = await supabase.auth.signUp({
@@ -211,7 +216,21 @@ function AuthPage() {
                       className="mt-1.5 h-11 rounded-xl border-hairline bg-card/70"
                       onChange={(e) => setForm({ ...form, password: e.target.value })} />
                   </div>
-                  <Button type="submit" disabled={loading} variant="default" size="lg" className="w-full mt-2">
+                  <div className="flex items-start gap-3 rounded-lg border border-hairline bg-card/40 p-3">
+                    <Checkbox
+                      id="admin-terms"
+                      checked={adminAcceptedTerms}
+                      onCheckedChange={(v) => setAdminAcceptedTerms(v === true)}
+                      className="mt-0.5"
+                    />
+                    <Label htmlFor="admin-terms" className="text-xs text-muted-foreground font-normal leading-relaxed cursor-pointer">
+                      He leído y acepto los{" "}
+                      <Link to="/legal/terms" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:no-underline">Términos</Link>
+                      {" "}y la{" "}
+                      <Link to="/legal/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:no-underline">Política de Privacidad</Link>.
+                    </Label>
+                  </div>
+                  <Button type="submit" disabled={loading || !adminAcceptedTerms} variant="default" size="lg" className="w-full mt-2">
                     Crear cuenta de administrador
                   </Button>
                 </form>
