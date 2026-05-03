@@ -216,7 +216,21 @@ function AuthPage() {
                       className="mt-1.5 h-11 rounded-xl border-hairline bg-card/70"
                       onChange={(e) => setForm({ ...form, password: e.target.value })} />
                   </div>
-                  <Button type="submit" disabled={loading} variant="default" size="lg" className="w-full mt-2">
+                  <div className="flex items-start gap-3 rounded-lg border border-hairline bg-card/40 p-3">
+                    <Checkbox
+                      id="admin-terms"
+                      checked={adminAcceptedTerms}
+                      onCheckedChange={(v) => setAdminAcceptedTerms(v === true)}
+                      className="mt-0.5"
+                    />
+                    <Label htmlFor="admin-terms" className="text-xs text-muted-foreground font-normal leading-relaxed cursor-pointer">
+                      He leído y acepto los{" "}
+                      <Link to="/legal/terms" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:no-underline">Términos</Link>
+                      {" "}y la{" "}
+                      <Link to="/legal/privacy" target="_blank" rel="noopener noreferrer" className="text-primary underline hover:no-underline">Política de Privacidad</Link>.
+                    </Label>
+                  </div>
+                  <Button type="submit" disabled={loading || !adminAcceptedTerms} variant="default" size="lg" className="w-full mt-2">
                     Crear cuenta de administrador
                   </Button>
                 </form>
