@@ -214,7 +214,7 @@ export const setOrderStatus = createServerFn({ method: "POST" })
     try {
       const { data: rest } = await supabaseAdmin
         .from("restaurants")
-        .select("user_id")
+        .select("user_id, name")
         .eq("id", updated.restaurant_id)
         .maybeSingle();
       if (rest?.user_id) {
@@ -227,9 +227,26 @@ export const setOrderStatus = createServerFn({ method: "POST" })
               : "Tu pedido fue entregado.",
           url: "/app",
         });
+        try {
+          const { data: userRow } = await supabaseAdmin.auth.admin.getUserById(rest.user_id);
+          const email = userRow?.user?.email;
+          if (email) {
+            const { enqueueTransactionalEmail } = await import("./email.server");
+            const tpl = data.status === "in_transit" ? "order-in-transit" : "order-delivered";
+            await enqueueTransactionalEmail({
+              templateName: tpl,
+              recipientEmail: email,
+              idempotencyKey: `${tpl}-${updated.id}`,
+              templateData: {
+                restaurantName: rest.name,
+                orderShortId: String(updated.id).slice(0, 6).toUpperCase(),
+              },
+            });
+          }
+        } catch (e) { console.warn("[setOrderStatus] email failed", e); }
       }
     } catch (e) {
-      console.warn("[setOrderStatus] push failed", e);
+      console.warn("[setOrderStatus] notify failed", e);
     }
 
     return { ok: true as const };
