@@ -1024,7 +1024,12 @@ export type Database = {
     Enums: {
       app_role: "restaurant" | "courier" | "admin"
       courier_plan: "pps" | "subscription"
-      courier_status: "pending_validation" | "active" | "rejected" | "suspended"
+      courier_status:
+        | "incomplete"
+        | "pending_validation"
+        | "active"
+        | "rejected"
+        | "suspended"
       order_status:
         | "pending"
         | "assigned"
@@ -1161,7 +1166,13 @@ export const Constants = {
     Enums: {
       app_role: ["restaurant", "courier", "admin"],
       courier_plan: ["pps", "subscription"],
-      courier_status: ["pending_validation", "active", "rejected", "suspended"],
+      courier_status: [
+        "incomplete",
+        "pending_validation",
+        "active",
+        "rejected",
+        "suspended",
+      ],
       order_status: [
         "pending",
         "assigned",
