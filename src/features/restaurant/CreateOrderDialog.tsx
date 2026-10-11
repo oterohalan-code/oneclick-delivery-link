@@ -132,7 +132,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
     // Notificar a los repartidores elegibles (push)
     if (inserted?.id) {
       try {
-        const { notifyCouriersNewOrder } = await import("@/server/orders.functions");
+        const { notifyCouriersNewOrder } = await import("@/lib/rpc/orders.functions");
         await notifyCouriersNewOrder({ data: { orderId: inserted.id } });
       } catch (e) {
         console.warn("notify couriers failed", e);
