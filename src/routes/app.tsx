@@ -1,7 +1,7 @@
 import { createFileRoute, Outlet, Link, useLocation, useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
-import { Loader2, Home, User, Wallet, History, Shield, LogOut, BarChart3, Gift } from "lucide-react";
+import { Loader2, Home, User, CreditCard, History, Shield, LogOut, BarChart3, Gift } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
 
@@ -35,7 +35,7 @@ function AppLayout() {
   const navItems = [
     { to: "/app", icon: Home, label: "Inicio", exact: true },
     ...(isRestaurant ? [{ to: "/app/insights", icon: BarChart3, label: "Métricas" }] : []),
-    ...(isCourier ? [{ to: "/app/wallet", icon: Wallet, label: "Wallet" }] : []),
+    ...((isCourier || isRestaurant) ? [{ to: "/app/wallet", icon: CreditCard, label: "Membresía" }] : []),
     { to: "/app/refer", icon: Gift, label: "Invita" },
     { to: "/app/history", icon: History, label: "Historial" },
     { to: "/app/profile", icon: User, label: "Perfil" },
