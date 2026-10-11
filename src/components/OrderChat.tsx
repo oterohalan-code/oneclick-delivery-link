@@ -6,7 +6,7 @@ import { Phone, Send, X, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { useServerFn } from "@tanstack/react-start";
-import { sendOrderMessage } from "@/server/orders.functions";
+import { sendOrderMessage } from "@/lib/rpc/orders.functions";
 import { toast } from "sonner";
 
 interface Message {

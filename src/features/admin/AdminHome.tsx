@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2, CheckCircle2, XCircle, ExternalLink, AlertTriangle, Clock, DollarSign, Package, Users, TrendingUp, Ban, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
-import { getAdminFinance, adminCancelOrder, adminUnassignOrder, sendTestAuthEmail } from "@/server/admin.functions";
+import { getAdminFinance, adminCancelOrder, adminUnassignOrder, sendTestAuthEmail } from "@/lib/rpc/admin.functions";
 import { Input } from "@/components/ui/input";
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth-context";

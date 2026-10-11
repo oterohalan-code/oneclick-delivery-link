@@ -11,8 +11,8 @@ import { CreateOrderDialog } from "./CreateOrderDialog";
 import { OrderChat } from "@/components/OrderChat";
 import { Badge } from "@/components/ui/badge";
 import { enablePush } from "@/lib/push";
-import { getCourierForOrder } from "@/server/orders.functions";
-import { getCourierStats } from "@/server/intelligence.functions";
+import { getCourierForOrder } from "@/lib/rpc/orders.functions";
+import { getCourierStats } from "@/lib/rpc/intelligence.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 

@@ -9,7 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
 import { PhoneInput } from "@/components/PhoneInput";
 import { DEFAULT_COUNTRY } from "@/lib/countries";
-import { validateDocument } from "@/server/validate-document.functions";
+import { validateDocument } from "@/lib/rpc/validate-document.functions";
 import { toast } from "sonner";
 import {
   Upload,

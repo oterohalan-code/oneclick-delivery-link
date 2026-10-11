@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { runDocumentValidation, persistValidation, type DocType } from "./validate-document.server";
+import { runDocumentValidation, persistValidation, type DocType } from "@/server/validate-document.server";
 
 const InputSchema = z.object({
   docPath: z.string().min(1).max(500),
