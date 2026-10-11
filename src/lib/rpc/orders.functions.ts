@@ -68,7 +68,7 @@ export const acceptOrder = createServerFn({ method: "POST" })
         .eq("id", userId)
         .maybeSingle();
       if (rest?.user_id) {
-        const { sendPushToUsers } = await import("./push.server");
+        const { sendPushToUsers } = await import("@/server/push.server");
         await sendPushToUsers([rest.user_id], {
           title: "🛵 ¡Pedido aceptado!",
           body: `${prof?.full_name ?? "Un repartidor"} viene por tu pedido.`,
@@ -79,7 +79,7 @@ export const acceptOrder = createServerFn({ method: "POST" })
           const { data: userRow } = await supabaseAdmin.auth.admin.getUserById(rest.user_id);
           const email = userRow?.user?.email;
           if (email) {
-            const { enqueueTransactionalEmail } = await import("./email.server");
+            const { enqueueTransactionalEmail } = await import("@/server/email.server");
             await enqueueTransactionalEmail({
               templateName: "order-accepted",
               recipientEmail: email,
@@ -218,7 +218,7 @@ export const setOrderStatus = createServerFn({ method: "POST" })
         .eq("id", updated.restaurant_id)
         .maybeSingle();
       if (rest?.user_id) {
-        const { sendPushToUsers } = await import("./push.server");
+        const { sendPushToUsers } = await import("@/server/push.server");
         await sendPushToUsers([rest.user_id], {
           title: data.status === "in_transit" ? "🚚 Pedido en camino" : "✅ Pedido entregado",
           body:
@@ -231,7 +231,7 @@ export const setOrderStatus = createServerFn({ method: "POST" })
           const { data: userRow } = await supabaseAdmin.auth.admin.getUserById(rest.user_id);
           const email = userRow?.user?.email;
           if (email) {
-            const { enqueueTransactionalEmail } = await import("./email.server");
+            const { enqueueTransactionalEmail } = await import("@/server/email.server");
             const tpl = data.status === "in_transit" ? "order-in-transit" : "order-delivered";
             await enqueueTransactionalEmail({
               templateName: tpl,
@@ -309,7 +309,7 @@ export const sendOrderMessage = createServerFn({ method: "POST" })
             .select("full_name")
             .eq("id", userId)
             .maybeSingle();
-          const { sendPushToUsers } = await import("./push.server");
+          const { sendPushToUsers } = await import("@/server/push.server");
           await sendPushToUsers(targetUserIds, {
             title: `💬 ${prof?.full_name ?? "Mensaje nuevo"}`,
             body: data.content.slice(0, 120),
@@ -362,7 +362,7 @@ export const notifyCouriersNewOrder = createServerFn({ method: "POST" })
     if (!userIds.length) return { ok: true as const, sent: 0 };
 
     try {
-      const { sendPushToUsers } = await import("./push.server");
+      const { sendPushToUsers } = await import("@/server/push.server");
       await sendPushToUsers(userIds, {
         title: "📦 Nuevo pedido cerca",
         body: `${rest.name} solicita un repartidor`,
