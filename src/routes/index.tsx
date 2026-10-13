@@ -22,7 +22,7 @@ export const Route = createFileRoute("/")({
   component: Landing,
   head: () => ({
     meta: [
-      { title: "1Click — Logística premium para restaurantes en Cancún" },
+      { title: "1Click — Logística premium para restaurantes en Manzanillo" },
       { name: "description", content: "Red profesional de repartidores verificados. Asignación en menos de 30 segundos. Sin comisiones ocultas." },
     ],
   }),
@@ -58,7 +58,7 @@ function Landing() {
         <section className="pt-6 md:pt-32 pb-12 md:pb-32 grid md:grid-cols-[1.1fr_0.9fr] gap-8 md:gap-16 md:items-center">
           {/* Mobile: image first (compact), Desktop: text first */}
           <div className="md:order-1 order-2 spring-in">
-            <div className="eyebrow mb-4 md:mb-6">EST. 2026 · Cancún · Quintana Roo</div>
+            <div className="eyebrow mb-4 md:mb-6">EST. 2026 · Manzanillo · Colima</div>
             <h1 className="text-display text-[2.5rem] sm:text-5xl md:text-7xl font-medium leading-[0.95]">
               Un click.<br />
               <span className="italic font-light text-graphite">Tu repartidor</span><br />
@@ -91,7 +91,7 @@ function Landing() {
               <div className="relative h-full w-full rounded-2xl overflow-hidden">
                 <img
                   src={heroCourier}
-                  alt="Repartidor profesional 1Click en Cancún al atardecer"
+                  alt="Repartidor profesional 1Click en Manzanillo al atardecer"
                   width={1024}
                   height={1024}
                   className="h-full w-full object-cover scale-105"
@@ -115,7 +115,7 @@ function Landing() {
                     <div>
                       <div className="text-[9px] md:text-[10px] tracking-[0.25em] uppercase text-white/70">Premium service</div>
                       <div className="text-display italic text-lg md:text-2xl font-light text-white leading-tight mt-0.5 md:mt-1">
-                        Cancún · Q.Roo
+                        Manzanillo · Colima
                       </div>
                     </div>
                     <div className="text-right">
@@ -142,7 +142,7 @@ function Landing() {
               {[
                 { v: "< 30s", l: "Asignación promedio" },
                 { v: "100%", l: "Repartidores verificados" },
-                { v: "$249", l: "Mensual ilimitado" },
+                { v: "$450", l: "Membresía restaurante" },
                 { v: "0%", l: "Comisión sobre venta" },
               ].map((s, i) => (
                 <div key={i} className="p-6 md:p-7 text-center md:text-left">
@@ -159,7 +159,7 @@ function Landing() {
           {[
             { icon: Sparkles, n: "01", title: "Pedido en vivo", desc: "Lanza un pedido y los repartidores cercanos lo ven al instante en sus dispositivos." },
             { icon: MapPin, n: "02", title: "Mapa con ruta", desc: "Visualiza recogida, trayecto y entrega en tiempo real con cartografía profesional." },
-            { icon: Wallet, n: "03", title: "Modelo flexible", desc: "$5 por pedido o $249 al mes ilimitado. Sin comisiones sobre tu venta." },
+            { icon: Wallet, n: "03", title: "Membresía mensual", desc: "$450 restaurante y $300 repartidor. Sin comisión sobre tu venta." },
           ].map((f) => (
             <GlassCard key={f.title} interactive className="p-7">
               <div className="flex items-start justify-between mb-8">
@@ -235,7 +235,7 @@ function Landing() {
             <Link to="/legal/terms" className="text-graphite hover:text-foreground transition">Términos</Link>
             <Link to="/legal/privacy" className="text-graphite hover:text-foreground transition">Privacidad</Link>
           </nav>
-          <p className="text-xs text-graphite tracking-wider uppercase">© 2026 1Click · Cancún, México</p>
+          <p className="text-xs text-graphite tracking-wider uppercase">© 2026 1Click · Manzanillo, Colima</p>
         </div>
       </footer>
     </div>

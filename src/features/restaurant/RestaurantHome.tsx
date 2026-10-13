@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Plus, Loader2, Package, Truck, CheckCircle2, Clock, MessageCircle, Phone, Inbox, Share2, Copy, Star, Ban } from "lucide-react";
+import { Plus, Loader2, Package, Truck, CheckCircle2, Clock, MessageCircle, Phone, Inbox, Share2, Copy, Star, Ban, Crown } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SkeletonList } from "@/components/ui/skeleton";
 import { RestaurantOnboarding } from "./RestaurantOnboarding";
@@ -15,6 +15,8 @@ import { getCourierForOrder } from "@/lib/rpc/orders.functions";
 import { getCourierStats } from "@/lib/rpc/intelligence.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
+import { Link } from "@tanstack/react-router";
+import { BUSINESS, formatMxn } from "@/lib/business";
 
 interface Restaurant {
   id: string; name: string; address: string; lat: number | null; lng: number | null;
@@ -246,9 +248,14 @@ export function RestaurantHome() {
 
       <Card className="p-6 bg-gradient-to-br from-primary to-primary-glow text-primary-foreground border-0 shadow-glow">
         <h2 className="font-display text-xl font-semibold">¿Necesitas un repartidor?</h2>
-        <p className="text-sm opacity-80 mt-1">Lanza un pedido en segundos.</p>
+        <p className="text-sm opacity-80 mt-1">
+          Membresía {formatMxn(BUSINESS.membership.restaurantMonthlyMxn)}/mes. One Click no se queda con la comida.
+        </p>
         <Button size="lg" variant="secondary" className="mt-4 w-full" onClick={() => setOpen(true)}>
           <Plus className="mr-2 h-5 w-5" /> Solicitar Repartidor
+        </Button>
+        <Button asChild variant="ghost" className="mt-2 w-full text-primary-foreground/90">
+          <Link to="/app/wallet"><Crown className="mr-2 h-4 w-4" /> Ver membresía</Link>
         </Button>
       </Card>
 

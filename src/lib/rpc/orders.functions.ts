@@ -2,58 +2,109 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { hasActiveMembership } from "@/lib/membership-access.server";
+import { computeOrderMoney, type PaymentMode } from "@/lib/order-money";
 
 const InputSchema = z.object({
   orderId: z.string().uuid(),
 });
 
+const CreateOrderSchema = z.object({
+  dropoff_address: z.string().trim().min(5).max(300),
+  dropoff_lat: z.number(),
+  dropoff_lng: z.number(),
+  customer_name: z.string().trim().min(2).max(80),
+  customer_phone: z.string().regex(/^\d{10}$/),
+  foodMxn: z.number().min(0).max(100000),
+  shippingMxn: z.number().min(0).max(100000),
+  distanceKm: z.number().nullable(),
+  notes: z.string().trim().max(500).optional(),
+  paymentMode: z.enum(["prepaid_at_restaurant", "collect_on_delivery"]),
+});
+
+export const createRestaurantOrder = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => CreateOrderSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    if (!(await hasActiveMembership(userId, "restaurant"))) {
+      return { ok: false as const, message: "Necesitas membresía activa para pedir repartidor." };
+    }
+
+    const { data: rest } = await supabaseAdmin
+      .from("restaurants")
+      .select("id, name, address, lat, lng, user_id")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (!rest) return { ok: false as const, message: "Restaurante no encontrado." };
+
+    const money = computeOrderMoney({
+      mode: data.paymentMode as PaymentMode,
+      foodMxn: data.foodMxn,
+      shippingMxn: data.shippingMxn,
+    });
+
+    const { data: inserted, error } = await supabaseAdmin
+      .from("orders")
+      .insert({
+        restaurant_id: rest.id,
+        pickup_address: rest.address,
+        pickup_lat: rest.lat,
+        pickup_lng: rest.lng,
+        dropoff_address: data.dropoff_address,
+        dropoff_lat: data.dropoff_lat,
+        dropoff_lng: data.dropoff_lng,
+        amount_to_collect: money.amount_to_collect,
+        shipping_fee: data.shippingMxn,
+        distance_km: data.distanceKm,
+        notes: data.notes ?? null,
+        customer_name: data.customer_name,
+        customer_phone: `+52${data.customer_phone}`,
+        customer_phone_dial_code: "+52",
+        status: "pending",
+        payment_mode: money.payment_mode,
+        food_amount_cents: money.food_amount_cents,
+        shipping_amount_cents: money.shipping_amount_cents,
+        advance_due_cents: money.advance_due_cents,
+        restaurant_pays_shipping_cents: money.restaurant_pays_shipping_cents,
+        collect_on_delivery_cents: money.collect_on_delivery_cents,
+      })
+      .select("id")
+      .maybeSingle();
+
+    if (error || !inserted) {
+      return { ok: false as const, message: error?.message ?? "No se pudo crear el pedido." };
+    }
+    return { ok: true as const, orderId: inserted.id };
+  });
+
 export const acceptOrder = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((input) => InputSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
+    const { userId } = context;
 
-    const { data: courier, error: cErr } = await supabase
-      .from("couriers")
-      .select("id, status, wallet_balance, subscription_active, subscription_expires_at")
-      .eq("user_id", userId)
-      .maybeSingle();
+    const { data: rpc, error: rpcErr } = await supabaseAdmin.rpc("accept_order_for_courier", {
+      _order_id: data.orderId,
+      _user_id: userId,
+    });
 
-    if (cErr) return { ok: false as const, message: cErr.message };
-    if (!courier) return { ok: false as const, message: "Repartidor no encontrado." };
-
-    if (courier.status !== "active") {
-      return { ok: false as const, message: "Tu cuenta aún no está activa." };
+    if (rpcErr) return { ok: false as const, message: rpcErr.message };
+    const result = rpc as { ok?: boolean; reason?: string; order_id?: string; restaurant_id?: string } | null;
+    if (!result?.ok) {
+      const reason = result?.reason;
+      const message =
+        reason === "membership_required"
+          ? "Necesitas membresía activa para aceptar pedidos."
+          : reason === "already_taken"
+            ? "Otro repartidor ya tomó el pedido."
+            : reason === "courier_inactive"
+              ? "Tu cuenta aún no está activa."
+              : "No se pudo aceptar el pedido.";
+      return { ok: false as const, message };
     }
 
-    const subActive =
-      !!courier.subscription_active &&
-      !!courier.subscription_expires_at &&
-      new Date(courier.subscription_expires_at).getTime() > Date.now();
-
-    const hasFunds = Number(courier.wallet_balance) >= 5;
-
-    if (!subActive && !hasFunds) {
-      return {
-        ok: false as const,
-        message: "Necesitas saldo de al menos $5 o una suscripción activa para aceptar pedidos.",
-      };
-    }
-
-    const { data: updated, error: uErr } = await supabase
-      .from("orders")
-      .update({
-        courier_id: courier.id,
-        status: "assigned",
-        accepted_at: new Date().toISOString(),
-      })
-      .eq("id", data.orderId)
-      .eq("status", "pending")
-      .select("id, restaurant_id")
-      .maybeSingle();
-
-    if (uErr) return { ok: false as const, message: uErr.message };
-    if (!updated) return { ok: false as const, message: "Otro repartidor ya tomó el pedido." };
+    const updated = { id: result.order_id, restaurant_id: result.restaurant_id };
 
     // Notificar al restaurante (best-effort)
     try {
@@ -348,14 +399,14 @@ export const notifyCouriersNewOrder = createServerFn({ method: "POST" })
 
     const { data: couriers } = await supabaseAdmin
       .from("couriers")
-      .select("user_id, wallet_balance, subscription_active, subscription_expires_at, status");
+      .select("user_id, subscription_active, subscription_expires_at, status");
     const eligible = (couriers ?? []).filter((c) => {
       if (c.status !== "active") return false;
-      const sub =
+      return (
         !!c.subscription_active &&
         !!c.subscription_expires_at &&
-        new Date(c.subscription_expires_at).getTime() > Date.now();
-      return sub || Number(c.wallet_balance ?? 0) >= 5;
+        new Date(c.subscription_expires_at).getTime() > Date.now()
+      );
     });
 
     const userIds = eligible.map((c) => c.user_id);

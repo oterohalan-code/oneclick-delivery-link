@@ -7,26 +7,21 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { AddressSearch } from "@/components/AddressSearch";
 import { MapView, reverseGeocode } from "@/components/MapView";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { z } from "zod";
 import { calculateShippingFee, surgeLabel } from "@/lib/pricing";
 import { Badge } from "@/components/ui/badge";
-
-type PaymentStatus = "pending" | "all" | "paid";
-
-const PAYMENT_LABELS: Record<PaymentStatus, string> = {
-  pending: "Envío pendiente",
-  all: "Cliente pagará todo",
-  paid: "Envío y producto pagados",
-};
+import { createRestaurantOrder, notifyCouriersNewOrder } from "@/lib/rpc/orders.functions";
+import { useServerFn } from "@tanstack/react-start";
+import { useAuth } from "@/lib/auth-context";
+import type { PaymentMode } from "@/lib/order-money";
 
 const schema = z.object({
   customer_name: z.string().trim().min(2, "Nombre del cliente requerido").max(80),
   customer_phone: z.string().regex(/^\d{10}$/, "WhatsApp: 10 dígitos"),
   dropoff_address: z.string().trim().min(5, "Dirección de entrega requerida").max(300),
   total: z.number().min(0).max(100000),
-  payment: z.enum(["pending", "all", "paid"]),
+  paymentMode: z.enum(["prepaid_at_restaurant", "collect_on_delivery"]),
   notes: z.string().trim().max(500).optional(),
 });
 
@@ -38,9 +33,12 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
   const [form, setForm] = useState({
     customer_name: "", customer_phone: "",
     dropoff_address: "", lat: null as number | null, lng: null as number | null,
-    amount: "", payment: "pending" as PaymentStatus, notes: "",
+    amount: "", paymentMode: "collect_on_delivery" as PaymentMode, notes: "",
   });
   const [loading, setLoading] = useState(false);
+  const { session } = useAuth();
+  const createOrderFn = useServerFn(createRestaurantOrder);
+  const notifyCouriersFn = useServerFn(notifyCouriersNewOrder);
   const [routeInfo, setRouteInfo] = useState<{ distanceKm: number; durationMin: number } | null>(null);
   const [routeLoading, setRouteLoading] = useState(false);
   const [addressLoading, setAddressLoading] = useState(false);
@@ -94,52 +92,43 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
       customer_phone: form.customer_phone,
       dropoff_address: form.dropoff_address,
       total: Number(form.amount || 0),
-      payment: form.payment,
+      paymentMode: form.paymentMode,
       notes: form.notes || undefined,
     });
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
     if (form.lat == null || form.lng == null) return toast.error("Selecciona el destino en el mapa");
+    const token = session?.access_token;
+    if (!token) return toast.error("Sesión expirada.");
     setLoading(true);
-    const total = Number(form.amount || 0);
-    const amountToCollect = form.payment === "paid" ? 0 : total + shippingFee;
-    const paymentNote = `[Pago: ${PAYMENT_LABELS[form.payment]}]`;
-    const durationStr = routeInfo ? ` · ~${Math.round(routeInfo.durationMin)} min` : "";
-    const shippingNote = `[Envío: $${shippingFee} · ${distanceKm?.toFixed(2) ?? "?"} km${durationStr}]`;
-    const composedNotes = form.notes
-      ? `${paymentNote} ${shippingNote} ${form.notes}`
-      : `${paymentNote} ${shippingNote}`;
-    const dialCode = "+52";
-    const fullPhone = `${dialCode}${form.customer_phone}`;
-    const { data: inserted, error } = await supabase.from("orders").insert({
-      restaurant_id: restaurant.id,
-      pickup_address: restaurant.address,
-      pickup_lat: restaurant.lat, pickup_lng: restaurant.lng,
-      dropoff_address: form.dropoff_address,
-      dropoff_lat: form.lat, dropoff_lng: form.lng,
-      amount_to_collect: amountToCollect,
-      shipping_fee: shippingFee,
-      distance_km: distanceKm,
-      notes: composedNotes,
-      customer_name: form.customer_name.trim(),
-      customer_phone: fullPhone,
-      customer_phone_dial_code: dialCode,
-      status: "pending",
-    }).select("id").maybeSingle();
+    const result = await createOrderFn({
+      headers: { Authorization: `Bearer ${token}` },
+      data: {
+        dropoff_address: form.dropoff_address,
+        dropoff_lat: form.lat,
+        dropoff_lng: form.lng,
+        customer_name: form.customer_name.trim(),
+        customer_phone: form.customer_phone,
+        foodMxn: Number(form.amount || 0),
+        shippingMxn: shippingFee,
+        distanceKm,
+        notes: form.notes || undefined,
+        paymentMode: form.paymentMode,
+      },
+    });
     setLoading(false);
-    if (error) return toast.error(error.message);
+    if (!result?.ok) return toast.error(result?.message ?? "No se pudo crear el pedido.");
     toast.success("Pedido publicado. Avisando a repartidores...");
 
-    // Notificar a los repartidores elegibles (push)
-    if (inserted?.id) {
-      try {
-        const { notifyCouriersNewOrder } = await import("@/lib/rpc/orders.functions");
-        await notifyCouriersNewOrder({ data: { orderId: inserted.id } });
-      } catch (e) {
-        console.warn("notify couriers failed", e);
-      }
+    try {
+      await notifyCouriersFn({
+        headers: { Authorization: `Bearer ${token}` },
+        data: { orderId: result.orderId },
+      });
+    } catch (e) {
+      console.warn("notify couriers failed", e);
     }
 
-    setForm({ customer_name: "", customer_phone: "", dropoff_address: "", lat: null, lng: null, amount: "", payment: "pending", notes: "" });
+    setForm({ customer_name: "", customer_phone: "", dropoff_address: "", lat: null, lng: null, amount: "", paymentMode: "collect_on_delivery", notes: "" });
     onOpenChange(false);
     onCreated();
   };
@@ -210,13 +199,12 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
                 onChange={(e) => setForm({ ...form, amount: e.target.value })} required />
             </div>
             <div>
-              <Label>¿Pagado por el cliente?</Label>
-              <Select value={form.payment} onValueChange={(v) => setForm({ ...form, payment: v as PaymentStatus })}>
+              <Label>Modalidad de cobro</Label>
+              <Select value={form.paymentMode} onValueChange={(v) => setForm({ ...form, paymentMode: v as PaymentMode })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="pending">Envío pendiente</SelectItem>
-                  <SelectItem value="all">Cliente pagará todo</SelectItem>
-                  <SelectItem value="paid">Envío y producto pagados</SelectItem>
+                  <SelectItem value="collect_on_delivery">Cobrar al cliente en entrega</SelectItem>
+                  <SelectItem value="prepaid_at_restaurant">Ya pagó en el restaurante</SelectItem>
                 </SelectContent>
               </Select>
             </div>

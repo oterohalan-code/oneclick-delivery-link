@@ -98,62 +98,9 @@ const BatchInput = z.object({
 export const acceptOrderBatch = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((i) => BatchInput.parse(i))
-  .handler(async ({ data, context }) => {
-    const { supabase, userId } = context;
-
-    const { data: courier } = await supabase
-      .from("couriers")
-      .select("id, status, wallet_balance, subscription_active, subscription_expires_at")
-      .eq("user_id", userId)
-      .maybeSingle();
-    if (!courier) return { ok: false as const, message: "Repartidor no encontrado." };
-    if (courier.status !== "active") {
-      return { ok: false as const, message: "Tu cuenta aún no está activa." };
-    }
-
-    const subActive =
-      !!courier.subscription_active &&
-      !!courier.subscription_expires_at &&
-      new Date(courier.subscription_expires_at).getTime() > Date.now();
-    // Cobro PPS = $5 por entrega; para batch necesita saldo proporcional o sub
-    const needed = data.orderIds.length * 5;
-    const hasFunds = Number(courier.wallet_balance) >= needed;
-    if (!subActive && !hasFunds) {
-      return {
-        ok: false as const,
-        message: `Para tomar ${data.orderIds.length} pedidos necesitas $${needed} de saldo o suscripción activa.`,
-      };
-    }
-
-    const batchId = crypto.randomUUID();
-    const nowIso = new Date().toISOString();
-
-    // Asignar todos los que sigan pending
-    const { data: updated, error } = await supabase
-      .from("orders")
-      .update({
-        courier_id: courier.id,
-        status: "assigned",
-        accepted_at: nowIso,
-        batch_id: batchId,
-      })
-      .in("id", data.orderIds)
-      .eq("status", "pending")
-      .select("id, restaurant_id");
-
-    if (error) return { ok: false as const, message: error.message };
-    if (!updated || updated.length === 0) {
-      return { ok: false as const, message: "Ningún pedido seguía disponible." };
-    }
-    if (updated.length < data.orderIds.length) {
-      // Algunos fueron tomados por otros — devolver lo asignado igual
-      return {
-        ok: true as const,
-        batchId,
-        assigned: updated.length,
-        partial: true,
-        message: `Se asignaron ${updated.length} de ${data.orderIds.length}.`,
-      };
-    }
-    return { ok: true as const, batchId, assigned: updated.length, partial: false };
+  .handler(async () => {
+    return {
+      ok: false as const,
+      message: "La toma de pedidos en lote está desactivada.",
+    };
   });

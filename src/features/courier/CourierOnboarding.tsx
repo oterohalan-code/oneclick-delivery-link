@@ -226,16 +226,14 @@ export function CourierOnboarding({ existing, onDone }: Props) {
     if (!allDocsReady) return toast.error("Faltan documentos por validar.");
     if (!equipmentOk) return toast.error("Necesitas equipamiento para repartir.");
     setSubmitting(true);
-    const newStatus: "active" | "pending_validation" = allFullyValid ? "active" : "pending_validation";
     const { error } = await supabase.from("couriers").update({
       has_backpack: hasBackpack ?? false,
       willing_to_get_backpack: willing ?? false,
-      status: newStatus,
       rejection_reason: null,
     }).eq("user_id", user.id);
     setSubmitting(false);
     if (error) return toast.error(error.message);
-    setAutoActivated(newStatus === "active");
+    setAutoActivated(false);
     setDone(true);
   };
 

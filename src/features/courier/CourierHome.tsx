@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, MapPin, DollarSign, AlertCircle, Truck, CheckCircle2, Wallet, Crown, MessageCircle, Inbox, WifiOff } from "lucide-react";
+import { Loader2, MapPin, DollarSign, AlertCircle, Truck, CheckCircle2, Crown, MessageCircle, Inbox, WifiOff } from "lucide-react";
 import { useOfflineQueue } from "@/hooks/useOfflineQueue";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SkeletonList } from "@/components/ui/skeleton";
@@ -110,7 +110,7 @@ export function CourierHome() {
 
   // Realtime: solo si está activo Y tiene saldo/sub (puede recibir pedidos)
   const subActiveRT = courier?.subscription_active && courier?.subscription_expires_at && new Date(courier.subscription_expires_at) > new Date();
-  const canAcceptRT = !!subActiveRT || (Number(courier?.wallet_balance ?? 0) >= 5);
+  const canAcceptRT = !!subActiveRT;
   useEffect(() => {
     if (!courier || courier.status !== "active" || !canAcceptRT) return;
     const ch = supabase.channel(`courier-${courier.id}`)
@@ -181,7 +181,7 @@ export function CourierHome() {
   }
 
   const subActive = courier.subscription_active && courier.subscription_expires_at && new Date(courier.subscription_expires_at) > new Date();
-  const canAccept = subActive || courier.wallet_balance >= 5;
+  const canAccept = !!subActive;
 
   if (active) {
     return (
@@ -250,7 +250,7 @@ export function CourierHome() {
         </div>
         <div className="flex flex-col items-end gap-1">
           <Badge className={subActive ? "bg-success/20 text-success-foreground" : "bg-accent text-accent-foreground"}>
-            {subActive ? "Suscripción activa" : "Plan PPS"}
+            {subActive ? "Membresía activa" : "Sin membresía"}
           </Badge>
           {(courier as any).stats_total_deliveries > 0 && (
             <div className="text-xs text-muted-foreground flex items-center gap-1">
@@ -278,15 +278,12 @@ export function CourierHome() {
           <div>
             <h3 className="font-display text-lg font-bold">No puedes recibir pedidos</h3>
             <p className="text-sm text-muted-foreground mt-1 max-w-xs mx-auto">
-              Necesitas <strong>$5 MXN</strong> de saldo o una <strong>suscripción activa</strong> para empezar a repartir.
+              Necesitas una <strong>membresía activa</strong> ($300 MXN/mes) para aceptar pedidos.
             </p>
           </div>
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            <Button asChild variant="secondary" className="h-12">
-              <Link to="/app/wallet"><Wallet className="mr-1 h-4 w-4" /> Recargar</Link>
-            </Button>
-            <Button asChild className="h-12">
-              <Link to="/app/wallet"><Crown className="mr-1 h-4 w-4" /> Suscribirme</Link>
+          <div className="pt-1">
+            <Button asChild className="h-12 w-full">
+              <Link to="/app/wallet"><Crown className="mr-1 h-4 w-4" /> Pagar membresía</Link>
             </Button>
           </div>
         </Card>
@@ -294,18 +291,6 @@ export function CourierHome() {
         <div>
           <div className="flex items-center justify-between mb-3">
             <h3 className="text-display text-xl font-medium">Pedidos disponibles ({sorted.length})</h3>
-            {sorted.length >= 2 && (
-              <Button
-                variant={batchMode ? "default" : "outline"}
-                size="sm"
-                onClick={() => {
-                  setBatchMode((v) => !v);
-                  setSelected(new Set());
-                }}
-              >
-                {batchMode ? "Cancelar" : "Tomar varios"}
-              </Button>
-            )}
           </div>
           {sorted.length === 0 ? (
             <EmptyState
@@ -540,19 +525,7 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
     });
     if (!res?.ok) { toast.error(res?.message ?? "Error"); return; }
 
-    // PPS charge if no active subscription
-    const subActive = courier.subscription_active && courier.subscription_expires_at && new Date(courier.subscription_expires_at) > new Date();
-    if (!subActive) {
-      const newBal = Number(courier.wallet_balance) - 5;
-      await supabase.from("couriers").update({ wallet_balance: newBal }).eq("id", courier.id);
-      await supabase.from("wallet_transactions").insert({
-        courier_id: courier.id, type: "order_fee", amount: -5, balance_after: newBal,
-        order_id: order.id, description: "Comisión por entrega",
-      });
-      toast.success(`Entregado. Se descontaron $5 (saldo: $${newBal.toFixed(2)})`);
-    } else {
-      toast.success("Pedido entregado ✅");
-    }
+    toast.success("Pedido entregado ✅");
     onChange();
   };
 
