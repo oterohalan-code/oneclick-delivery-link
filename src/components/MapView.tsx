@@ -38,7 +38,7 @@ interface Props {
   onRouteInfo?: (info: { distanceKm: number; durationMin: number } | null) => void;
 }
 
-const CANCUN: [number, number] = [21.1619, -86.8515];
+const MANZANILLO: [number, number] = [19.1076, -104.3385];
 
 export function MapView({ pins = [], showRoute, center, zoom = 13, height = "320px", onMapClick, onRouteInfo }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -107,7 +107,7 @@ export function MapView({ pins = [], showRoute, center, zoom = 13, height = "320
     loadLeaflet().then((L) => {
       if (cancelled || !containerRef.current || mapRef.current) return;
       LRef.current = L;
-      const map = L.map(containerRef.current, { zoomControl: true }).setView(center ?? CANCUN, zoom);
+      const map = L.map(containerRef.current, { zoomControl: true }).setView(center ?? MANZANILLO, zoom);
       L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
         attribution: "© OpenStreetMap",
         maxZoom: 19,
@@ -173,7 +173,7 @@ export function haversine(a: { lat: number; lng: number }, b: { lat: number; lng
 // Nominatim address search
 export async function searchAddress(q: string): Promise<Array<{ display_name: string; lat: number; lng: number }>> {
   if (q.trim().length < 3) return [];
-  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=mx&q=${encodeURIComponent(q + " Cancun")}`;
+  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=mx&q=${encodeURIComponent(q + " Manzanillo, Colima, México")}`;
   const r = await fetch(url, { headers: { Accept: "application/json" } });
   if (!r.ok) return [];
   const data = (await r.json()) as Array<{ display_name: string; lat: string; lon: string }>;

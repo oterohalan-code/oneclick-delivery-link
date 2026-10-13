@@ -37,7 +37,7 @@ export function SupportChat() {
     if (open && messages.length === 0) {
       setMessages([{
         role: "assistant",
-        content: "¡Hola! Soy el asistente de 1Click. ¿En qué te ayudo hoy? Puedo explicarte cómo crear pedidos, validar documentos, manejar tu wallet, el plan PPS y más.",
+        content: "¡Hola! Soy el asistente de 1Click en Manzanillo. ¿En qué te ayudo hoy? Puedo explicarte cómo crear pedidos, validar documentos y la membresía mensual.",
       }]);
     }
   }, [open]);

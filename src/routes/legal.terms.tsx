@@ -20,7 +20,7 @@ function TermsPage() {
       <p>
         Bienvenido a <strong>1Click</strong>, plataforma de logística operada por
         Punching Solutions S.A. de C.V. (en adelante, "1Click", "nosotros"), con
-        domicilio en Cancún, Quintana Roo, México. Al registrarte y utilizar la
+        domicilio en Manzanillo, Colima, México. Al registrarte y utilizar la
         plataforma aceptas estos Términos.
       </p>
 
@@ -40,10 +40,10 @@ function TermsPage() {
 
       <h2>3. Tarifas y pagos</h2>
       <p>
-        Los restaurantes pagan una suscripción mensual y/o tarifas por envío
-        publicadas en la app. Los repartidores acceden bajo modelo PPS (pago por
-        servicio) o suscripción. Todos los pagos se procesan a través de
-        proveedores autorizados (Stripe). 1Click no almacena datos de tarjetas.
+        Los restaurantes pagan una membresía mensual de $450 MXN. Los
+        repartidores pagan $300 MXN al mes. One Click no cobra comisión sobre
+        la comida ni sobre el envío. Los pagos de membresía se procesan con
+        Mercado Pago. 1Click no almacena datos de tarjetas.
       </p>
 
       <h2>4. Obligaciones del usuario</h2>
@@ -76,7 +76,7 @@ function TermsPage() {
       <h2>8. Ley aplicable</h2>
       <p>
         Estos Términos se rigen por las leyes de los Estados Unidos Mexicanos.
-        Cualquier disputa se someterá a los tribunales de Cancún, Quintana Roo.
+        Cualquier disputa se someterá a los tribunales de Manzanillo, Colima.
       </p>
 
       <h2>9. Contacto</h2>

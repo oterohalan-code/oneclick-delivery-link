@@ -19,7 +19,7 @@ function PrivacyPage() {
 
       <p>
         <strong>Punching Solutions S.A. de C.V.</strong> ("1Click"), con domicilio
-        en Cancún, Quintana Roo, México, es responsable del tratamiento de tus
+        en Manzanillo, Colima, México, es responsable del tratamiento de tus
         datos personales conforme a la Ley Federal de Protección de Datos
         Personales en Posesión de los Particulares (LFPDPPP).
       </p>
