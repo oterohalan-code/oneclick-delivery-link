@@ -15,10 +15,9 @@ import { lovable } from "@/integrations/lovable/index";
 import { toast } from "sonner";
 import { CourierSignupWizard } from "@/features/courier/CourierSignupWizard";
 import { RestaurantSignupWizard } from "@/features/restaurant/RestaurantSignupWizard";
+import { ADMIN_DOMAIN, isAllowedAdminEmail } from "@/lib/admin-access";
 
 type RoleParam = "restaurant" | "courier" | "admin";
-
-const ADMIN_DOMAIN = "@punchingsolutions.com.mx";
 
 export const Route = createFileRoute("/auth")({
   validateSearch: (s: Record<string, unknown>): { role?: RoleParam; next?: string } => ({
@@ -83,8 +82,8 @@ function AuthPage() {
   const onAdminSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     const email = form.email.trim().toLowerCase();
-    if (!email.endsWith(ADMIN_DOMAIN)) {
-      return toast.error(`Solo correos ${ADMIN_DOMAIN} pueden registrarse como administradores.`);
+    if (!isAllowedAdminEmail(email)) {
+      return toast.error(`Solo el dueño o correos ${ADMIN_DOMAIN} pueden registrarse como administradores.`);
     }
     if (!form.password || form.password.length < 6) {
       return toast.error("La contraseña debe tener al menos 6 caracteres.");
@@ -198,7 +197,7 @@ function AuthPage() {
               {role === "admin" ? (
                 <form onSubmit={onAdminSignup} className="space-y-4">
                   <p className="text-xs text-muted-foreground bg-muted/40 border border-hairline rounded-lg p-3">
-                    Solo correos <strong className="text-foreground">{ADMIN_DOMAIN}</strong> pueden registrarse como administradores. Recibirás un correo de confirmación.
+                    Admin: el correo del dueño o un correo <strong className="text-foreground">{ADMIN_DOMAIN}</strong>. Recibirás un correo de confirmación.
                   </p>
                   <div>
                     <Label htmlFor="an" className="text-xs uppercase tracking-wider text-muted-foreground">Nombre completo</Label>

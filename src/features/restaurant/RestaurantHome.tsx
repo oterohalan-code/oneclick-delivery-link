@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Plus, Loader2, Package, Truck, CheckCircle2, Clock, MessageCircle, Phone, Inbox, Share2, Copy, Star, Ban, Crown } from "lucide-react";
+import { Plus, Package, Truck, CheckCircle2, Clock, MessageCircle, Phone, Inbox, Share2, Copy, Star, Ban, Crown } from "lucide-react";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SkeletonList } from "@/components/ui/skeleton";
 import { RestaurantOnboarding } from "./RestaurantOnboarding";
@@ -17,13 +17,16 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 import { BUSINESS, formatMxn } from "@/lib/business";
+import { customerMapsWhatsAppText, whatsappChatUrl } from "@/lib/maps";
 
 interface Restaurant {
   id: string; name: string; address: string; lat: number | null; lng: number | null;
   phone: string; category: string;
 }
 interface Order {
-  id: string; status: string; pickup_address: string; dropoff_address: string;
+  id: string; status: string;
+  pickup_address: string; pickup_lat: number | null; pickup_lng: number | null;
+  dropoff_address: string; dropoff_lat: number | null; dropoff_lng: number | null;
   amount_to_collect: number; external_order_id: string | null;
   customer_name: string | null; customer_phone: string | null;
   created_at: string; courier_id: string | null;
@@ -190,36 +193,40 @@ export function RestaurantHome() {
   const chatOrder = chatOrderId ? orders.find((o) => o.id === chatOrderId) : null;
   const chatCourier = chatOrderId ? courierByOrder[chatOrderId] : null;
 
-  const trackingUrl = (token: string) => `${window.location.origin}/t/${token}`;
+  const customerMessage = (o: Order) =>
+    customerMapsWhatsAppText({
+      restaurantName: rest?.name ?? BUSINESS.brandName,
+      customerName: o.customer_name,
+      pickup: { lat: o.pickup_lat, lng: o.pickup_lng, address: o.pickup_address },
+      dropoff: { lat: o.dropoff_lat, lng: o.dropoff_lng, address: o.dropoff_address },
+      trackingUrl: o.tracking_token ? `${window.location.origin}/t/${o.tracking_token}` : null,
+    });
 
-  const copyTracking = async (token: string) => {
+  const copyCustomerMessage = async (o: Order) => {
     try {
-      await navigator.clipboard.writeText(trackingUrl(token));
-      toast.success("Enlace copiado");
+      await navigator.clipboard.writeText(customerMessage(o));
+      toast.success("Mensaje copiado");
     } catch {
       toast.error("No se pudo copiar");
     }
   };
 
-  const shareTracking = async (o: Order) => {
-    if (!o.tracking_token) return;
-    const url = trackingUrl(o.tracking_token);
-    const text = `Sigue tu pedido en tiempo real: ${url}`;
+  const shareWithCustomer = async (o: Order) => {
+    const text = customerMessage(o);
+    const wa = whatsappChatUrl(o.customer_phone, text);
+    if (wa) {
+      window.open(wa, "_blank", "noopener,noreferrer");
+      return;
+    }
     if (navigator.share) {
       try {
-        await navigator.share({ title: "Tu pedido", text, url });
+        await navigator.share({ title: "Tu pedido One Click", text });
         return;
       } catch {
         // user cancelled or unsupported
       }
     }
-    // Fallback: WhatsApp if we have customer phone
-    if (o.customer_phone) {
-      const phone = o.customer_phone.replace(/\D/g, "");
-      window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, "_blank");
-    } else {
-      copyTracking(o.tracking_token);
-    }
+    await copyCustomerMessage(o);
   };
 
   const cancelOrder = async (o: Order) => {
@@ -288,26 +295,24 @@ export function RestaurantHome() {
                     <Badge className={m.color}><Icon className="h-3 w-3 mr-1" />{m.label}</Badge>
                   </div>
 
-                  {o.tracking_token && (
-                    <div className="mt-3 flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => shareTracking(o)}
-                      >
-                        <Share2 className="h-3.5 w-3.5 mr-1.5" /> Enviar a cliente
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => copyTracking(o.tracking_token!)}
-                        title="Copiar enlace"
-                      >
-                        <Copy className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  )}
+                  <div className="mt-3 flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => shareWithCustomer(o)}
+                    >
+                      <Share2 className="h-3.5 w-3.5 mr-1.5" /> WhatsApp al cliente
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyCustomerMessage(o)}
+                      title="Copiar mensaje con las dos ligas de Maps"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
 
                   {(o.status === "pending" || o.status === "assigned") && (
                     <div className="mt-2">

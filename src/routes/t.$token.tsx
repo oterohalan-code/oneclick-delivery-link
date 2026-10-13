@@ -6,8 +6,9 @@ import { GlassCard } from "@/components/ui/glass-card";
 import { MeshBackground } from "@/components/MeshBackground";
 import { Logo } from "@/components/Logo";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle2, MapPin, Package, Bike, Clock, Star, Timer } from "lucide-react";
+import { CheckCircle2, MapPin, Package, Bike, Clock, Star, Timer, Navigation } from "lucide-react";
 import { formatEta, timeAgo } from "@/lib/eta";
+import { googleMapsPlaceUrl } from "@/lib/maps";
 
 export const Route = createFileRoute("/t/$token")({
   head: () => ({
@@ -215,8 +216,22 @@ function TrackingContent({ data }: { data: Tracking }) {
       </GlassCard>
 
       <GlassCard variant="strong" className="p-5 space-y-3">
-        <Row icon={MapPin} label="Recogida" value={data.pickup_address} />
-        <Row icon={MapPin} label="Entrega" value={data.dropoff_address} />
+        <Row
+          icon={MapPin}
+          label="Recogida"
+          value={data.pickup_address}
+          mapsUrl={googleMapsPlaceUrl({
+            lat: data.pickup_lat, lng: data.pickup_lng, address: data.pickup_address,
+          })}
+        />
+        <Row
+          icon={MapPin}
+          label="Entrega"
+          value={data.dropoff_address}
+          mapsUrl={googleMapsPlaceUrl({
+            lat: data.dropoff_lat, lng: data.dropoff_lng, address: data.dropoff_address,
+          })}
+        />
       </GlassCard>
 
       <p className="text-center text-xs text-muted-foreground pt-2">
@@ -226,7 +241,17 @@ function TrackingContent({ data }: { data: Tracking }) {
   );
 }
 
-function Row({ icon: Icon, label, value }: { icon: typeof MapPin; label: string; value: string }) {
+function Row({
+  icon: Icon,
+  label,
+  value,
+  mapsUrl,
+}: {
+  icon: typeof MapPin;
+  label: string;
+  value: string;
+  mapsUrl?: string | null;
+}) {
   return (
     <div className="flex items-start gap-3">
       <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
@@ -235,6 +260,16 @@ function Row({ icon: Icon, label, value }: { icon: typeof MapPin; label: string;
       <div className="flex-1 min-w-0">
         <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</p>
         <p className="text-sm mt-0.5 truncate">{value}</p>
+        {mapsUrl && (
+          <a
+            href={mapsUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1 mt-1 text-xs font-medium text-primary hover:underline"
+          >
+            <Navigation className="h-3 w-3" /> Abrir en Google Maps
+          </a>
+        )}
       </div>
     </div>
   );
