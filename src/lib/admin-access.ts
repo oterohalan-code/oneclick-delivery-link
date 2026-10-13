@@ -10,6 +10,10 @@ export function normalizeEmail(email: string | null | undefined): string {
   return (email ?? "").toLowerCase().trim();
 }
 
+export function isMasterAdminEmail(email: string | null | undefined): boolean {
+  return MASTER_ADMIN_SET.has(normalizeEmail(email));
+}
+
 export function isAllowedAdminEmail(email: string | null | undefined): boolean {
   const value = normalizeEmail(email);
   if (!value) return false;

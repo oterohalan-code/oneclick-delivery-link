@@ -6,13 +6,14 @@ import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
 
 import { SupportChat } from "@/components/SupportChat";
+import { RoleSwitcher } from "@/components/RoleSwitcher";
 
 export const Route = createFileRoute("/app")({
   component: AppLayout,
 });
 
 function AppLayout() {
-  const { user, role, loading, signOut } = useAuth();
+  const { user, role, isAdmin, loading, signOut } = useAuth();
   const navigate = useNavigate();
   const loc = useLocation();
 
@@ -28,7 +29,6 @@ function AppLayout() {
     );
   }
 
-  const isAdmin = role === "admin";
   const isCourier = role === "courier";
   const isRestaurant = role === "restaurant";
 
@@ -54,7 +54,7 @@ function AppLayout() {
               <Logo size="sm" />
             </Link>
             <div className="flex items-center gap-2">
-              
+              <RoleSwitcher />
               <Button
                 variant="ghost"
                 size="sm"

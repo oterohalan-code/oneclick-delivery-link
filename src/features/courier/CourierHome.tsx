@@ -41,7 +41,7 @@ interface OrderRow {
 }
 
 export function CourierHome() {
-  const { user, session } = useAuth();
+  const { user, session, isMasterAdmin } = useAuth();
   const acceptOrderRpc = useServerFn(acceptOrderFn);
   const acceptBatchRpc = useServerFn(acceptOrderBatchFn);
   const { online, pending } = useOfflineQueue();
@@ -111,7 +111,7 @@ export function CourierHome() {
 
   // Realtime: solo si está activo Y tiene saldo/sub (puede recibir pedidos)
   const subActiveRT = courier?.subscription_active && courier?.subscription_expires_at && new Date(courier.subscription_expires_at) > new Date();
-  const canAcceptRT = !!subActiveRT;
+  const canAcceptRT = !!subActiveRT || isMasterAdmin;
   useEffect(() => {
     if (!courier || courier.status !== "active" || !canAcceptRT) return;
     const ch = supabase.channel(`courier-${courier.id}`)
@@ -149,7 +149,7 @@ export function CourierHome() {
       </div>
     );
   }
-  if (!courier) return <div className="grid place-items-center py-20"><Loader2 className="h-6 w-6 animate-spin" /></div>;
+  if (!courier) return <CourierOnboarding existing={false} onDone={load} />;
 
   // 1) Si fue rechazado, dejarlo volver a subir documentos
   if (courier.status === "rejected") {
@@ -182,7 +182,7 @@ export function CourierHome() {
   }
 
   const subActive = courier.subscription_active && courier.subscription_expires_at && new Date(courier.subscription_expires_at) > new Date();
-  const canAccept = !!subActive;
+  const canAccept = !!subActive || isMasterAdmin;
 
   if (active) {
     return (

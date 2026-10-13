@@ -1,9 +1,13 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { isMasterAdminEmail } from "@/lib/admin-access";
 
 export async function hasActiveMembership(
   userId: string,
   role: "restaurant" | "courier",
 ): Promise<boolean> {
+  const { data: userRes } = await supabaseAdmin.auth.admin.getUserById(userId);
+  if (isMasterAdminEmail(userRes?.user?.email)) return true;
+
   const { data, error } = await supabaseAdmin.rpc("has_active_membership", {
     _user_id: userId,
     _role: role,
