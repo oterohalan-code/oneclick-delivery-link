@@ -2,10 +2,9 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 import { supabase } from "@/integrations/supabase/client";
 import type { Session, User } from "@supabase/supabase-js";
 import { claimAdminRole } from "@/lib/rpc/admin-claim.functions";
+import { isAllowedAdminEmail } from "@/lib/admin-access";
 
 export type AppRole = "restaurant" | "courier" | "admin";
-
-const ADMIN_DOMAIN = "@punchingsolutions.com.mx";
 
 interface AuthCtx {
   user: User | null;
@@ -29,18 +28,21 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data } = await supabase
       .from("user_roles")
       .select("role")
-      .eq("user_id", uid)
-      .order("role", { ascending: true })
-      .limit(1)
-      .maybeSingle();
-    const r = (data?.role as AppRole) ?? null;
+      .eq("user_id", uid);
+    const roles = (data ?? []).map((row) => row.role as AppRole);
+    const r: AppRole | null = roles.includes("admin")
+      ? "admin"
+      : roles.includes("restaurant")
+        ? "restaurant"
+        : roles.includes("courier")
+          ? "courier"
+          : null;
     setRole(r);
     return r;
   };
 
   const maybeClaimAdmin = async (u: User) => {
-    const email = (u.email ?? "").toLowerCase().trim();
-    if (!email.endsWith(ADMIN_DOMAIN)) return;
+    if (!isAllowedAdminEmail(u.email)) return;
     if (!u.email_confirmed_at) return;
     if (adminClaimInFlight.current) return;
     adminClaimInFlight.current = true;
@@ -65,8 +67,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(s?.user ?? null);
       if (s?.user) {
         setTimeout(async () => {
-          const current = await fetchRole(s.user.id);
-          if (!current) await maybeClaimAdmin(s.user);
+          await maybeClaimAdmin(s.user);
+          await fetchRole(s.user.id);
         }, 0);
       } else {
         setRole(null);
@@ -77,10 +79,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(s);
       setUser(s?.user ?? null);
       if (s?.user) {
-        fetchRole(s.user.id)
-          .then(async (current) => {
-            if (!current && s?.user) await maybeClaimAdmin(s.user);
-          })
+        maybeClaimAdmin(s.user)
+          .then(() => fetchRole(s.user.id))
           .finally(() => setLoading(false));
       } else setLoading(false);
     });
