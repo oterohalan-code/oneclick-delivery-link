@@ -286,6 +286,9 @@ export function RestaurantHome() {
               const m = STATUS_META[o.status];
               const Icon = m.icon;
               const c = courierByOrder[o.id];
+              const wa = isEmbeddedPreview()
+                ? null
+                : whatsappChatUrl(o.customer_phone, customerMessage(o));
               return (
                 <Card key={o.id} className="p-4">
                   <div className="flex items-start justify-between gap-2">
@@ -301,14 +304,22 @@ export function RestaurantHome() {
                   </div>
 
                   <div className="mt-3 flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1"
-                      onClick={() => shareWithCustomer(o)}
-                    >
-                      <Share2 className="h-3.5 w-3.5 mr-1.5" /> WhatsApp al cliente
-                    </Button>
+                    {wa ? (
+                      <Button variant="outline" size="sm" className="flex-1" asChild>
+                        <a href={wa} target="_blank" rel="noopener noreferrer">
+                          <Share2 className="h-3.5 w-3.5 mr-1.5" /> WhatsApp al cliente
+                        </a>
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => shareWithCustomer(o)}
+                      >
+                        <Share2 className="h-3.5 w-3.5 mr-1.5" /> WhatsApp al cliente
+                      </Button>
+                    )}
                     <Button
                       variant="ghost"
                       size="sm"
