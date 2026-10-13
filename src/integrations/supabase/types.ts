@@ -241,6 +241,174 @@ export type Database = {
         }
         Relationships: []
       }
+      membership_intents: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          currency: string
+          external_reference: string
+          id: string
+          mode: string
+          mp_preapproval_id: string | null
+          mp_preference_id: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          currency?: string
+          external_reference: string
+          id?: string
+          mode: string
+          mp_preapproval_id?: string | null
+          mp_preference_id?: string | null
+          role: Database["public"]["Enums"]["app_role"]
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          currency?: string
+          external_reference?: string
+          id?: string
+          mode?: string
+          mp_preapproval_id?: string | null
+          mp_preference_id?: string | null
+          role?: Database["public"]["Enums"]["app_role"]
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      membership_payments: {
+        Row: {
+          amount_cents: number
+          created_at: string
+          currency: string
+          id: string
+          intent_id: string | null
+          membership_id: string | null
+          paid_at: string | null
+          provider_payment_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          created_at?: string
+          currency: string
+          id?: string
+          intent_id?: string | null
+          membership_id?: string | null
+          paid_at?: string | null
+          provider_payment_id: string
+          status: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          created_at?: string
+          currency?: string
+          id?: string
+          intent_id?: string | null
+          membership_id?: string | null
+          paid_at?: string | null
+          provider_payment_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "membership_payments_intent_id_fkey"
+            columns: ["intent_id"]
+            isOneToOne: false
+            referencedRelation: "membership_intents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "membership_payments_membership_id_fkey"
+            columns: ["membership_id"]
+            isOneToOne: false
+            referencedRelation: "memberships"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      membership_webhook_events: {
+        Row: {
+          id: string
+          processed_at: string
+          provider_event_key: string
+          resource_id: string
+          topic: string
+        }
+        Insert: {
+          id?: string
+          processed_at?: string
+          provider_event_key: string
+          resource_id: string
+          topic: string
+        }
+        Update: {
+          id?: string
+          processed_at?: string
+          provider_event_key?: string
+          resource_id?: string
+          topic?: string
+        }
+        Relationships: []
+      }
+      memberships: {
+        Row: {
+          amount_cents: number
+          auto_renew: boolean
+          created_at: string
+          currency: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          mp_preapproval_id: string | null
+          provider: string
+          role: Database["public"]["Enums"]["app_role"]
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_cents: number
+          auto_renew?: boolean
+          created_at?: string
+          currency?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          mp_preapproval_id?: string | null
+          provider?: string
+          role: Database["public"]["Enums"]["app_role"]
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_cents?: number
+          auto_renew?: boolean
+          created_at?: string
+          currency?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          mp_preapproval_id?: string | null
+          provider?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       operational_zones: {
         Row: {
           active: boolean
@@ -327,8 +495,10 @@ export type Database = {
       orders: {
         Row: {
           accepted_at: string | null
+          advance_due_cents: number | null
           amount_to_collect: number
           batch_id: string | null
+          collect_on_delivery_cents: number | null
           courier_id: string | null
           created_at: string
           customer_name: string | null
@@ -344,14 +514,18 @@ export type Database = {
           dropoff_lng: number | null
           eta_minutes: number | null
           external_order_id: string | null
+          food_amount_cents: number | null
           id: string
           notes: string | null
+          payment_mode: string | null
           picked_up_at: string | null
           pickup_address: string
           pickup_lat: number | null
           pickup_lng: number | null
           pos_integration_id: string | null
           restaurant_id: string
+          restaurant_pays_shipping_cents: number | null
+          shipping_amount_cents: number | null
           shipping_fee: number
           status: Database["public"]["Enums"]["order_status"]
           tracking_token: string | null
@@ -359,8 +533,10 @@ export type Database = {
         }
         Insert: {
           accepted_at?: string | null
+          advance_due_cents?: number | null
           amount_to_collect?: number
           batch_id?: string | null
+          collect_on_delivery_cents?: number | null
           courier_id?: string | null
           created_at?: string
           customer_name?: string | null
@@ -376,14 +552,18 @@ export type Database = {
           dropoff_lng?: number | null
           eta_minutes?: number | null
           external_order_id?: string | null
+          food_amount_cents?: number | null
           id?: string
           notes?: string | null
+          payment_mode?: string | null
           picked_up_at?: string | null
           pickup_address: string
           pickup_lat?: number | null
           pickup_lng?: number | null
           pos_integration_id?: string | null
           restaurant_id: string
+          restaurant_pays_shipping_cents?: number | null
+          shipping_amount_cents?: number | null
           shipping_fee?: number
           status?: Database["public"]["Enums"]["order_status"]
           tracking_token?: string | null
@@ -391,8 +571,10 @@ export type Database = {
         }
         Update: {
           accepted_at?: string | null
+          advance_due_cents?: number | null
           amount_to_collect?: number
           batch_id?: string | null
+          collect_on_delivery_cents?: number | null
           courier_id?: string | null
           created_at?: string
           customer_name?: string | null
@@ -408,14 +590,18 @@ export type Database = {
           dropoff_lng?: number | null
           eta_minutes?: number | null
           external_order_id?: string | null
+          food_amount_cents?: number | null
           id?: string
           notes?: string | null
+          payment_mode?: string | null
           picked_up_at?: string | null
           pickup_address?: string
           pickup_lat?: number | null
           pickup_lng?: number | null
           pos_integration_id?: string | null
           restaurant_id?: string
+          restaurant_pays_shipping_cents?: number | null
+          shipping_amount_cents?: number | null
           shipping_fee?: number
           status?: Database["public"]["Enums"]["order_status"]
           tracking_token?: string | null
@@ -915,6 +1101,21 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_order_for_courier: {
+        Args: { _order_id: string; _user_id: string }
+        Returns: Json
+      }
+      apply_membership_payment: {
+        Args: {
+          p_amount_cents: number
+          p_currency: string
+          p_external_reference: string
+          p_mp_preapproval_id?: string
+          p_paid_at: string
+          p_provider_payment_id: string
+        }
+        Returns: Json
+      }
       calculate_shipping_fee: {
         Args: { _distance_km: number; _requested_at?: string }
         Returns: {
@@ -987,6 +1188,13 @@ export type Database = {
           status: Database["public"]["Enums"]["order_status"]
         }[]
       }
+      has_active_membership: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1052,12 +1260,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1081,11 +1289,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1106,11 +1314,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1131,11 +1339,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1148,11 +1356,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
