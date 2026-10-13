@@ -6,7 +6,7 @@ import { useAuth } from "@/lib/auth-context";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, MapPin, DollarSign, AlertCircle, Truck, CheckCircle2, Crown, MessageCircle, Inbox, WifiOff } from "lucide-react";
+import { Loader2, MapPin, DollarSign, AlertCircle, Truck, CheckCircle2, Crown, MessageCircle, Inbox, WifiOff, Navigation } from "lucide-react";
 import { useOfflineQueue } from "@/hooks/useOfflineQueue";
 import { EmptyState } from "@/components/ui/empty-state";
 import { SkeletonList } from "@/components/ui/skeleton";
@@ -21,6 +21,7 @@ import { LocationPermissionGate } from "@/components/LocationPermissionGate";
 import { enablePush } from "@/lib/push";
 import { fetchEtaMinutes, formatEta } from "@/lib/eta";
 import { toast } from "sonner";
+import { googleMapsDirectionsUrl, whatsappChatUrl } from "@/lib/maps";
 
 interface Courier {
   id: string; status: string; plan: "pps" | "subscription"; wallet_balance: number;
@@ -532,6 +533,13 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
   // Pins según estado: "assigned" = courier→restaurante (recoger), "in_transit" = restaurante→cliente
   const goingToPickup = order.status === "assigned";
   const showMap = order.status === "assigned" || order.status === "in_transit";
+  const pickupMaps = googleMapsDirectionsUrl({
+    lat: order.pickup_lat, lng: order.pickup_lng, address: order.pickup_address,
+  });
+  const dropoffMaps = googleMapsDirectionsUrl({
+    lat: order.dropoff_lat, lng: order.dropoff_lng, address: order.dropoff_address,
+  });
+  const customerWa = whatsappChatUrl(order.customer_phone);
   const pins = goingToPickup
     ? [
         ...(courier.lat != null && courier.lng != null
@@ -584,12 +592,30 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
         </div>
         <div className="text-sm text-muted-foreground"><MapPin className="inline h-3.5 w-3.5" /> Recoger: {order.pickup_address}</div>
         <div className="text-sm text-muted-foreground"><MapPin className="inline h-3.5 w-3.5 text-primary" /> Entregar: {order.dropoff_address}</div>
+        {(pickupMaps || dropoffMaps) && (
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            {pickupMaps ? (
+              <Button asChild variant={goingToPickup ? "default" : "outline"} size="sm" className="h-11">
+                <a href={pickupMaps} target="_blank" rel="noopener noreferrer">
+                  <Navigation className="h-3.5 w-3.5 mr-1.5" /> Recoger
+                </a>
+              </Button>
+            ) : <span />}
+            {dropoffMaps ? (
+              <Button asChild variant={!goingToPickup ? "default" : "outline"} size="sm" className="h-11">
+                <a href={dropoffMaps} target="_blank" rel="noopener noreferrer">
+                  <Navigation className="h-3.5 w-3.5 mr-1.5" /> Entregar
+                </a>
+              </Button>
+            ) : <span />}
+          </div>
+        )}
         {order.customer_name && (
           <div className="text-sm">👤 Cliente: <strong>{order.customer_name}</strong></div>
         )}
-        {order.customer_phone && (
+        {customerWa && (
           <a
-            href={`https://wa.me/${order.customer_phone.replace(/\D/g, "")}`}
+            href={customerWa}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex items-center gap-2 text-sm font-medium text-success hover:underline"

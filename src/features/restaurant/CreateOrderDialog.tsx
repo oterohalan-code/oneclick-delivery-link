@@ -15,6 +15,7 @@ import { createRestaurantOrder, notifyCouriersNewOrder } from "@/lib/rpc/orders.
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth-context";
 import type { PaymentMode } from "@/lib/order-money";
+import { customerMapsWhatsAppText, whatsappChatUrl } from "@/lib/maps";
 
 const schema = z.object({
   customer_name: z.string().trim().min(2, "Nombre del cliente requerido").max(80),
@@ -117,7 +118,17 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
     });
     setLoading(false);
     if (!result?.ok) return toast.error(result?.message ?? "No se pudo crear el pedido.");
-    toast.success("Pedido publicado. Avisando a repartidores...");
+    toast.success("Pedido publicado. Abre WhatsApp para mandar las ligas al cliente.");
+    const wa = whatsappChatUrl(
+      `+52${parsed.data.customer_phone}`,
+      customerMapsWhatsAppText({
+        restaurantName: restaurant.name,
+        customerName: parsed.data.customer_name,
+        pickup: { lat: restaurant.lat, lng: restaurant.lng, address: restaurant.address },
+        dropoff: { lat: form.lat, lng: form.lng, address: parsed.data.dropoff_address },
+      }),
+    );
+    if (wa) window.open(wa, "_blank", "noopener,noreferrer");
 
     try {
       await notifyCouriersFn({
