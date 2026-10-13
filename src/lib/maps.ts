@@ -40,6 +40,25 @@ export function whatsappChatUrl(phone: string | null | undefined, text?: string)
   return `${base}?text=${encodeURIComponent(text)}`;
 }
 
+/** Lovable preview iframes WhatsApp; api.whatsapp.com then returns ERR_BLOCKED_BY_RESPONSE. */
+export function isEmbeddedPreview(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.self !== window.top;
+  } catch {
+    return true;
+  }
+}
+
+export async function copyText(text: string): Promise<boolean> {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 export function customerMapsWhatsAppText(input: {
   restaurantName: string;
   customerName?: string | null;

@@ -15,7 +15,8 @@ import { createRestaurantOrder, notifyCouriersNewOrder } from "@/lib/rpc/orders.
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth-context";
 import type { PaymentMode } from "@/lib/order-money";
-import { customerMapsWhatsAppText, whatsappChatUrl } from "@/lib/maps";
+import { Copy } from "lucide-react";
+import { copyText, customerMapsWhatsAppText, isEmbeddedPreview, whatsappChatUrl } from "@/lib/maps";
 
 const schema = z.object({
   customer_name: z.string().trim().min(2, "Nombre del cliente requerido").max(80),
@@ -43,6 +44,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
   const [routeInfo, setRouteInfo] = useState<{ distanceKm: number; durationMin: number } | null>(null);
   const [routeLoading, setRouteLoading] = useState(false);
   const [addressLoading, setAddressLoading] = useState(false);
+  const [share, setShare] = useState<{ text: string; wa: string | null } | null>(null);
 
   const handleMapClick = useCallback(async (lat: number, lng: number) => {
     setForm((f) => ({ ...f, lat, lng }));
@@ -118,17 +120,14 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
     });
     setLoading(false);
     if (!result?.ok) return toast.error(result?.message ?? "No se pudo crear el pedido.");
-    toast.success("Pedido publicado. Abre WhatsApp para mandar las ligas al cliente.");
-    const wa = whatsappChatUrl(
-      `+52${parsed.data.customer_phone}`,
-      customerMapsWhatsAppText({
-        restaurantName: restaurant.name,
-        customerName: parsed.data.customer_name,
-        pickup: { lat: restaurant.lat, lng: restaurant.lng, address: restaurant.address },
-        dropoff: { lat: form.lat, lng: form.lng, address: parsed.data.dropoff_address },
-      }),
-    );
-    if (wa) window.open(wa, "_blank", "noopener,noreferrer");
+    const text = customerMapsWhatsAppText({
+      restaurantName: restaurant.name,
+      customerName: parsed.data.customer_name,
+      pickup: { lat: restaurant.lat, lng: restaurant.lng, address: restaurant.address },
+      dropoff: { lat: form.lat, lng: form.lng, address: parsed.data.dropoff_address },
+    });
+    setShare({ text, wa: whatsappChatUrl(`+52${parsed.data.customer_phone}`, text) });
+    toast.success("Pedido publicado.");
 
     try {
       await notifyCouriersFn({
@@ -139,15 +138,52 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
       console.warn("notify couriers failed", e);
     }
 
-    setForm({ customer_name: "", customer_phone: "", dropoff_address: "", lat: null, lng: null, amount: "", paymentMode: "collect_on_delivery", notes: "" });
-    onOpenChange(false);
     onCreated();
   };
 
+  const resetAndClose = () => {
+    setShare(null);
+    setForm({ customer_name: "", customer_phone: "", dropoff_address: "", lat: null, lng: null, amount: "", paymentMode: "collect_on_delivery", notes: "" });
+    onOpenChange(false);
+  };
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={(next) => { if (!next) resetAndClose(); else onOpenChange(next); }}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-auto">
-        <DialogHeader><DialogTitle>Solicitar repartidor</DialogTitle></DialogHeader>
+        <DialogHeader>
+          <DialogTitle>{share ? "Mandar al cliente" : "Solicitar repartidor"}</DialogTitle>
+        </DialogHeader>
+        {share ? (
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              {isEmbeddedPreview()
+                ? "Lovable bloquea WhatsApp (api.whatsapp.com). Copia el mensaje y pégalo en WhatsApp del celular, o abre la web oneclick.punchingsolutions.com.mx."
+                : "Abre tu WhatsApp y manda este texto con las dos ligas de Maps. No usamos la API de Meta."}
+            </p>
+            <pre className="whitespace-pre-wrap text-sm bg-muted rounded-lg p-3 max-h-56 overflow-auto">{share.text}</pre>
+            <div className="grid gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                className="w-full"
+                onClick={async () => {
+                  const ok = await copyText(share.text);
+                  toast[ok ? "success" : "error"](ok ? "Mensaje copiado" : "No se pudo copiar");
+                }}
+              >
+                <Copy className="h-4 w-4 mr-2" /> Copiar mensaje
+              </Button>
+              {share.wa && !isEmbeddedPreview() && (
+                <Button asChild className="w-full">
+                  <a href={share.wa} target="_blank" rel="noopener noreferrer">Abrir WhatsApp</a>
+                </Button>
+              )}
+              <Button type="button" variant="outline" className="w-full" onClick={resetAndClose}>
+                Listo
+              </Button>
+            </div>
+          </div>
+        ) : (
         <form onSubmit={submit} className="space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
@@ -251,6 +287,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
           </div>
           <Button type="submit" disabled={loading} className="w-full">Publicar pedido</Button>
         </form>
+        )}
       </DialogContent>
     </Dialog>
   );

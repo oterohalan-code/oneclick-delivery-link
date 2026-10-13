@@ -17,7 +17,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 import { BUSINESS, formatMxn } from "@/lib/business";
-import { customerMapsWhatsAppText, whatsappChatUrl } from "@/lib/maps";
+import { copyText, customerMapsWhatsAppText, isEmbeddedPreview, whatsappChatUrl } from "@/lib/maps";
 
 interface Restaurant {
   id: string; name: string; address: string; lat: number | null; lng: number | null;
@@ -203,16 +203,21 @@ export function RestaurantHome() {
     });
 
   const copyCustomerMessage = async (o: Order) => {
-    try {
-      await navigator.clipboard.writeText(customerMessage(o));
-      toast.success("Mensaje copiado");
-    } catch {
-      toast.error("No se pudo copiar");
-    }
+    const ok = await copyText(customerMessage(o));
+    if (ok) toast.success("Mensaje copiado");
+    else toast.error("No se pudo copiar");
+    return ok;
   };
 
   const shareWithCustomer = async (o: Order) => {
     const text = customerMessage(o);
+    if (isEmbeddedPreview()) {
+      const ok = await copyCustomerMessage(o);
+      if (ok) {
+        toast.info("Lovable bloquea WhatsApp. Pega el mensaje en la app del celular.");
+      }
+      return;
+    }
     const wa = whatsappChatUrl(o.customer_phone, text);
     if (wa) {
       window.open(wa, "_blank", "noopener,noreferrer");
