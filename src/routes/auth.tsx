@@ -1,3 +1,4 @@
+import { oauthReturnPath } from "@/lib/oauth-return-path";
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Bike, Store, ArrowLeft, ShieldCheck } from "lucide-react";
@@ -20,7 +21,8 @@ type RoleParam = "restaurant" | "courier" | "admin";
 const ADMIN_DOMAIN = "@punchingsolutions.com.mx";
 
 export const Route = createFileRoute("/auth")({
-  validateSearch: (s: Record<string, unknown>): { role?: RoleParam } => ({
+  validateSearch: (s: Record<string, unknown>): { role?: RoleParam; next?: string } => ({
+    next: typeof s.next === "string" && oauthReturnPath(s.next) !== "/" ? oauthReturnPath(s.next) : undefined,
     role: s.role === "courier" ? "courier" : s.role === "admin" ? "admin" : s.role === "restaurant" ? "restaurant" : undefined,
   }),
   component: AuthPage,
@@ -28,7 +30,7 @@ export const Route = createFileRoute("/auth")({
 });
 
 function AuthPage() {
-  const { role: roleParam } = Route.useSearch();
+  const { role: roleParam, next } = Route.useSearch();
   const navigate = useNavigate();
   const [tab, setTab] = useState<"login" | "signup">(roleParam ? "signup" : "login");
   const [role, setRole] = useState<RoleParam>(roleParam ?? "restaurant");
@@ -46,6 +48,7 @@ function AuthPage() {
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("¡Bienvenido!");
+    if (next) { window.location.href = next; return; }
     navigate({ to: "/app" });
   };
 
@@ -64,7 +67,7 @@ function AuthPage() {
   const onGoogle = async () => {
     setLoading(true);
     const result = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/app",
+      redirect_uri: next ? new URL(next, window.location.origin).href : window.location.origin + "/app",
     });
     if (result.error) {
       setLoading(false);
@@ -97,7 +100,7 @@ function AuthPage() {
       email,
       password: form.password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth`,
+        emailRedirectTo: next ? new URL(next, window.location.origin).href : `${window.location.origin}/auth`,
         data: { full_name: form.fullName.trim(), role: "admin_pending" },
       },
     });

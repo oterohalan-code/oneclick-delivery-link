@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
@@ -25,7 +26,9 @@ import { Route as AppProfileRouteImport } from './routes/app.profile'
 import { Route as AppInsightsRouteImport } from './routes/app.insights'
 import { Route as AppHistoryRouteImport } from './routes/app.history'
 import { Route as AppAdminRouteImport } from './routes/app.admin'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
+import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -37,6 +40,11 @@ import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/publi
 const UnsubscribeRoute = UnsubscribeRouteImport.update({
   id: '/unsubscribe',
   path: '/unsubscribe',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -114,9 +122,20 @@ const AppAdminRoute = AppAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AppRoute,
 } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
   path: '/lovable/email/suppression',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
+  id: '/.lovable/oauth/consent',
+  path: '/.lovable/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LovableEmailTransactionalSendRoute =
@@ -163,7 +182,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
+  '/mcp': typeof McpRoute
   '/unsubscribe': typeof UnsubscribeRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/app/admin': typeof AppAdminRoute
   '/app/history': typeof AppHistoryRoute
   '/app/insights': typeof AppInsightsRoute
@@ -176,6 +197,7 @@ export interface FileRoutesByFullPath {
   '/legal/terms': typeof LegalTermsRoute
   '/t/$token': typeof TTokenRoute
   '/app/': typeof AppIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/pos/orders': typeof ApiPublicPosOrdersRoute
@@ -188,7 +210,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
+  '/mcp': typeof McpRoute
   '/unsubscribe': typeof UnsubscribeRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/app/admin': typeof AppAdminRoute
   '/app/history': typeof AppHistoryRoute
   '/app/insights': typeof AppInsightsRoute
@@ -201,6 +225,7 @@ export interface FileRoutesByTo {
   '/legal/terms': typeof LegalTermsRoute
   '/t/$token': typeof TTokenRoute
   '/app': typeof AppIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/pos/orders': typeof ApiPublicPosOrdersRoute
@@ -215,7 +240,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
+  '/mcp': typeof McpRoute
   '/unsubscribe': typeof UnsubscribeRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/app/admin': typeof AppAdminRoute
   '/app/history': typeof AppHistoryRoute
   '/app/insights': typeof AppInsightsRoute
@@ -228,6 +255,7 @@ export interface FileRoutesById {
   '/legal/terms': typeof LegalTermsRoute
   '/t/$token': typeof TTokenRoute
   '/app/': typeof AppIndexRoute
+  '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/pos/orders': typeof ApiPublicPosOrdersRoute
@@ -243,7 +271,9 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/auth'
+    | '/mcp'
     | '/unsubscribe'
+    | '/.well-known/oauth-protected-resource'
     | '/app/admin'
     | '/app/history'
     | '/app/insights'
@@ -256,6 +286,7 @@ export interface FileRouteTypes {
     | '/legal/terms'
     | '/t/$token'
     | '/app/'
+    | '/.lovable/oauth/consent'
     | '/lovable/email/suppression'
     | '/api/public/payments/webhook'
     | '/api/public/pos/orders'
@@ -268,7 +299,9 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/mcp'
     | '/unsubscribe'
+    | '/.well-known/oauth-protected-resource'
     | '/app/admin'
     | '/app/history'
     | '/app/insights'
@@ -281,6 +314,7 @@ export interface FileRouteTypes {
     | '/legal/terms'
     | '/t/$token'
     | '/app'
+    | '/.lovable/oauth/consent'
     | '/lovable/email/suppression'
     | '/api/public/payments/webhook'
     | '/api/public/pos/orders'
@@ -294,7 +328,9 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/auth'
+    | '/mcp'
     | '/unsubscribe'
+    | '/.well-known/oauth-protected-resource'
     | '/app/admin'
     | '/app/history'
     | '/app/insights'
@@ -307,6 +343,7 @@ export interface FileRouteTypes {
     | '/legal/terms'
     | '/t/$token'
     | '/app/'
+    | '/.lovable/oauth/consent'
     | '/lovable/email/suppression'
     | '/api/public/payments/webhook'
     | '/api/public/pos/orders'
@@ -321,11 +358,14 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
+  McpRoute: typeof McpRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   LegalPrivacyRoute: typeof LegalPrivacyRoute
   LegalTermsRoute: typeof LegalTermsRoute
   TTokenRoute: typeof TTokenRoute
+  DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicPosOrdersRoute: typeof ApiPublicPosOrdersRoute
@@ -343,6 +383,13 @@ declare module '@tanstack/react-router' {
       path: '/unsubscribe'
       fullPath: '/unsubscribe'
       preLoaderRoute: typeof UnsubscribeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -450,11 +497,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppAdminRouteImport
       parentRoute: typeof AppRoute
     }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/suppression': {
       id: '/lovable/email/suppression'
       path: '/lovable/email/suppression'
       fullPath: '/lovable/email/suppression'
       preLoaderRoute: typeof LovableEmailSuppressionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.lovable/oauth/consent': {
+      id: '/.lovable/oauth/consent'
+      path: '/.lovable/oauth/consent'
+      fullPath: '/.lovable/oauth/consent'
+      preLoaderRoute: typeof DotlovableOauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lovable/email/transactional/send': {
@@ -545,11 +606,15 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
+  McpRoute: McpRoute,
   UnsubscribeRoute: UnsubscribeRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
   EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   LegalPrivacyRoute: LegalPrivacyRoute,
   LegalTermsRoute: LegalTermsRoute,
   TTokenRoute: TTokenRoute,
+  DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicPosOrdersRoute: ApiPublicPosOrdersRoute,

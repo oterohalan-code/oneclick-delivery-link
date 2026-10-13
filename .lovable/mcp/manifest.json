@@ -1,0 +1,66 @@
+{
+  "version": 1,
+  "sdk_version": "3.0.5",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://txydzzjceaesdlyxyoch.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "1click",
+      "version": "0.1.0",
+      "title": "1Click"
+    },
+    "tools": [
+      {
+        "name": "list_my_orders",
+        "title": "Listar mis pedidos",
+        "description": "Lista los pedidos recientes visibles para el usuario (restaurante o repartidor), opcionalmente filtrados por estado.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {
+            "status": {
+              "description": "Estado a filtrar, ej. pending, assigned, picked_up, delivered, cancelled.",
+              "type": "string"
+            },
+            "limit": {
+              "description": "Máximo de pedidos (1-50, por defecto 20).",
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50
+            }
+          },
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "get_my_wallet",
+        "title": "Ver mi monedero",
+        "description": "Muestra el saldo del monedero, plan y estado de suscripción del repartidor que inició sesión.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "type": "object",
+          "properties": {},
+          "additionalProperties": false
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
