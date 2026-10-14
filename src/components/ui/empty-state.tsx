@@ -26,7 +26,7 @@ export function EmptyState({ icon: Icon, title, description, action, className, 
         className="pointer-events-none absolute inset-0 opacity-50"
         style={{
           background:
-            "radial-gradient(60% 50% at 50% 0%, oklch(0.85 0.08 45 / 0.25), transparent 70%)",
+            "radial-gradient(60% 50% at 50% 0%, color-mix(in srgb, #B8693A 22%, transparent), transparent 70%)",
         }}
       />
       <div className="relative">
