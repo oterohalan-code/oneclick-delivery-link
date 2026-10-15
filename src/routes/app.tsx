@@ -47,17 +47,18 @@ function AppLayout() {
       {/* subtle ambient mesh */}
       <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(at_15%_-5%,color-mix(in_srgb,#B8693A_18%,transparent),transparent_50%),radial-gradient(at_92%_8%,color-mix(in_srgb,#F5F2EB_70%,white),transparent_55%)] dark:bg-[radial-gradient(at_15%_-5%,color-mix(in_srgb,#B8693A_28%,transparent),transparent_50%),radial-gradient(at_92%_8%,#120F0D,transparent_55%)]" />
 
-      <header className="sticky top-0 z-30">
-        <div className="glass-strong border-b border-hairline/60">
+      <header className="sticky top-0 z-30 bg-navy text-navy-foreground">
+        <div className="border-b border-white/10">
           <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
             <Link to="/app" className="press">
-              <Logo size="sm" />
+              <Logo size="sm" tone="bone" />
             </Link>
             <div className="flex items-center gap-2">
               <RoleSwitcher />
               <Button
                 variant="ghost"
                 size="sm"
+                className="text-navy-foreground hover:bg-white/10 hover:text-navy-foreground"
                 aria-label="Cerrar sesión"
                 onClick={() => { signOut(); navigate({ to: "/" }); }}
               >

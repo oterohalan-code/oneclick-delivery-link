@@ -22,6 +22,9 @@ import { enablePush } from "@/lib/push";
 import { fetchEtaMinutes, formatEta } from "@/lib/eta";
 import { toast } from "sonner";
 import { googleMapsDirectionsUrl, whatsappChatUrl } from "@/lib/maps";
+import { formatMxn } from "@/lib/business";
+import { orderCode, orderMoney, readFlowFlag, writeFlowFlag } from "@/lib/order-flow";
+import { CheckRow, FlowButton, FlowCard, MoneyLine } from "@/components/order/FlowCard";
 
 interface Courier {
   id: string; status: string; plan: "pps" | "subscription"; wallet_balance: number;
@@ -37,6 +40,8 @@ interface OrderRow {
   amount_to_collect: number; external_order_id: string | null; notes: string | null;
   customer_name: string | null; customer_phone: string | null;
   shipping_fee: number; distance_km: number | null;
+  food_amount_cents?: number | null;
+  shipping_amount_cents?: number | null;
   restaurant_id: string; courier_id: string | null; created_at: string;
 }
 
@@ -346,19 +351,16 @@ export function CourierHome() {
                   {o.customer_name && (
                     <div className="text-sm mt-1">👤 <span className="font-medium">{o.customer_name}</span></div>
                   )}
-                  <div className="flex items-center justify-between mt-3 pt-3 border-t">
-                    <div>
-                      <div className="text-xs text-muted-foreground">Ganas</div>
-                      <div className="font-display text-xl font-bold text-success flex items-center gap-1">
-                        <DollarSign className="h-5 w-5" />{Number(o.shipping_fee).toFixed(0)}
-                      </div>
-                    </div>
-                    {!batchMode && (
-                      <Button size="sm" className="h-11" onClick={() => onAccept(o.id)}>
-                        Aceptar
-                      </Button>
-                    )}
+                  <div className="mt-3 rounded-xl bg-bone px-3 py-2">
+                    <MoneyLine label="Adelantas al restaurante" amount={formatMxn(orderMoney(o).food)} />
+                    <MoneyLine label="Cobras al cliente" amount={formatMxn(orderMoney(o).total)} />
+                    <MoneyLine label="Tu envío" amount={formatMxn(orderMoney(o).shipping)} strong />
                   </div>
+                  {!batchMode && (
+                    <div className="mt-3">
+                      <FlowButton onClick={() => onAccept(o.id)}>Aceptar pedido</FlowButton>
+                    </div>
+                  )}
                 </Card>
                 );
               })}
@@ -448,6 +450,12 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
   const [proofOpen, setProofOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [eta, setEta] = useState<number | null>(null);
+  const [gotFood, setGotFood] = useState(false);
+  const [paidRestaurant, setPaidRestaurant] = useState(false);
+  const [deliveredFood, setDeliveredFood] = useState(false);
+  const [collected, setCollected] = useState(false);
+  const [savedFirst, setSavedFirst] = useState(() => readFlowFlag(order.id, "courier-first"));
+  const [savedSecond, setSavedSecond] = useState(() => readFlowFlag(order.id, "courier-second"));
 
   // Recalcula ETA cada 30s usando la posición del courier hacia el target actual
   useEffect(() => {
@@ -558,97 +566,104 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
           : []),
       ];
 
+  const code = orderCode(order);
+  const money = orderMoney(order);
+  const saveFirst = () => {
+    writeFlowFlag(order.id, "courier-first");
+    setSavedFirst(true);
+  };
+  const saveSecond = () => {
+    writeFlowFlag(order.id, "courier-second");
+    setSavedSecond(true);
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between gap-2">
-        <Badge className="bg-primary text-primary-foreground">
-          {goingToPickup ? "En camino al restaurante" : "Pedido activo"}
-        </Badge>
-        {eta != null && (
-          <Badge variant="secondary" className="font-mono">
-            ⏱ ETA {formatEta(eta)}
-          </Badge>
-        )}
-      </div>
-      <Card className="p-4 space-y-2">
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex items-center gap-3 min-w-0">
-            {restaurant?.facadeUrl ? (
-              <img src={restaurant.facadeUrl} alt={restaurant.name} className="h-14 w-14 rounded-lg object-cover border" />
-            ) : (
-              <div className="h-14 w-14 rounded-lg bg-muted grid place-items-center text-2xl">🍽️</div>
+      <FlowCard title={`Pedido #${code}`} step={goingToPickup ? "Hacia el restaurante" : "Hacia el cliente"}>
+        <p className="text-sm font-medium">{restaurant?.name ?? "Restaurante"}</p>
+        <p className="text-sm text-graphite">{goingToPickup ? order.pickup_address : order.dropoff_address}</p>
+        {eta != null && <p className="mt-1 text-xs text-graphite">ETA {formatEta(eta)}</p>}
+      </FlowCard>
+
+      {order.status === "assigned" && !savedFirst && (
+        <FlowCard step="02" title="Reserva pendiente">
+          <p className="mb-3 text-sm text-graphite">Abre el restaurante en Maps y guarda la primera liga.</p>
+          {pickupMaps && (
+            <Button asChild variant="outline" className="mb-2 h-12 w-full">
+              <a href={pickupMaps} target="_blank" rel="noopener noreferrer">Abrir restaurante en Maps</a>
+            </Button>
+          )}
+          <FlowButton onClick={saveFirst}>Guardar primera liga</FlowButton>
+        </FlowCard>
+      )}
+
+      {order.status === "assigned" && savedFirst && (
+        <FlowCard step="03" title="Recogida">
+          <p className="mb-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-950">
+            Entregas {formatMxn(money.food)} en efectivo al restaurante.
+          </p>
+          <div className="space-y-2">
+            <CheckRow checked={gotFood} label="Producto recibido" onChange={setGotFood} />
+            <CheckRow checked={paidRestaurant} label="Anticipo entregado" onChange={setPaidRestaurant} />
+          </div>
+          <div className="mt-3">
+            <FlowButton disabled={busy || !gotFood || !paidRestaurant} onClick={goInTransit}>
+              Confirmar recogida
+            </FlowButton>
+          </div>
+        </FlowCard>
+      )}
+
+      {order.status === "in_transit" && !savedSecond && (
+        <FlowCard step="04" title="Segundo recorrido">
+          <p className="mb-3 text-sm text-graphite">Abre el domicilio del cliente y guarda la segunda liga.</p>
+          {dropoffMaps && (
+            <Button asChild variant="outline" className="mb-2 h-12 w-full">
+              <a href={dropoffMaps} target="_blank" rel="noopener noreferrer">Abrir destino en Maps</a>
+            </Button>
+          )}
+          <FlowButton onClick={saveSecond}>Guardar segunda liga</FlowButton>
+        </FlowCard>
+      )}
+
+      {order.status === "in_transit" && savedSecond && (
+        <FlowCard step="05" title="Entrega y cobro">
+          <p className="mb-3 text-lg font-semibold text-primary">Cobra al cliente {formatMxn(money.total)}</p>
+          <div className="space-y-2">
+            <CheckRow checked={deliveredFood} label="Entregué el pedido" onChange={setDeliveredFood} />
+            <CheckRow checked={collected} label={`Cobré ${formatMxn(money.total)}`} onChange={setCollected} />
+          </div>
+          <div className="mt-3 space-y-2">
+            <FlowButton disabled={!deliveredFood || !collected} onClick={() => setProofOpen(true)}>
+              Confirmar entrega
+            </FlowButton>
+            {customerWa && (
+              <Button asChild variant="outline" className="h-12 w-full">
+                <a href={customerWa} target="_blank" rel="noopener noreferrer">WhatsApp del cliente</a>
+              </Button>
             )}
-            <div className="min-w-0">
-              <div className="font-display text-lg font-bold truncate">{restaurant?.name ?? "Restaurante"}</div>
-              {restaurant?.phone && (
-                <a href={`tel:${restaurant.phone}`} className="text-sm text-primary hover:underline">📞 {restaurant.phone}</a>
-              )}
-            </div>
           </div>
-          <div className="text-right shrink-0">
-            <div className="text-xs text-muted-foreground">Ganas</div>
-            <div className="font-display text-lg font-bold text-success">${Number(order.shipping_fee).toFixed(0)}</div>
-          </div>
-        </div>
-        <div className="text-sm text-muted-foreground"><MapPin className="inline h-3.5 w-3.5" /> Recoger: {order.pickup_address}</div>
-        <div className="text-sm text-muted-foreground"><MapPin className="inline h-3.5 w-3.5 text-primary" /> Entregar: {order.dropoff_address}</div>
-        {(pickupMaps || dropoffMaps) && (
-          <div className="grid grid-cols-2 gap-2 pt-1">
-            {pickupMaps ? (
-              <Button asChild variant={goingToPickup ? "default" : "outline"} size="sm" className="h-11">
-                <a href={pickupMaps} target="_blank" rel="noopener noreferrer">
-                  <Navigation className="h-3.5 w-3.5 mr-1.5" /> Recoger
-                </a>
-              </Button>
-            ) : <span />}
-            {dropoffMaps ? (
-              <Button asChild variant={!goingToPickup ? "default" : "outline"} size="sm" className="h-11">
-                <a href={dropoffMaps} target="_blank" rel="noopener noreferrer">
-                  <Navigation className="h-3.5 w-3.5 mr-1.5" /> Entregar
-                </a>
-              </Button>
-            ) : <span />}
-          </div>
-        )}
-        {order.customer_name && (
-          <div className="text-sm">👤 Cliente: <strong>{order.customer_name}</strong></div>
-        )}
-        {customerWa && (
-          <a
-            href={customerWa}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm font-medium text-success hover:underline"
-          >
-            📱 WhatsApp cliente: {order.customer_phone}
-          </a>
-        )}
-        <div className="text-sm">💵 Cobrar al cliente: <strong>${Number(order.amount_to_collect).toFixed(2)}</strong></div>
-        {order.notes && <div className="text-sm bg-muted p-2 rounded">📝 {order.notes}</div>}
-      </Card>
+        </FlowCard>
+      )}
+
+      {order.status === "delivered" && (
+        <FlowCard step="06" title="Pedido finalizado">
+          <div className="mb-3 rounded-xl bg-emerald-50 px-3 py-3 text-sm text-emerald-800">Entrega confirmada</div>
+          <MoneyLine label="Cobro registrado" amount={formatMxn(money.total)} />
+          <MoneyLine label="Anticipo recuperado" amount={formatMxn(money.food)} />
+          <MoneyLine label="Tu envío" amount={formatMxn(money.shipping)} strong />
+        </FlowCard>
+      )}
 
       {showMap && pins.length >= 1 && (
-        <div className="h-72">
+        <div className="h-56 overflow-hidden rounded-2xl">
           <MapView key={`map-${order.id}-${order.status}`} pins={pins} showRoute height="100%" />
         </div>
       )}
 
-      <Button variant="secondary" onClick={() => setChatOpen(true)} className="w-full h-12">
+      <Button variant="outline" onClick={() => setChatOpen(true)} className="h-12 w-full">
         <MessageCircle className="mr-2 h-4 w-4" /> Chat con el restaurante
       </Button>
-
-      <div className="grid grid-cols-2 gap-3">
-        {order.status === "assigned" && (
-          <Button onClick={goInTransit} disabled={busy} className="col-span-2 h-12">
-            <Truck className="mr-2 h-4 w-4" /> En camino
-          </Button>
-        )}
-        {order.status === "in_transit" && (
-          <Button onClick={() => setProofOpen(true)} className="col-span-2 h-12">
-            <CheckCircle2 className="mr-2 h-4 w-4" /> Finalizar entrega
-          </Button>
-        )}
-      </div>
 
       <OrderChat
         open={chatOpen}

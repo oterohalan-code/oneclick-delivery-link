@@ -34,22 +34,22 @@ function Landing() {
       <MeshBackground />
 
       {/* Header */}
-      <header className="sticky top-0 z-40">
-        <div className="glass-strong border-b border-hairline/60">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3">
-            <Logo size="md" />
-            <div className="flex items-center gap-2">
-              
-              <Link to="/auth" className="hidden sm:inline-flex">
-                <Button variant="ghost" size="sm">Iniciar sesión</Button>
-              </Link>
-              <Link to="/auth">
-                <Button variant="default" size="sm" className="press">
-                  Comenzar <ArrowRight className="h-3.5 w-3.5" />
-                </Button>
-              </Link>
-            </div>
-          </div>
+      <header className="sticky top-0 z-40 bg-navy text-navy-foreground">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3">
+          <Logo size="md" tone="bone" />
+          <nav className="flex items-center gap-2 sm:gap-4 text-sm">
+            <Link to="/restaurantes" className="hidden sm:inline text-navy-foreground/80 hover:text-navy-foreground">
+              Restaurantes
+            </Link>
+            <Link to="/auth" className="hidden sm:inline text-navy-foreground/80 hover:text-navy-foreground">
+              Iniciar sesión
+            </Link>
+            <Link to="/auth">
+              <Button variant="default" size="sm" className="press">
+                Comenzar <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          </nav>
         </div>
       </header>
 

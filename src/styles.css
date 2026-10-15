@@ -55,6 +55,9 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  --color-navy: #0E3140;
+  --color-navy-foreground: #F7F4EF;
+
   --font-display: "Fraunces", "Georgia", serif;
   --font-sans: "Inter Tight", "Inter", system-ui, sans-serif;
 
@@ -68,14 +71,14 @@
 :root {
   --radius: 0.875rem;
 
-  /* Brand mocks in src/assets/logos: ink #1A1614, bone #F5F2EB, copper #B8693A */
-  --ink: #1A1614;
-  --bone: #F5F2EB;
-  --paper: #FBF8F3;
-  --ember: #B8693A;
-  --ember-foreground: #F5F2EB;
-  --graphite: #6F6862;
-  --hairline: #E4DDD4;
+  /* Screen mocks: navy bar, cool paper, orange actions */
+  --ink: #102833;
+  --bone: #F3F6F7;
+  --paper: #FFFFFF;
+  --ember: #E45712;
+  --ember-foreground: #FFFFFF;
+  --graphite: #5C6B73;
+  --hairline: #E3E8EB;
 
   --background: var(--bone);
   --foreground: var(--ink);
@@ -88,9 +91,9 @@
   --popover: var(--paper);
   --popover-foreground: var(--ink);
 
-  --primary: var(--ink);
-  --primary-foreground: var(--bone);
-  --primary-glow: #C47A4A;
+  --primary: #E45712;
+  --primary-foreground: #FFFFFF;
+  --primary-glow: #F07A3A;
 
   --secondary: #EBE6DE;
   --secondary-foreground: var(--ink);
