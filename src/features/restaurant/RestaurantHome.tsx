@@ -285,16 +285,63 @@ export function RestaurantHome() {
           <div className="space-y-3">
             {active.map((o) => {
               const c = courierByOrder[o.id];
-              const courierPhone = c?.phone ? `${c.phoneDialCode}${c.phone}` : null;
+              const wa = isEmbeddedPreview()
+                ? null
+                : whatsappChatUrl(o.customer_phone, customerMessage(o));
               return (
-                <div key={o.id} className="space-y-2">
-                  <RestaurantOrderBoard
-                    order={o}
-                    restaurantName={rest.name}
-                    courierName={c?.fullName ?? null}
-                    courierPhone={courierPhone}
-                    onCancel={o.status === "pending" || o.status === "assigned" ? () => cancelOrder(o) : undefined}
-                  />
+                <Card key={o.id} className="p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="text-xs text-muted-foreground">#{o.external_order_id ?? o.id.slice(0, 6)}</div>
+                      <div className="font-medium truncate">{o.dropoff_address}</div>
+                      {o.customer_name && (
+                        <div className="text-xs text-muted-foreground truncate">👤 {o.customer_name}</div>
+                      )}
+                      <div className="text-sm text-muted-foreground mt-1">${Number(o.amount_to_collect).toFixed(2)} MXN</div>
+                    </div>
+                    <Badge className={m.color}><Icon className="h-3 w-3 mr-1" />{m.label}</Badge>
+                  </div>
+
+                  <div className="mt-3 flex gap-2">
+                    {wa ? (
+                      <Button variant="outline" size="sm" className="flex-1" asChild>
+                        <a href={wa} target="_blank" rel="noopener noreferrer">
+                          <Share2 className="h-3.5 w-3.5 mr-1.5" /> WhatsApp al cliente
+                        </a>
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => shareWithCustomer(o)}
+                      >
+                        <Share2 className="h-3.5 w-3.5 mr-1.5" /> WhatsApp al cliente
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => copyCustomerMessage(o)}
+                      title="Copiar mensaje con las dos ligas de Maps"
+                    >
+                      <Copy className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+
+                  {(o.status === "pending" || o.status === "assigned") && (
+                    <div className="mt-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full text-destructive hover:text-destructive hover:bg-destructive/10 border-destructive/30"
+                        onClick={() => cancelOrder(o)}
+                      >
+                        <Ban className="h-3.5 w-3.5 mr-1.5" /> Cancelar envío
+                      </Button>
+                    </div>
+                  )}
+
                   {o.courier_id && (o.status === "assigned" || o.status === "in_transit") && (
                     <Button variant="outline" className="w-full" onClick={() => setChatOrderId(o.id)}>
                       <MessageCircle className="h-4 w-4 mr-2" /> Chat con {c?.fullName ?? "repartidor"}
