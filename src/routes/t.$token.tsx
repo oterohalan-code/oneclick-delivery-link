@@ -84,9 +84,11 @@ function TrackingPage() {
   return (
     <div className="relative min-h-dvh">
       <MeshBackground />
-      <header className="px-4 sm:px-6 py-4 flex items-center justify-between">
-        <Logo />
-        <span className="text-xs uppercase tracking-widest text-muted-foreground">Tracking</span>
+      <header className="bg-navy px-4 py-4 text-navy-foreground sm:px-6">
+        <div className="mx-auto flex max-w-2xl items-center justify-between">
+          <Logo tone="bone" size="sm" />
+          <span className="text-xs uppercase tracking-widest text-navy-foreground/70">Tu pedido</span>
+        </div>
       </header>
 
       <main className="px-4 sm:px-6 pb-12 max-w-2xl mx-auto">
@@ -139,8 +141,13 @@ function TrackingContent({ data }: { data: Tracking }) {
               {data.restaurant_name ?? "Tu pedido"}
             </p>
             <h1 className="text-2xl font-semibold mt-1">
-              {isDelivered ? "¡Entregado!" : STATUS_STEPS[stepIndex].label}
+              {isDelivered ? "Pedido entregado" : STATUS_STEPS[stepIndex].label}
             </h1>
+            {isDelivered && (
+              <p className="mt-2 rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+                Entrega registrada por el repartidor
+              </p>
+            )}
           </div>
           {!isDelivered && (
             <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/40 px-2 py-1 rounded-full">

@@ -55,6 +55,9 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
+  --color-navy: #0E3140;
+  --color-navy-foreground: #F7F4EF;
+
   --font-display: "Fraunces", "Georgia", serif;
   --font-sans: "Inter Tight", "Inter", system-ui, sans-serif;
 
@@ -68,14 +71,14 @@
 :root {
   --radius: 0.875rem;
 
-  /* Obsidian Glass — premium monochrome with warm copper accent */
-  --ink: oklch(0.16 0.008 60);
-  --bone: oklch(0.97 0.006 80);
-  --paper: oklch(0.99 0.004 80);
-  --ember: oklch(0.62 0.13 45);
-  --ember-foreground: oklch(0.98 0.005 80);
-  --graphite: oklch(0.45 0.008 60);
-  --hairline: oklch(0.88 0.005 60);
+  /* Screen mocks: navy bar, cool paper, orange actions */
+  --ink: #102833;
+  --bone: #F3F6F7;
+  --paper: #FFFFFF;
+  --ember: #E45712;
+  --ember-foreground: #FFFFFF;
+  --graphite: #5C6B73;
+  --hairline: #E3E8EB;
 
   --background: var(--bone);
   --foreground: var(--ink);
@@ -88,15 +91,15 @@
   --popover: var(--paper);
   --popover-foreground: var(--ink);
 
-  --primary: var(--ember);
-  --primary-foreground: var(--ember-foreground);
-  --primary-glow: oklch(0.72 0.14 45);
+  --primary: #E45712;
+  --primary-foreground: #FFFFFF;
+  --primary-glow: #F07A3A;
 
-  --secondary: oklch(0.94 0.005 60);
+  --secondary: #EBE6DE;
   --secondary-foreground: var(--ink);
-  --muted: oklch(0.94 0.005 60);
+  --muted: #EBE6DE;
   --muted-foreground: var(--graphite);
-  --accent: oklch(0.93 0.02 45);
+  --accent: #F3E6DC;
   --accent-foreground: var(--ink);
 
   --destructive: oklch(0.55 0.18 25);
@@ -117,67 +120,67 @@
   --glass-border: color-mix(in oklab, white 70%, transparent);
   --glass-border-dark: color-mix(in oklab, white 12%, transparent);
 
-  /* Mesh gradient — warm copper + ivory */
-  --mesh-1: oklch(0.85 0.08 45 / 0.6);
-  --mesh-2: oklch(0.92 0.04 80 / 0.5);
-  --mesh-3: oklch(0.88 0.06 30 / 0.4);
+  /* Mesh — bone field with a copper point, same as the logo mocks */
+  --mesh-1: color-mix(in srgb, #B8693A 28%, transparent);
+  --mesh-2: color-mix(in srgb, #F5F2EB 70%, white);
+  --mesh-3: color-mix(in srgb, #1A1614 6%, transparent);
 
-  --sidebar: var(--ink);
-  --sidebar-foreground: var(--bone);
-  --sidebar-primary: var(--ember);
-  --sidebar-primary-foreground: var(--bone);
-  --sidebar-accent: oklch(0.24 0.008 60);
-  --sidebar-accent-foreground: var(--bone);
-  --sidebar-border: oklch(0.24 0.008 60);
-  --sidebar-ring: var(--ember);
+  --sidebar: #1A1614;
+  --sidebar-foreground: #F5F2EB;
+  --sidebar-primary: #B8693A;
+  --sidebar-primary-foreground: #F5F2EB;
+  --sidebar-accent: #2A2420;
+  --sidebar-accent-foreground: #F5F2EB;
+  --sidebar-border: #2A2420;
+  --sidebar-ring: #B8693A;
 }
 
 .dark {
-  /* Obsidian Glass — premium dark variant */
-  --background: oklch(0.13 0.006 60);
-  --foreground: oklch(0.96 0.005 80);
-  --bone: oklch(0.96 0.005 80);
-  --paper: oklch(0.18 0.007 60);
-  --ink: oklch(0.96 0.005 80);
-  --graphite: oklch(0.68 0.008 60);
-  --hairline: oklch(1 0 0 / 0.10);
-  --ember: oklch(0.72 0.14 45);
-  --ember-foreground: oklch(0.13 0.006 60);
+  /* Same mock palette, inverted: ink field, bone type, copper point */
+  --background: #1A1614;
+  --foreground: #F5F2EB;
+  --bone: #F5F2EB;
+  --paper: #241F1C;
+  --ink: #F5F2EB;
+  --graphite: #B7AFA6;
+  --hairline: color-mix(in srgb, #F5F2EB 12%, transparent);
+  --ember: #C47A4A;
+  --ember-foreground: #1A1614;
 
-  --brand: oklch(0.96 0.005 80);
-  --brand-foreground: oklch(0.13 0.006 60);
-  --card: oklch(0.18 0.007 60);
-  --card-foreground: oklch(0.96 0.005 80);
-  --popover: oklch(0.18 0.007 60);
-  --popover-foreground: oklch(0.96 0.005 80);
-  --primary: oklch(0.96 0.005 80);
-  --primary-foreground: oklch(0.13 0.006 60);
-  --primary-glow: oklch(0.85 0.005 80);
-  --secondary: oklch(0.22 0.008 60);
-  --secondary-foreground: oklch(0.96 0.005 80);
-  --muted: oklch(0.22 0.008 60);
-  --muted-foreground: oklch(0.68 0.008 60);
-  --accent: oklch(0.30 0.04 45);
-  --accent-foreground: oklch(0.96 0.005 80);
-  --border: oklch(1 0 0 / 0.10);
-  --input: oklch(1 0 0 / 0.14);
-  --ring: var(--ember);
+  --brand: #F5F2EB;
+  --brand-foreground: #1A1614;
+  --card: #241F1C;
+  --card-foreground: #F5F2EB;
+  --popover: #241F1C;
+  --popover-foreground: #F5F2EB;
+  --primary: #F5F2EB;
+  --primary-foreground: #1A1614;
+  --primary-glow: #E7E0D6;
+  --secondary: #2A2420;
+  --secondary-foreground: #F5F2EB;
+  --muted: #2A2420;
+  --muted-foreground: #B7AFA6;
+  --accent: #3A2C24;
+  --accent-foreground: #F5F2EB;
+  --border: color-mix(in srgb, #F5F2EB 12%, transparent);
+  --input: color-mix(in srgb, #F5F2EB 16%, transparent);
+  --ring: #C47A4A;
 
-  --glass-bg: color-mix(in oklab, oklch(0.20 0.007 60) 65%, transparent);
-  --glass-bg-strong: color-mix(in oklab, oklch(0.20 0.007 60) 82%, transparent);
-  --glass-bg-dark: color-mix(in oklab, oklch(0.10 0.005 60) 70%, transparent);
-  --glass-border: color-mix(in oklab, white 14%, transparent);
-  --glass-border-dark: color-mix(in oklab, white 10%, transparent);
+  --glass-bg: color-mix(in srgb, #241F1C 72%, transparent);
+  --glass-bg-strong: color-mix(in srgb, #241F1C 88%, transparent);
+  --glass-bg-dark: color-mix(in srgb, #1A1614 78%, transparent);
+  --glass-border: color-mix(in srgb, #F5F2EB 14%, transparent);
+  --glass-border-dark: color-mix(in srgb, #F5F2EB 10%, transparent);
 
-  --mesh-1: oklch(0.55 0.10 45 / 0.35);
-  --mesh-2: oklch(0.40 0.05 80 / 0.25);
-  --mesh-3: oklch(0.45 0.08 30 / 0.30);
+  --mesh-1: color-mix(in srgb, #B8693A 32%, transparent);
+  --mesh-2: color-mix(in srgb, #1A1614 40%, transparent);
+  --mesh-3: color-mix(in srgb, #C47A4A 18%, transparent);
 
-  --sidebar: oklch(0.10 0.005 60);
-  --sidebar-foreground: oklch(0.96 0.005 80);
-  --sidebar-accent: oklch(0.20 0.008 60);
-  --sidebar-accent-foreground: oklch(0.96 0.005 80);
-  --sidebar-border: oklch(1 0 0 / 0.08);
+  --sidebar: #120F0D;
+  --sidebar-foreground: #F5F2EB;
+  --sidebar-accent: #2A2420;
+  --sidebar-accent-foreground: #F5F2EB;
+  --sidebar-border: color-mix(in srgb, #F5F2EB 10%, transparent);
 }
 
 @layer base {
@@ -249,8 +252,8 @@
     100% { transform: translateX(220%); }
   }
   @keyframes ember-pulse {
-    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 oklch(0.62 0.13 45 / 0.6); }
-    50% { opacity: 0.85; box-shadow: 0 0 0 8px oklch(0.62 0.13 45 / 0); }
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 color-mix(in srgb, #B8693A 60%, transparent); }
+    50% { opacity: 0.85; box-shadow: 0 0 0 8px color-mix(in srgb, #B8693A 0%, transparent); }
   }
   .pulse-ember { animation: ember-pulse 1.8s ease-out infinite; }
   .btn-shimmer { position: relative; overflow: hidden; isolation: isolate; }

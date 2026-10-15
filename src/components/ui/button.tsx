@@ -11,9 +11,9 @@ const buttonVariants = cva(
       variant: {
         // Premium signature — primary pill with shimmer + lift (auto-adapts dark)
         default:
-          "btn-shimmer rounded-full bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary active:text-primary-foreground shadow-button hover:shadow-button-hover hover:-translate-y-0.5 active:translate-y-0",
+          "btn-shimmer rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary active:text-primary-foreground shadow-button hover:shadow-button-hover hover:-translate-y-0.5 active:translate-y-0",
         premium:
-          "btn-shimmer rounded-full bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary active:text-primary-foreground shadow-button hover:shadow-button-hover hover:-translate-y-0.5 active:translate-y-0",
+          "btn-shimmer rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary active:text-primary-foreground shadow-button hover:shadow-button-hover hover:-translate-y-0.5 active:translate-y-0",
         // Glass / translucent — guarantee contrast in all states
         glass:
           "rounded-full glass-strong text-foreground hover:text-foreground active:text-foreground hover:-translate-y-0.5 transition border-2 border-foreground/20 hover:border-foreground/40 hover:bg-[var(--glass-bg-strong)]",

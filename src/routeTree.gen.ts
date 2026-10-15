@@ -10,7 +10,9 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
+import { Route as RestaurantesRouteImport } from './routes/restaurantes'
 import { Route as McpRouteImport } from './routes/mcp'
+import { Route as FlujoRouteImport } from './routes/flujo'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as IndexRouteImport } from './routes/index'
@@ -43,9 +45,19 @@ const UnsubscribeRoute = UnsubscribeRouteImport.update({
   path: '/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RestaurantesRoute = RestaurantesRouteImport.update({
+  id: '/restaurantes',
+  path: '/restaurantes',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const McpRoute = McpRouteImport.update({
   id: '/mcp',
   path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FlujoRoute = FlujoRouteImport.update({
+  id: '/flujo',
+  path: '/flujo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -189,7 +201,9 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
+  '/flujo': typeof FlujoRoute
   '/mcp': typeof McpRoute
+  '/restaurantes': typeof RestaurantesRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/app/admin': typeof AppAdminRoute
@@ -206,8 +220,8 @@ export interface FileRoutesByFullPath {
   '/app/': typeof AppIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
-  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/payments/mercadopago': typeof ApiPublicPaymentsMercadopagoRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/pos/orders': typeof ApiPublicPosOrdersRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -218,7 +232,9 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
+  '/flujo': typeof FlujoRoute
   '/mcp': typeof McpRoute
+  '/restaurantes': typeof RestaurantesRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/app/admin': typeof AppAdminRoute
@@ -235,8 +251,8 @@ export interface FileRoutesByTo {
   '/app': typeof AppIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
-  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/payments/mercadopago': typeof ApiPublicPaymentsMercadopagoRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/pos/orders': typeof ApiPublicPosOrdersRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -249,7 +265,9 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
+  '/flujo': typeof FlujoRoute
   '/mcp': typeof McpRoute
+  '/restaurantes': typeof RestaurantesRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/app/admin': typeof AppAdminRoute
@@ -266,8 +284,8 @@ export interface FileRoutesById {
   '/app/': typeof AppIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
-  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/payments/mercadopago': typeof ApiPublicPaymentsMercadopagoRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/api/public/pos/orders': typeof ApiPublicPosOrdersRoute
   '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
   '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
@@ -281,7 +299,9 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/auth'
+    | '/flujo'
     | '/mcp'
+    | '/restaurantes'
     | '/unsubscribe'
     | '/.well-known/oauth-protected-resource'
     | '/app/admin'
@@ -298,8 +318,8 @@ export interface FileRouteTypes {
     | '/app/'
     | '/.lovable/oauth/consent'
     | '/lovable/email/suppression'
-    | '/api/public/payments/webhook'
     | '/api/public/payments/mercadopago'
+    | '/api/public/payments/webhook'
     | '/api/public/pos/orders'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -310,7 +330,9 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/flujo'
     | '/mcp'
+    | '/restaurantes'
     | '/unsubscribe'
     | '/.well-known/oauth-protected-resource'
     | '/app/admin'
@@ -327,8 +349,8 @@ export interface FileRouteTypes {
     | '/app'
     | '/.lovable/oauth/consent'
     | '/lovable/email/suppression'
-    | '/api/public/payments/webhook'
     | '/api/public/payments/mercadopago'
+    | '/api/public/payments/webhook'
     | '/api/public/pos/orders'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -340,7 +362,9 @@ export interface FileRouteTypes {
     | '/'
     | '/app'
     | '/auth'
+    | '/flujo'
     | '/mcp'
+    | '/restaurantes'
     | '/unsubscribe'
     | '/.well-known/oauth-protected-resource'
     | '/app/admin'
@@ -357,8 +381,8 @@ export interface FileRouteTypes {
     | '/app/'
     | '/.lovable/oauth/consent'
     | '/lovable/email/suppression'
-    | '/api/public/payments/webhook'
     | '/api/public/payments/mercadopago'
+    | '/api/public/payments/webhook'
     | '/api/public/pos/orders'
     | '/lovable/email/auth/preview'
     | '/lovable/email/auth/webhook'
@@ -371,7 +395,9 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
+  FlujoRoute: typeof FlujoRoute
   McpRoute: typeof McpRoute
+  RestaurantesRoute: typeof RestaurantesRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
@@ -380,8 +406,8 @@ export interface RootRouteChildren {
   TTokenRoute: typeof TTokenRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
-  ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicPaymentsMercadopagoRoute: typeof ApiPublicPaymentsMercadopagoRoute
+  ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   ApiPublicPosOrdersRoute: typeof ApiPublicPosOrdersRoute
   LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
   LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
@@ -399,11 +425,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof UnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/restaurantes': {
+      id: '/restaurantes'
+      path: '/restaurantes'
+      fullPath: '/restaurantes'
+      preLoaderRoute: typeof RestaurantesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/mcp': {
       id: '/mcp'
       path: '/mcp'
       fullPath: '/mcp'
       preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/flujo': {
+      id: '/flujo'
+      path: '/flujo'
+      fullPath: '/flujo'
+      preLoaderRoute: typeof FlujoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -627,7 +667,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
+  FlujoRoute: FlujoRoute,
   McpRoute: McpRoute,
+  RestaurantesRoute: RestaurantesRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
@@ -637,8 +679,8 @@ const rootRouteChildren: RootRouteChildren = {
   TTokenRoute: TTokenRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
-  ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicPaymentsMercadopagoRoute: ApiPublicPaymentsMercadopagoRoute,
+  ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   ApiPublicPosOrdersRoute: ApiPublicPosOrdersRoute,
   LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
   LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,

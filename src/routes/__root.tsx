@@ -30,7 +30,7 @@ export const Route = createRootRoute({
       { httpEquiv: "Permissions-Policy", content: "geolocation=(self), camera=(self), microphone=(), payment=(self)" },
       { title: "1-Click — Logística Manzanillo" },
       { name: "description", content: "Conecta restaurantes con repartidores en Manzanillo, Colima. Pedidos en vivo y membresía mensual." },
-      { name: "theme-color", content: "#171615" },
+      { name: "theme-color", content: "#1A1614" },
       { property: "og:title", content: "1-Click — Logística Manzanillo" },
       { property: "og:description", content: "Conecta restaurantes con repartidores en Manzanillo, Colima. Pedidos en vivo y membresía mensual." },
       { property: "og:type", content: "website" },
