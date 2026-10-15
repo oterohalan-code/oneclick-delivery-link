@@ -111,7 +111,7 @@ export const acceptOrder = createServerFn({ method: "POST" })
       const { data: rest } = await supabaseAdmin
         .from("restaurants")
         .select("user_id, name")
-        .eq("id", updated.restaurant_id)
+        .eq("id", updated.restaurant_id as string)
         .maybeSingle();
       const { data: prof } = await supabaseAdmin
         .from("profiles")

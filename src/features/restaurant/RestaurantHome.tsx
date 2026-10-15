@@ -285,6 +285,8 @@ export function RestaurantHome() {
           <div className="space-y-3">
             {active.map((o) => {
               const c = courierByOrder[o.id];
+              const m = STATUS_META[o.status] ?? STATUS_META.pending;
+              const Icon = m.icon;
               const wa = isEmbeddedPreview()
                 ? null
                 : whatsappChatUrl(o.customer_phone, customerMessage(o));
@@ -347,7 +349,7 @@ export function RestaurantHome() {
                       <MessageCircle className="h-4 w-4 mr-2" /> Chat con {c?.fullName ?? "repartidor"}
                     </Button>
                   )}
-                </div>
+                </Card>
               );
             })}
           </div>
