@@ -48,7 +48,7 @@ export async function applyApprovedPayment(payment: MpPayment) {
     p_amount_cents: amountCents,
     p_currency: "MXN",
     p_paid_at: paidAt,
-    p_mp_preapproval_id: preapprovalId,
+    p_mp_preapproval_id: preapprovalId ?? undefined,
   });
 
   if (error) return { ok: false as const, reason: error.message };
