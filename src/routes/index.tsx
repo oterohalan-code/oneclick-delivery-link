@@ -34,22 +34,22 @@ function Landing() {
       <MeshBackground />
 
       {/* Header */}
-      <header className="sticky top-0 z-40">
-        <div className="glass-strong border-b border-hairline/60">
-          <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3">
-            <Logo size="md" />
-            <div className="flex items-center gap-2">
-              
-              <Link to="/auth" className="hidden sm:inline-flex">
-                <Button variant="ghost" size="sm">Iniciar sesión</Button>
-              </Link>
-              <Link to="/auth">
-                <Button variant="default" size="sm" className="press">
-                  Comenzar <ArrowRight className="h-3.5 w-3.5" />
-                </Button>
-              </Link>
-            </div>
-          </div>
+      <header className="sticky top-0 z-40 bg-navy text-navy-foreground">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3">
+          <Logo size="md" tone="bone" />
+          <nav className="flex items-center gap-2 sm:gap-4 text-sm">
+            <Link to="/restaurantes" className="hidden sm:inline text-navy-foreground/80 hover:text-navy-foreground">
+              Restaurantes
+            </Link>
+            <Link to="/auth" className="hidden sm:inline text-navy-foreground/80 hover:text-navy-foreground">
+              Iniciar sesión
+            </Link>
+            <Link to="/auth">
+              <Button variant="default" size="sm" className="press">
+                Comenzar <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
+            </Link>
+          </nav>
         </div>
       </header>
 
@@ -86,7 +86,7 @@ function Landing() {
           <div className="md:order-2 order-1 relative spring-in">
             {/* Decorative glow halo */}
             <div className="absolute -inset-6 md:-inset-8 -z-10 rounded-[2rem] opacity-70 blur-3xl"
-                 style={{ background: "radial-gradient(60% 60% at 70% 30%, oklch(0.72 0.16 45 / 0.45), transparent 60%), radial-gradient(50% 50% at 20% 80%, oklch(0.55 0.14 25 / 0.35), transparent 65%)" }} />
+                 style={{ background: "radial-gradient(60% 60% at 70% 30%, color-mix(in srgb, #B8693A 42%, transparent), transparent 60%), radial-gradient(50% 50% at 20% 80%, color-mix(in srgb, #1A1614 28%, transparent), transparent 65%)" }} />
             <GlassCard variant="strong" className="aspect-[4/3] md:aspect-square p-2 md:p-2.5 overflow-hidden">
               <div className="relative h-full w-full rounded-2xl overflow-hidden">
                 <img
@@ -99,7 +99,7 @@ function Landing() {
                 {/* Color grade overlays */}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/30 to-black/10" />
                 <div className="absolute inset-0 mix-blend-overlay opacity-40"
-                     style={{ background: "linear-gradient(135deg, oklch(0.72 0.16 45 / 0.5), transparent 50%, oklch(0.55 0.14 25 / 0.4))" }} />
+                     style={{ background: "linear-gradient(135deg, color-mix(in srgb, #B8693A 48%, transparent), transparent 50%, color-mix(in srgb, #1A1614 35%, transparent))" }} />
 
                 {/* Top chip — bg oscuro para contraste WCAG */}
                 <div className="absolute top-3 md:top-4 left-3 md:left-4 right-3 md:right-4 flex items-center justify-between">
@@ -204,7 +204,7 @@ function Landing() {
           <GlassCard variant="dark" className="p-12 md:p-16 text-center grain overflow-hidden relative">
             <MeshBackground variant="dark" />
             <div className="relative">
-              <div className="eyebrow mb-5" style={{ color: "oklch(0.78 0.12 45)" }}>Comienza hoy</div>
+              <div className="eyebrow mb-5" style={{ color: "#C47A4A" }}>Comienza hoy</div>
               <h2 className="text-display text-4xl md:text-5xl font-medium text-bone max-w-2xl mx-auto leading-tight">
                 Eleva la operación de tu restaurante.
               </h2>

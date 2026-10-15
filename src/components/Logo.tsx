@@ -23,7 +23,7 @@ export const Logo = forwardRef<HTMLDivElement, LogoProps>(
       <div ref={ref} className={`inline-flex items-center gap-2.5 ${className}`}>
         <img src={logoMark} alt="1Click" className={`${sz.mark} ${tone === "bone" ? "invert" : ""}`} />
         {showWordmark && (
-          <span className={`text-display font-medium ${sz.text} ${toneClass} tracking-tight`}>
+          <span className={`font-sans font-semibold ${sz.text} ${toneClass} tracking-[-0.04em]`}>
             1Click
           </span>
         )}

@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 import { BUSINESS, formatMxn } from "@/lib/business";
 import { copyText, customerMapsWhatsAppText, isEmbeddedPreview, whatsappChatUrl } from "@/lib/maps";
+import { RestaurantOrderBoard } from "./RestaurantOrderBoard";
 
 interface Restaurant {
   id: string; name: string; address: string; lat: number | null; lng: number | null;
@@ -283,8 +284,6 @@ export function RestaurantHome() {
         ) : (
           <div className="space-y-3">
             {active.map((o) => {
-              const m = STATUS_META[o.status];
-              const Icon = m.icon;
               const c = courierByOrder[o.id];
               const wa = isEmbeddedPreview()
                 ? null
@@ -344,41 +343,11 @@ export function RestaurantHome() {
                   )}
 
                   {o.courier_id && (o.status === "assigned" || o.status === "in_transit") && (
-                    <div className="mt-3 pt-3 border-t space-y-2">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="min-w-0">
-                          <div className="text-xs text-muted-foreground">Repartidor</div>
-                          <div className="font-medium truncate">🛵 {c?.fullName ?? "Cargando..."}</div>
-                          {c?.score != null && (
-                            <div className="flex items-center gap-1.5 mt-0.5 text-xs">
-                              <Star className="h-3 w-3 fill-warning text-warning" />
-                              <span className="font-semibold">{c.score.toFixed(1)}</span>
-                              <span className="text-muted-foreground">
-                                · {c.totalDeliveries ?? 0} entregas
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        {c?.phone && (
-                          <a
-                            href={`tel:${c.phoneDialCode}${c.phone}`}
-                            className="inline-flex items-center gap-1 text-sm text-primary hover:underline shrink-0"
-                          >
-                            <Phone className="h-3.5 w-3.5" /> {c.phoneDialCode} {c.phone}
-                          </a>
-                        )}
-                      </div>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="w-full"
-                        onClick={() => setChatOrderId(o.id)}
-                      >
-                        <MessageCircle className="h-4 w-4 mr-2" /> Chat con repartidor
-                      </Button>
-                    </div>
+                    <Button variant="outline" className="w-full" onClick={() => setChatOrderId(o.id)}>
+                      <MessageCircle className="h-4 w-4 mr-2" /> Chat con {c?.fullName ?? "repartidor"}
+                    </Button>
                   )}
-                </Card>
+                </div>
               );
             })}
           </div>

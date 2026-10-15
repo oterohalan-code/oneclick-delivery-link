@@ -120,14 +120,10 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
     });
     setLoading(false);
     if (!result?.ok) return toast.error(result?.message ?? "No se pudo crear el pedido.");
-    const text = customerMapsWhatsAppText({
-      restaurantName: restaurant.name,
-      customerName: parsed.data.customer_name,
-      pickup: { lat: restaurant.lat, lng: restaurant.lng, address: restaurant.address },
-      dropoff: { lat: form.lat, lng: form.lng, address: parsed.data.dropoff_address },
-    });
-    setShare({ text, wa: whatsappChatUrl(`+52${parsed.data.customer_phone}`, text) });
-    toast.success("Pedido publicado.");
+    setShare(null);
+    toast.success("Pedido publicado. La liga al cliente se manda cuando el repartidor recoja.");
+    onOpenChange(false);
+    setForm({ customer_name: "", customer_phone: "", dropoff_address: "", lat: null, lng: null, amount: "", paymentMode: "collect_on_delivery", notes: "" });
 
     try {
       await notifyCouriersFn({
