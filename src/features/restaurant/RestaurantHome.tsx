@@ -347,7 +347,7 @@ export function RestaurantHome() {
                       <MessageCircle className="h-4 w-4 mr-2" /> Chat con {c?.fullName ?? "repartidor"}
                     </Button>
                   )}
-                </div>
+                </Card>
               );
             })}
           </div>
