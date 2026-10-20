@@ -4,6 +4,15 @@ import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { BUSINESS, formatMxn } from "@/lib/business";
 import { SHIPPING_BANDS } from "@/lib/pricing";
+import courierHero from "@/assets/role-courier-hero.jpg";
+import courierDetail from "@/assets/role-courier-detail.jpg";
+import restaurantHero from "@/assets/role-restaurant-hero.jpg";
+import restaurantDetail from "@/assets/role-restaurant-detail.jpg";
+
+const IMAGES = {
+  courier: { hero: courierHero, detail: courierDetail, heroAlt: "Repartidor 1Click en Manzanillo", detailAlt: "Ruta de entrega en el celular" },
+  restaurant: { hero: restaurantHero, detail: restaurantDetail, heroAlt: "Restaurante entregando un pedido al repartidor", detailAlt: "Platillos listos para entregar" },
+};
 
 export function RoleGuide({
   eyebrow,
@@ -26,6 +35,7 @@ export function RoleGuide({
   role: "restaurant" | "courier";
   extra?: ReactNode;
 }) {
+  const img = IMAGES[role];
   return (
     <div className="min-h-screen bg-bone text-ink">
       <header className="bg-navy text-navy-foreground">
@@ -35,8 +45,14 @@ export function RoleGuide({
         </div>
       </header>
       <main className="mx-auto max-w-lg space-y-4 px-4 py-6">
-        <p className="text-sm font-medium text-primary">{eyebrow}</p>
-        <h1 className="text-3xl font-semibold">{title}</h1>
+        <div className="relative overflow-hidden rounded-2xl shadow-lg">
+          <img src={img.hero} alt={img.heroAlt} width={1280} height={720} className="aspect-[16/10] w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-navy/90 via-navy/30 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 p-4 text-navy-foreground">
+            <p className="text-sm font-medium text-primary">{eyebrow}</p>
+            <h1 className="text-2xl font-semibold leading-tight sm:text-3xl">{title}</h1>
+          </div>
+        </div>
         <p className="text-sm text-graphite">{lede}</p>
 
         <section className="rounded-2xl border border-hairline bg-white p-4">
@@ -68,6 +84,8 @@ export function RoleGuide({
           </ul>
           <p className="mt-3 text-sm text-graphite">De 1 a 3 pm y de 7 a 10 pm el envío suma 20%. Antes de las 6 am suma 15%. Sábado y domingo, fuera de esas horas, suma 10%.</p>
         </section>
+
+        <img src={img.detail} alt={img.detailAlt} width={1024} height={768} loading="lazy" className="aspect-[16/9] w-full rounded-2xl object-cover shadow-md" />
 
         <section className="rounded-2xl bg-navy p-5 text-navy-foreground shadow-lg">
           <p className="text-xs font-medium uppercase tracking-widest text-primary">Membresía 1Click</p>
