@@ -25,7 +25,16 @@ export const Route = createFileRoute("/auth")({
     role: s.role === "courier" ? "courier" : s.role === "admin" ? "admin" : s.role === "restaurant" ? "restaurant" : undefined,
   }),
   component: AuthPage,
-  head: () => ({ meta: [{ title: "Entrar — 1-Click" }] }),
+  head: () => ({
+    meta: [
+      { title: "Entrar — 1Click" },
+      { name: "description", content: "Inicia sesión o crea tu cuenta de restaurante o repartidor en 1Click." },
+      { property: "og:title", content: "Entrar — 1Click" },
+      { property: "og:description", content: "Inicia sesión o crea tu cuenta de restaurante o repartidor en 1Click." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
 });
 
 function AuthPage() {

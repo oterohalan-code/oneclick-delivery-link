@@ -5,7 +5,16 @@ import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/restaurantes")({
-  head: () => ({ meta: [{ title: "Restaurantes — One Click" }] }),
+  head: () => ({
+    meta: [
+      { title: "Restaurantes — 1Click" },
+      { name: "description", content: "Directorio de restaurantes con menú público en Manzanillo." },
+      { property: "og:title", content: "Restaurantes — 1Click" },
+      { property: "og:description", content: "Directorio de restaurantes con menú público en Manzanillo." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: DirectoryPage,
 });
 
