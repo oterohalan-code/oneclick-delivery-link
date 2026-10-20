@@ -283,7 +283,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated, s
             )}
           </div>
           {form.paymentMode === "collect_on_delivery" && (
-            <p className="rounded-xl bg-sky-50 px-3 py-3 text-sm text-sky-950">
+            <p className="rounded-xl alert-info px-3 py-3 text-sm">
               Recibes {formatMxn(foodMxn)} en efectivo del repartidor. Él cobra {formatMxn(clientTotal)} al cliente.
             </p>
           )}

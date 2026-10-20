@@ -699,7 +699,7 @@ function ActiveOrderView({ order, restaurant, courier, onChange, onBack }: {
 
       {order.status === "assigned" && savedFirst && (
         <FlowCard step="03" title="Recogida" subtitle="Confirma que ya tienes el pedido y que entregaste el dinero.">
-          <p className="mb-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-950">
+          <p className="mb-3 rounded-xl alert-warning px-3 py-2 text-sm">
             Entregas {formatMxn(money.food)} en efectivo al restaurante.
           </p>
           <div className="space-y-2">
@@ -778,7 +778,7 @@ function ActiveOrderView({ order, restaurant, courier, onChange, onBack }: {
 
       {order.status === "delivered" && (
         <FlowCard step="06" title="Pedido finalizado">
-          <div className="mb-3 rounded-xl bg-emerald-50 px-3 py-3 text-sm text-emerald-800">Entrega confirmada</div>
+          <div className="mb-3 rounded-xl alert-success px-3 py-3 text-sm">Entrega confirmada</div>
           <MoneyLine label="Cobro registrado" amount={formatMxn(money.total)} />
           <MoneyLine label="Anticipo recuperado" amount={formatMxn(money.food)} />
           <MoneyLine label="Tu envío" amount={formatMxn(money.shipping)} strong />

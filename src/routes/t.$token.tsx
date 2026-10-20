@@ -155,7 +155,7 @@ function TrackingContent({ data }: { data: Tracking }) {
           {isDelivered ? "Pedido entregado" : STATUS_STEPS[stepIndex].label}
         </h1>
         {isDelivered ? (
-          <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-3 text-sm text-emerald-800">
+          <p className="mt-3 rounded-xl alert-success px-3 py-3 text-sm">
             Entrega registrada por el repartidor
           </p>
         ) : (
@@ -172,7 +172,7 @@ function TrackingContent({ data }: { data: Tracking }) {
           <div className="flex justify-between py-1"><span>Comida</span><span>{formatMxn(Number(data.food_mxn ?? 0))}</span></div>
           <div className="flex justify-between py-1 text-graphite"><span>Envío</span><span>{formatMxn(Number(data.shipping_mxn ?? 0))}</span></div>
           <div className="mt-2 flex justify-between border-t border-hairline pt-2 font-semibold"><span>Total</span><span>{formatMxn(Number(data.total_mxn ?? 0))}</span></div>
-          {isDelivered && <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-emerald-800">Cobro confirmado por el repartidor</p>}
+          {isDelivered && <p className="mt-3 rounded-xl alert-success px-3 py-2">Cobro confirmado por el repartidor</p>}
         </section>
       )}
 
