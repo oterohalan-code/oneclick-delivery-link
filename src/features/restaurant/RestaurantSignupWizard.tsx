@@ -13,6 +13,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { compressImage } from "@/lib/restaurant-media";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
+import { CityCheck, type CityChoice } from "@/components/CityCheck";
 import {
   Camera,
   ChevronRight,
@@ -45,6 +46,7 @@ export function RestaurantSignupWizard() {
   const [submitting, setSubmitting] = useState(false);
   const [needsEmailConfirm, setNeedsEmailConfirm] = useState(false);
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [city, setCity] = useState<CityChoice>("");
 
   // Paso 1
   const [name, setName] = useState("");
@@ -79,6 +81,7 @@ export function RestaurantSignupWizard() {
 
   const onCreateAccount = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (city !== "manzanillo") return toast.error(city === "other" ? "¡Pronto estaremos en tu ciudad! Por ahora solo damos servicio en Manzanillo." : "Indica en qué ciudad estás");
     const parsed = step1Schema.safeParse({ name, phone, email, password });
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
     if (!acceptedTerms) return toast.error("Debes aceptar los Términos y la Política de Privacidad");
@@ -192,6 +195,7 @@ export function RestaurantSignupWizard() {
         </div>
       ) : !alreadyAuthed && step === 1 ? (
         <form onSubmit={onCreateAccount} className="space-y-4">
+          <CityCheck value={city} onChange={setCity} />
           <div className="space-y-2">
             <Label htmlFor="rw-name">Nombre del local</Label>
             <Input
@@ -262,7 +266,7 @@ export function RestaurantSignupWizard() {
             </Label>
           </div>
 
-          <Button type="submit" disabled={submitting || !acceptedTerms} className="w-full h-14 text-base">
+          <Button type="submit" disabled={submitting || !acceptedTerms || city !== "manzanillo"} className="w-full h-14 text-base">
             {submitting ? (
               <Loader2 className="h-5 w-5 animate-spin" />
             ) : (
