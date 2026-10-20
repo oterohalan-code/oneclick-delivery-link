@@ -25,6 +25,9 @@ type RestaurantRow = {
 export function RestaurantMenuEditor() {
   const { user } = useAuth();
   const [row, setRow] = useState<RestaurantRow | null>(null);
+  const [name, setName] = useState("");
+  const [address, setAddress] = useState("");
+  const [phone, setPhone] = useState("");
   const [hours, setHours] = useState("");
   const [mapsUrl, setMapsUrl] = useState("");
   const [category, setCategory] = useState("Mexicana");
@@ -33,13 +36,17 @@ export function RestaurantMenuEditor() {
 
   const load = async () => {
     if (!user) return;
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from("restaurants")
       .select("id,name,category,address,phone,hours,logo_url,facade_url,menu,maps_url")
       .eq("user_id", user.id)
       .maybeSingle();
+    if (error) return toast.error("No se pudieron cargar los datos del negocio");
     if (!data) return;
     setRow(data as RestaurantRow);
+    setName(data.name ?? "");
+    setAddress(data.address ?? "");
+    setPhone(data.phone ?? "");
     setHours(data.hours ?? "");
     setMapsUrl(data.maps_url ?? "");
     setCategory(data.category || "Mexicana");
@@ -82,23 +89,29 @@ export function RestaurantMenuEditor() {
   };
 
   const saveMenu = async () => {
-    if (!row) return;
+    if (!row || !user) return;
+    if (!name.trim()) return toast.error("Escribe el nombre del negocio");
+    if (!address.trim()) return toast.error("Escribe la dirección del negocio");
     const clean = menu.filter((item) => item.name.trim());
     const link = mapsUrl.trim();
     const parsedLink = link ? parseGoogleMapsLink(link) : null;
     if (link && !parsedLink) return toast.error("La liga de Google Maps del negocio no es válida");
     setBusy(true);
-    const { error } = await supabase.from("restaurants").update({
+    const { data, error } = await supabase.from("restaurants").update({
+      name: name.trim(),
+      address: address.trim(),
+      phone: phone.trim(),
       maps_url: link || null,
       ...(parsedLink?.lat != null && parsedLink?.lng != null ? { lat: parsedLink.lat, lng: parsedLink.lng } : {}),
       hours: hours.trim() || null,
       category,
       menu: clean as never,
-    }).eq("id", row.id);
+    }).eq("id", row.id).eq("user_id", user.id).select("id").maybeSingle();
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Menú guardado");
-    load();
+    if (!data) return toast.error("No se pudieron guardar los datos del negocio");
+    await load();
+    toast.success("Datos del negocio y menú guardados");
   };
 
   if (!row) return null;
@@ -107,6 +120,20 @@ export function RestaurantMenuEditor() {
     <section className="rounded-2xl border border-hairline bg-paper p-4">
       <h2 className="text-lg font-semibold">Tu página pública</h2>
       <p className="mt-1 text-sm text-graphite">Logo, foto del local y platillos que ve el cliente.</p>
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <div className="sm:col-span-2">
+          <Label htmlFor="restaurant-name">Nombre del negocio</Label>
+          <Input id="restaurant-name" className="mt-1" value={name} disabled={busy} autoComplete="organization" onChange={(event) => setName(event.target.value)} />
+        </div>
+        <div className="sm:col-span-2">
+          <Label htmlFor="restaurant-address">Dirección del negocio</Label>
+          <Input id="restaurant-address" className="mt-1" value={address} disabled={busy} autoComplete="street-address" placeholder="Calle, número, colonia, Manzanillo, Colima" onChange={(event) => setAddress(event.target.value)} />
+        </div>
+        <div>
+          <Label htmlFor="restaurant-phone">Teléfono del negocio</Label>
+          <Input id="restaurant-phone" className="mt-1" type="tel" value={phone} disabled={busy} autoComplete="tel" onChange={(event) => setPhone(event.target.value)} />
+        </div>
+      </div>
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <ImageField label="Logo" src={publicMediaUrl(row.logo_url)} busy={busy} onFile={(file) => upload(file, "logo")} />
         <ImageField label="Foto del local" src={publicMediaUrl(row.facade_url)} busy={busy} onFile={(file) => upload(file, "facade")} />
@@ -179,9 +206,9 @@ export function RestaurantMenuEditor() {
           </div>
         ))}
       </div>
-      <Button className="mt-4 h-12 w-full" disabled={busy} onClick={saveMenu}>Guardar menú</Button>
+      <Button className="mt-4 h-12 w-full" disabled={busy} onClick={saveMenu}>{busy ? "Guardando…" : "Guardar datos y menú"}</Button>
       <div className="mt-6">
-        <RestaurantProfile preview place={previewPlace(row, hours, category, menu)} />
+        <RestaurantProfile preview place={previewPlace({ ...row, name, address, phone }, hours, category, menu)} />
       </div>
     </section>
   );
