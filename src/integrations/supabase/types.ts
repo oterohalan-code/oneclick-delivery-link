@@ -409,6 +409,50 @@ export type Database = {
         }
         Relationships: []
       }
+      menu_requests: {
+        Row: {
+          created_at: string
+          customer_name: string
+          customer_phone: string
+          dropoff_address: string
+          food_total: number
+          id: string
+          items: Json
+          restaurant_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          customer_name: string
+          customer_phone: string
+          dropoff_address: string
+          food_total: number
+          id?: string
+          items: Json
+          restaurant_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          customer_name?: string
+          customer_phone?: string
+          dropoff_address?: string
+          food_total?: number
+          id?: string
+          items?: Json
+          restaurant_id?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "menu_requests_restaurant_id_fkey"
+            columns: ["restaurant_id"]
+            isOneToOne: false
+            referencedRelation: "restaurants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       operational_zones: {
         Row: {
           active: boolean
@@ -514,6 +558,7 @@ export type Database = {
           dropoff_lng: number | null
           eta_minutes: number | null
           external_order_id: string | null
+          flow: Json
           food_amount_cents: number | null
           id: string
           notes: string | null
@@ -552,6 +597,7 @@ export type Database = {
           dropoff_lng?: number | null
           eta_minutes?: number | null
           external_order_id?: string | null
+          flow?: Json
           food_amount_cents?: number | null
           id?: string
           notes?: string | null
@@ -590,6 +636,7 @@ export type Database = {
           dropoff_lng?: number | null
           eta_minutes?: number | null
           external_order_id?: string | null
+          flow?: Json
           food_amount_cents?: number | null
           id?: string
           notes?: string | null
@@ -769,9 +816,12 @@ export type Database = {
           category: string | null
           created_at: string
           facade_url: string | null
+          hours: string | null
           id: string
           lat: number | null
           lng: number | null
+          logo_url: string | null
+          menu: Json
           name: string
           phone: string
           updated_at: string
@@ -783,9 +833,12 @@ export type Database = {
           category?: string | null
           created_at?: string
           facade_url?: string | null
+          hours?: string | null
           id?: string
           lat?: number | null
           lng?: number | null
+          logo_url?: string | null
+          menu?: Json
           name: string
           phone: string
           updated_at?: string
@@ -797,9 +850,12 @@ export type Database = {
           category?: string | null
           created_at?: string
           facade_url?: string | null
+          hours?: string | null
           id?: string
           lat?: number | null
           lng?: number | null
+          logo_url?: string | null
+          menu?: Json
           name?: string
           phone?: string
           updated_at?: string
@@ -1141,11 +1197,13 @@ export type Database = {
       get_available_orders: {
         Args: { _limit?: number }
         Returns: {
+          amount_to_collect: number
           created_at: string
           distance_km: number
           dropoff_address: string
           dropoff_lat: number
           dropoff_lng: number
+          external_order_id: string
           id: string
           pickup_address: string
           pickup_lat: number
@@ -1179,13 +1237,17 @@ export type Database = {
           dropoff_lat: number
           dropoff_lng: number
           eta_minutes: number
+          food_mxn: number
           location_updated_at: string
           picked_up_at: string
           pickup_address: string
           pickup_lat: number
           pickup_lng: number
           restaurant_name: string
+          restaurant_phone: string
+          shipping_mxn: number
           status: Database["public"]["Enums"]["order_status"]
+          total_mxn: number
         }[]
       }
       has_active_membership: {
@@ -1206,6 +1268,20 @@ export type Database = {
         Args: { _order_id: string; _user_id: string }
         Returns: boolean
       }
+      list_public_restaurants: {
+        Args: never
+        Returns: {
+          address: string
+          category: string
+          facade_url: string
+          hours: string
+          id: string
+          logo_url: string
+          menu: Json
+          name: string
+          phone: string
+        }[]
+      }
       move_to_dlq: {
         Args: {
           dlq_name: string
@@ -1214,6 +1290,16 @@ export type Database = {
           source_queue: string
         }
         Returns: number
+      }
+      place_menu_request: {
+        Args: {
+          _customer_name: string
+          _customer_phone: string
+          _dropoff_address: string
+          _items: Json
+          _restaurant_id: string
+        }
+        Returns: string
       }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }

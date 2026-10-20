@@ -44,11 +44,9 @@ function AppLayout() {
 
   return (
     <div className="relative min-h-screen bg-background text-foreground pb-28">
-      {/* subtle ambient mesh */}
-      <div aria-hidden className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(at_15%_-5%,color-mix(in_srgb,#B8693A_18%,transparent),transparent_50%),radial-gradient(at_92%_8%,color-mix(in_srgb,#F5F2EB_70%,white),transparent_55%)] dark:bg-[radial-gradient(at_15%_-5%,color-mix(in_srgb,#B8693A_28%,transparent),transparent_50%),radial-gradient(at_92%_8%,#120F0D,transparent_55%)]" />
 
       <header className="sticky top-0 z-30 bg-navy text-navy-foreground">
-        <div className="border-b border-white/10">
+        <div className="border-b border-navy-foreground/10 shadow-sm">
           <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
             <Link to="/app" className="press">
               <Logo size="sm" tone="bone" />
@@ -58,7 +56,7 @@ function AppLayout() {
               <Button
                 variant="ghost"
                 size="sm"
-                className="text-navy-foreground hover:bg-white/10 hover:text-navy-foreground"
+                className="text-navy-foreground hover:bg-navy-foreground/10 hover:text-navy-foreground"
                 aria-label="Cerrar sesión"
                 onClick={() => { signOut(); navigate({ to: "/" }); }}
               >
@@ -77,7 +75,7 @@ function AppLayout() {
         className="fixed bottom-3 inset-x-3 z-40 max-w-3xl mx-auto"
         aria-label="Navegación principal"
       >
-        <div className="glass-strong rounded-full shadow-elegant px-2 py-1.5">
+        <div className="glass-strong rounded-2xl shadow-elegant px-1.5 py-1.5">
           <div className="grid" style={{ gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))` }}>
             {navItems.map((it) => {
               const active = it.exact ? loc.pathname === it.to : loc.pathname.startsWith(it.to);
@@ -86,12 +84,12 @@ function AppLayout() {
                   key={it.to}
                   to={it.to}
                   aria-current={active ? "page" : undefined}
-                  className={`relative flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold tracking-wider uppercase rounded-full press transition ${
+                  className={`relative flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold tracking-wide rounded-xl press transition ${
                     active ? "text-ember-foreground" : "text-foreground/75 hover:text-foreground"
                   }`}
                 >
                   {active && (
-                    <span aria-hidden className="absolute inset-0 rounded-full bg-ember shadow-button" />
+                    <span aria-hidden className="absolute inset-0 rounded-xl bg-ember shadow-button" />
                   )}
                   <it.icon className="relative h-4 w-4" strokeWidth={1.6} />
                   <span className="relative">{it.label}</span>

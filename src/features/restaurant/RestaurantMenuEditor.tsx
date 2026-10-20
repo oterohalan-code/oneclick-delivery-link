@@ -58,8 +58,8 @@ export function RestaurantMenuEditor() {
       setBusy(false);
       return toast.error(error.message);
     }
-    const column = kind === "logo" ? "logo_url" : "facade_url";
-    const { error: saveError } = await supabase.from("restaurants").update({ [column]: path }).eq("id", row.id);
+    const patch = kind === "logo" ? { logo_url: path } : { facade_url: path };
+    const { error: saveError } = await supabase.from("restaurants").update(patch).eq("id", row.id);
     setBusy(false);
     if (saveError) return toast.error(saveError.message);
     toast.success(kind === "logo" ? "Logo guardado" : "Foto guardada");

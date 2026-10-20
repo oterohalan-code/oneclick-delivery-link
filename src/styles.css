@@ -61,10 +61,10 @@
   --font-display: "Fraunces", "Georgia", serif;
   --font-sans: "Inter Tight", "Inter", system-ui, sans-serif;
 
-  --shadow-soft: 0 1px 2px rgb(0 0 0 / 0.04), 0 4px 12px -2px rgb(0 0 0 / 0.06);
-  --shadow-elegant: 0 1px 2px rgb(0 0 0 / 0.05), 0 12px 32px -8px rgb(0 0 0 / 0.12);
-  --shadow-button: 0 1px 2px rgb(0 0 0 / 0.08), 0 6px 16px -4px rgb(15 15 15 / 0.25);
-  --shadow-button-hover: 0 2px 4px rgb(0 0 0 / 0.1), 0 12px 24px -6px rgb(15 15 15 / 0.35);
+  --shadow-soft: 0 1px 2px rgb(15 36 48 / 0.04), 0 4px 14px -4px rgb(15 36 48 / 0.08);
+  --shadow-elegant: 0 1px 2px rgb(15 36 48 / 0.05), 0 16px 40px -12px rgb(15 36 48 / 0.16);
+  --shadow-button: 0 1px 2px rgb(15 36 48 / 0.10), 0 4px 12px -4px rgb(217 83 26 / 0.35);
+  --shadow-button-hover: 0 2px 4px rgb(15 36 48 / 0.10), 0 10px 22px -6px rgb(217 83 26 / 0.45);
   --shadow-glow: 0 0 60px -15px color-mix(in oklab, var(--ember) 60%, transparent);
 }
 
@@ -72,13 +72,13 @@
   --radius: 0.875rem;
 
   /* Screen mocks: navy bar, cool paper, orange actions */
-  --ink: #102833;
-  --bone: #F3F6F7;
+  --ink: #0F2430;
+  --bone: #F5F7F9;
   --paper: #FFFFFF;
-  --ember: #E45712;
+  --ember: #D9531A;
   --ember-foreground: #FFFFFF;
-  --graphite: #5C6B73;
-  --hairline: #E3E8EB;
+  --graphite: #5A6872;
+  --hairline: #E2E7EB;
 
   --background: var(--bone);
   --foreground: var(--ink);
@@ -91,15 +91,15 @@
   --popover: var(--paper);
   --popover-foreground: var(--ink);
 
-  --primary: #E45712;
+  --primary: #D9531A;
   --primary-foreground: #FFFFFF;
-  --primary-glow: #F07A3A;
+  --primary-glow: #EC7440;
 
-  --secondary: #EBE6DE;
+  --secondary: #EEF2F5;
   --secondary-foreground: var(--ink);
-  --muted: #EBE6DE;
+  --muted: #EEF2F5;
   --muted-foreground: var(--graphite);
-  --accent: #F3E6DC;
+  --accent: #FBEDE5;
   --accent-foreground: var(--ink);
 
   --destructive: oklch(0.55 0.18 25);
@@ -111,7 +111,7 @@
 
   --border: var(--hairline);
   --input: var(--hairline);
-  --ring: var(--ink);
+  --ring: var(--ember);
 
   /* Glass tokens */
   --glass-bg: color-mix(in oklab, white 60%, transparent);
@@ -121,9 +121,9 @@
   --glass-border-dark: color-mix(in oklab, white 12%, transparent);
 
   /* Mesh — bone field with a copper point, same as the logo mocks */
-  --mesh-1: color-mix(in srgb, #B8693A 28%, transparent);
-  --mesh-2: color-mix(in srgb, #F5F2EB 70%, white);
-  --mesh-3: color-mix(in srgb, #1A1614 6%, transparent);
+  --mesh-1: color-mix(in srgb, #D9531A 10%, transparent);
+  --mesh-2: color-mix(in srgb, #0E3140 6%, transparent);
+  --mesh-3: color-mix(in srgb, #0E3140 4%, transparent);
 
   --sidebar: #1A1614;
   --sidebar-foreground: #F5F2EB;
@@ -190,6 +190,8 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    background-image: radial-gradient(at 0% 0%, var(--mesh-2), transparent 45%), radial-gradient(at 100% 0%, var(--mesh-1), transparent 40%);
+    background-attachment: fixed;
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     font-feature-settings: "ss01", "cv11";
@@ -197,8 +199,10 @@
   }
   h1, h2, h3, h4 {
     font-family: var(--font-display);
-    letter-spacing: -0.025em;
-    font-weight: 500;
+    letter-spacing: -0.02em;
+    font-weight: 600;
+    line-height: 1.15;
+    text-wrap: balance;
   }
   ::selection { background: var(--ember); color: var(--ember-foreground); }
 }
@@ -223,6 +227,7 @@
     border: 1px solid var(--glass-border-dark);
   }
   .text-display { font-family: var(--font-display); letter-spacing: -0.03em; }
+  .tabular { font-variant-numeric: tabular-nums; }
   .text-mono-tight { font-feature-settings: "ss01", "cv11", "tnum"; }
   .eyebrow {
     font-size: 0.6875rem;
