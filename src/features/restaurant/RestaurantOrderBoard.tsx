@@ -15,7 +15,7 @@ import {
   writeFlowFlag,
   type OrderFlow,
 } from "@/lib/order-flow";
-import { copyText } from "@/lib/maps";
+import { copyText, googleMapsDirectionsUrl } from "@/lib/maps";
 import { recordOrderFlow } from "@/lib/rpc/orders.functions";
 import { CheckRow, FlowButton, FlowCard, MoneyLine } from "@/components/order/FlowCard";
 
@@ -156,14 +156,24 @@ export function RestaurantOrderBoard({
   }
 
   if (order.status === "assigned" && !firstSent) {
+    const courierText = courierPickupMessage({
+      code,
+      restaurantName,
+      pickup,
+      customerName: order.customer_name,
+      money,
+    });
+    const pickupUrl = googleMapsDirectionsUrl(pickup);
     return (
       <FlowCard step="03" title="Hacia el restaurante">
-        <p className="mb-2 text-sm">
-          Repartidor: <strong>{courierName || "Asignado"}</strong>
-        </p>
-        <p className="mb-3 text-sm text-graphite">
-          Comparte la liga del local. El repartidor paga la comida en efectivo.
-        </p>
+        <p className="mb-2 text-sm">Repartidor asignado: <strong>{courierName || "Asignado"}</strong></p>
+        <p className="mb-3 text-sm text-graphite">Comparte la primera liga para que llegue al local.</p>
+        {pickupUrl && (
+          <a href={pickupUrl} target="_blank" rel="noopener noreferrer" className="mb-3 block rounded-xl border border-hairline px-3 py-2 text-sm text-primary">
+            Abrir liga de Google Maps
+          </a>
+        )}
+        <pre className="mb-3 whitespace-pre-wrap rounded-xl bg-bone px-3 py-2 text-sm">{courierText}</pre>
         <FlowButton onClick={shareCourier}>Abrir WhatsApp para enviar</FlowButton>
         <div className="mt-2">
           <FlowButton disabled={busy} variant="outline" onClick={() => save("restaurant_first_sent")}>
@@ -189,11 +199,19 @@ export function RestaurantOrderBoard({
   }
 
   if (order.status === "in_transit" && !secondSent) {
+    const clientText = customerEnRouteMessage({ dropoff, money });
+    const dropoffUrl = googleMapsDirectionsUrl(dropoff);
     return (
       <FlowCard step="04" title="Hacia el cliente">
         <div className="mb-3 rounded-xl bg-emerald-50 px-3 py-3 text-sm text-emerald-800">
-          Pedido recogido. Comparte la liga del domicilio con el cliente.
+          Pedido recogido. Comparte la segunda liga para que el cliente vea el recorrido a su casa.
         </div>
+        {dropoffUrl && (
+          <a href={dropoffUrl} target="_blank" rel="noopener noreferrer" className="mb-3 block rounded-xl border border-hairline px-3 py-2 text-sm text-primary">
+            Abrir liga de Google Maps
+          </a>
+        )}
+        <pre className="mb-3 whitespace-pre-wrap rounded-xl bg-bone px-3 py-2 text-sm">{clientText}</pre>
         <FlowButton onClick={shareCustomer}>Abrir WhatsApp para enviar</FlowButton>
         <div className="mt-2">
           <FlowButton disabled={busy} variant="outline" onClick={() => save("restaurant_second_sent")}>

@@ -15,8 +15,7 @@ import { createRestaurantOrder, notifyCouriersNewOrder } from "@/lib/rpc/orders.
 import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth-context";
 import type { PaymentMode } from "@/lib/order-money";
-import { Copy } from "lucide-react";
-import { copyText, customerMapsWhatsAppText, isEmbeddedPreview, whatsappChatUrl } from "@/lib/maps";
+import { formatMxn } from "@/lib/business";
 
 const schema = z.object({
   customer_name: z.string().trim().min(2, "Nombre del cliente requerido").max(80),
@@ -44,7 +43,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
   const [routeInfo, setRouteInfo] = useState<{ distanceKm: number; durationMin: number } | null>(null);
   const [routeLoading, setRouteLoading] = useState(false);
   const [addressLoading, setAddressLoading] = useState(false);
-  const [share, setShare] = useState<{ text: string; wa: string | null } | null>(null);
+  const [step, setStep] = useState<1 | 2>(1);
 
   const handleMapClick = useCallback(async (lat: number, lng: number) => {
     setForm((f) => ({ ...f, lat, lng }));
@@ -88,18 +87,32 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
       : []),
   ], [restaurant.lat, restaurant.lng, form.lat, form.lng]);
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const foodMxn = Number(form.amount || 0);
+  const clientTotal = foodMxn + shippingFee;
+
+  const readyForReview = () => {
     const parsed = schema.safeParse({
       customer_name: form.customer_name,
       customer_phone: form.customer_phone,
       dropoff_address: form.dropoff_address,
-      total: Number(form.amount || 0),
+      total: foodMxn,
       paymentMode: form.paymentMode,
       notes: form.notes || undefined,
     });
-    if (!parsed.success) return toast.error(parsed.error.issues[0].message);
-    if (form.lat == null || form.lng == null) return toast.error("Selecciona el destino en el mapa");
+    if (!parsed.success) {
+      toast.error(parsed.error.issues[0].message);
+      return false;
+    }
+    if (form.lat == null || form.lng == null) {
+      toast.error("Selecciona el destino en el mapa");
+      return false;
+    }
+    return true;
+  };
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!readyForReview() || form.lat == null || form.lng == null) return;
     const token = session?.access_token;
     if (!token) return toast.error("Sesión expirada.");
     setLoading(true);
@@ -111,7 +124,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
         dropoff_lng: form.lng,
         customer_name: form.customer_name.trim(),
         customer_phone: form.customer_phone,
-        foodMxn: Number(form.amount || 0),
+        foodMxn,
         shippingMxn: shippingFee,
         distanceKm,
         notes: form.notes || undefined,
@@ -120,7 +133,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
     });
     setLoading(false);
     if (!result?.ok) return toast.error(result?.message ?? "No se pudo crear el pedido.");
-    setShare(null);
+    setStep(1);
     toast.success("Pedido publicado. La liga al cliente se manda cuando el repartidor recoja.");
     onOpenChange(false);
     setForm({ customer_name: "", customer_phone: "", dropoff_address: "", lat: null, lng: null, amount: "", paymentMode: "collect_on_delivery", notes: "" });
@@ -138,7 +151,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
   };
 
   const resetAndClose = () => {
-    setShare(null);
+    setStep(1);
     setForm({ customer_name: "", customer_phone: "", dropoff_address: "", lat: null, lng: null, amount: "", paymentMode: "collect_on_delivery", notes: "" });
     onOpenChange(false);
   };
@@ -147,141 +160,111 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
     <Dialog open={open} onOpenChange={(next) => { if (!next) resetAndClose(); else onOpenChange(next); }}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-auto">
         <DialogHeader>
-          <DialogTitle>{share ? "Mandar al cliente" : "Solicitar repartidor"}</DialogTitle>
+          <DialogTitle>{step === 1 ? "01  Datos del pedido" : "02  Revisar y solicitar"}</DialogTitle>
         </DialogHeader>
-        {share ? (
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              {isEmbeddedPreview()
-                ? "Lovable bloquea WhatsApp (api.whatsapp.com). Copia el mensaje y pégalo en WhatsApp del celular, o abre la web oneclick.punchingsolutions.com.mx."
-                : "Abre tu WhatsApp y manda este texto con las dos ligas de Maps. No usamos la API de Meta."}
-            </p>
-            <pre className="whitespace-pre-wrap text-sm bg-muted rounded-lg p-3 max-h-56 overflow-auto">{share.text}</pre>
-            <div className="grid gap-2">
-              <Button
-                type="button"
-                variant="secondary"
-                className="w-full"
-                onClick={async () => {
-                  const ok = await copyText(share.text);
-                  toast[ok ? "success" : "error"](ok ? "Mensaje copiado" : "No se pudo copiar");
-                }}
-              >
-                <Copy className="h-4 w-4 mr-2" /> Copiar mensaje
-              </Button>
-              {share.wa && !isEmbeddedPreview() && (
-                <Button asChild className="w-full">
-                  <a href={share.wa} target="_blank" rel="noopener noreferrer">Abrir WhatsApp</a>
-                </Button>
-              )}
-              <Button type="button" variant="outline" className="w-full" onClick={resetAndClose}>
-                Listo
-              </Button>
-            </div>
+        {step === 1 ? (
+        <form
+          className="space-y-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            if (readyForReview()) setStep(2);
+          }}
+        >
+          <p className="text-sm text-muted-foreground">Captura al cliente, la dirección y cuánto cuesta la comida.</p>
+          <div>
+            <Label>Cliente</Label>
+            <Input
+              placeholder="Ana Ejemplo"
+              value={form.customer_name}
+              maxLength={80}
+              onChange={(e) => setForm({ ...form, customer_name: e.target.value })}
+              required
+            />
           </div>
-        ) : (
-        <form onSubmit={submit} className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <Label>Nombre del cliente</Label>
+          <div>
+            <Label>Teléfono</Label>
+            <div className="flex">
+              <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-sm text-muted-foreground">+52</span>
               <Input
-                placeholder="Ej. Juan Pérez"
-                value={form.customer_name}
-                maxLength={80}
-                onChange={(e) => setForm({ ...form, customer_name: e.target.value })}
+                className="rounded-l-none"
+                type="tel"
+                inputMode="numeric"
+                placeholder="3141234567"
+                value={form.customer_phone}
+                maxLength={10}
+                onChange={(e) => setForm({ ...form, customer_phone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
                 required
               />
             </div>
-            <div>
-              <Label>WhatsApp del cliente</Label>
-              <div className="flex">
-                <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-input bg-muted text-sm text-muted-foreground">+52</span>
-                <Input
-                  className="rounded-l-none"
-                  type="tel"
-                  inputMode="numeric"
-                  placeholder="5512345678"
-                  value={form.customer_phone}
-                  maxLength={10}
-                  onChange={(e) => setForm({ ...form, customer_phone: e.target.value.replace(/\D/g, "").slice(0, 10) })}
-                  required
-                />
-              </div>
-            </div>
           </div>
           <div>
-            <Label>Buscar dirección (opcional)</Label>
+            <Label>Dirección y referencias</Label>
             <AddressSearch
               value={form.dropoff_address}
               onChange={(a, lat, lng) => setForm({ ...form, dropoff_address: a, lat: lat ?? form.lat, lng: lng ?? form.lng })}
             />
-            <p className="text-xs text-muted-foreground mt-1">O toca el mapa para colocar el pin del destino.</p>
+            <p className="text-xs text-muted-foreground mt-1">O toca el mapa para poner el pin del cliente.</p>
           </div>
-          <div className="h-56">
-            <MapView
-              pins={pins}
-              showRoute
-              onMapClick={handleMapClick}
-              onRouteInfo={handleRouteInfo}
-              height="100%"
-            />
+          <div className="h-48">
+            <MapView pins={pins} showRoute onMapClick={handleMapClick} onRouteInfo={handleRouteInfo} height="100%" />
           </div>
           <div>
-            <Label>Destino seleccionado</Label>
-            <Input
-              readOnly
-              className="bg-muted"
-              value={addressLoading ? "Obteniendo dirección…" : form.dropoff_address}
-              placeholder="Selecciona en el mapa o busca arriba"
-            />
+            <Label>Origen del pedido</Label>
+            <Input readOnly className="bg-muted" value={restaurant.name} />
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <Label>Total del pedido</Label>
-              <Input type="number" step="0.01" placeholder="0.00" value={form.amount}
-                onChange={(e) => setForm({ ...form, amount: e.target.value })} required />
-            </div>
-            <div>
-              <Label>Modalidad de cobro</Label>
-              <Select value={form.paymentMode} onValueChange={(v) => setForm({ ...form, paymentMode: v as PaymentMode })}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="collect_on_delivery">Cobrar al cliente en entrega</SelectItem>
-                  <SelectItem value="prepaid_at_restaurant">Ya pagó en el restaurante</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <div>
-              <Label>Distancia por ruta (km)</Label>
-              <Input
-                readOnly
-                className="bg-muted"
-                value={routeLoading ? "Calculando ruta…" : distanceKm == null ? "" : `${distanceKm.toFixed(2)}${routeInfo ? ` · ~${Math.round(routeInfo.durationMin)} min` : ""}`}
-                placeholder="Selecciona destino"
-              />
-            </div>
-            <div>
-              <Label>Total del envío</Label>
-              <Input
-                readOnly
-                className="bg-muted font-medium"
-                value={routeLoading ? "…" : distanceKm == null ? "" : `$${shippingFee}`}
-                placeholder="—"
-              />
-              {quote && quote.surgeReason !== "normal" && (
-                <Badge variant="secondary" className="mt-1 text-xs">
-                  {surgeLabel(quote.surgeReason)} · base ${quote.baseFee}
-                </Badge>
-              )}
-            </div>
+          <div>
+            <Label>Comida</Label>
+            <Input type="number" min="0" step="1" placeholder="250" value={form.amount}
+              onChange={(e) => setForm({ ...form, amount: e.target.value })} required />
           </div>
           <div>
             <Label>Notas</Label>
             <Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
           </div>
-          <Button type="submit" disabled={loading} className="w-full">Publicar pedido</Button>
+          <Button type="submit" className="h-12 w-full">Continuar</Button>
+        </form>
+        ) : (
+        <form onSubmit={submit} className="space-y-4">
+          <p className="text-sm text-muted-foreground">Confirma los datos y pide el repartidor.</p>
+          <div className="rounded-xl border border-hairline bg-bone px-3 py-2 text-sm">
+            <div className="flex justify-between gap-3 py-1"><span className="text-graphite">Restaurante</span><span>{restaurant.name}</span></div>
+            <div className="flex justify-between gap-3 py-1"><span className="text-graphite">Cliente</span><span>{form.customer_name}</span></div>
+            <div className="flex justify-between gap-3 py-1"><span className="text-graphite">Teléfono</span><span>+52 {form.customer_phone}</span></div>
+            <div className="py-1 text-graphite">{addressLoading ? "Obteniendo dirección…" : form.dropoff_address}</div>
+          </div>
+          <div className="rounded-xl bg-amber-50 px-3 py-3 text-sm">
+            <div className="text-xs uppercase tracking-wide text-amber-900">Modalidad de pago</div>
+            <Select value={form.paymentMode} onValueChange={(v) => setForm({ ...form, paymentMode: v as PaymentMode })}>
+              <SelectTrigger className="mt-2 bg-white"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="collect_on_delivery">Pago en domicilio</SelectItem>
+                <SelectItem value="prepaid_at_restaurant">Ya pagó en el restaurante</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="text-sm">
+            <div className="flex justify-between py-1"><span>Comida</span><span>{formatMxn(foodMxn)}</span></div>
+            <div className="flex justify-between py-1 text-graphite">
+              <span>Envío del repartidor</span>
+              <span>{routeLoading ? "Calculando…" : distanceKm == null ? "—" : formatMxn(shippingFee)}</span>
+            </div>
+            <div className="flex justify-between border-t border-hairline pt-2 font-semibold">
+              <span>Total cliente</span>
+              <span>{routeLoading || distanceKm == null ? "—" : formatMxn(clientTotal)}</span>
+            </div>
+            {quote && quote.surgeReason !== "normal" && (
+              <Badge variant="secondary" className="mt-2 text-xs">{surgeLabel(quote.surgeReason)}</Badge>
+            )}
+          </div>
+          {form.paymentMode === "collect_on_delivery" && (
+            <p className="rounded-xl bg-sky-50 px-3 py-3 text-sm text-sky-950">
+              Recibes {formatMxn(foodMxn)} en efectivo del repartidor. Él cobra {formatMxn(clientTotal)} al cliente.
+            </p>
+          )}
+          <Button type="button" variant="outline" className="h-12 w-full" onClick={() => setStep(1)}>Volver</Button>
+          <Button type="submit" disabled={loading || routeLoading || distanceKm == null} className="h-12 w-full">
+            {loading ? "Publicando…" : "Solicitar repartidor"}
+          </Button>
         </form>
         )}
       </DialogContent>
