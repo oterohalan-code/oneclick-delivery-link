@@ -718,6 +718,15 @@ function ActiveOrderView({ order, restaurant, courier, onChange, onBack }: {
 
       {order.status === "in_transit" && savedSecond && (
         <FlowCard step="05" title="Entrega y cobro" subtitle="Marca la entrega y el dinero que cobraste.">
+          {order.customer_phone && (
+            <div className="mb-3 rounded-xl alert-info px-3 py-3 text-sm">
+              <p className="font-medium">Comparte tu ubicación en vivo con el cliente</p>
+              <p className="mt-1 text-graphite">Abre el chat, toca el clip 📎 → Ubicación → Compartir ubicación en tiempo real. También puedes hacerlo desde Google Maps → tu foto → Compartir ubicación.</p>
+              <Button asChild variant="outline" className="mt-2 h-11 w-full">
+                <a href={whatsappChatUrl(order.customer_phone, "Hola, soy tu repartidor de 1Click. Te comparto mi ubicación en tiempo real para que veas dónde voy.") ?? "#"} target="_blank" rel="noopener noreferrer">Abrir chat para compartir ubicación</a>
+              </Button>
+            </div>
+          )}
           <p className="mb-3 text-lg font-semibold text-primary">{money.prepaid ? "Ya pagado: no cobres nada" : `Cobra al cliente ${formatMxn(money.collect)}`}</p>
           <div className="space-y-2">
             <CheckRow checked={deliveredFood} label="Entregué el pedido" onChange={(value) => toggleCheck("foodDelivered", value)} />
