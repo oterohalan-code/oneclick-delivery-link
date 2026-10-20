@@ -39,6 +39,8 @@ export type OrderSeed = {
   lat?: number | null;
   lng?: number | null;
   mapsUrl?: string | null;
+  /** Chosen by the customer; when set it is locked for the rest of the order. */
+  paymentMode?: PaymentMode;
 };
 
 export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated, seed }: {
@@ -71,7 +73,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated, s
       lat: seed.lat ?? null,
       lng: seed.lng ?? null,
       amount: seed.amount,
-      paymentMode: "collect_on_delivery",
+      paymentMode: seed.paymentMode ?? "collect_on_delivery",
       notes: seed.notes,
       mapsUrl: seed.mapsUrl || googleMapsPlaceUrl({ lat: seed.lat, lng: seed.lng }) || "",
     });
@@ -297,7 +299,8 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated, s
           </div>
           <div className="rounded-xl alert-warning px-3 py-3 text-sm">
             <div className="text-xs uppercase tracking-wide text-amber-900">Modalidad de pago</div>
-            <Select value={form.paymentMode} onValueChange={(v) => setForm({ ...form, paymentMode: v as PaymentMode })}>
+            {seed?.paymentMode && <p className="mt-1 text-xs">Elegida por el cliente. No se puede cambiar.</p>}
+            <Select disabled={!!seed?.paymentMode} value={form.paymentMode} onValueChange={(v) => setForm({ ...form, paymentMode: v as PaymentMode })}>
               <SelectTrigger className="mt-2 bg-card"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="collect_on_delivery">Pago en domicilio</SelectItem>
@@ -319,6 +322,11 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated, s
               <Badge variant="secondary" className="mt-2 text-xs">{surgeLabel(quote.surgeReason)}</Badge>
             )}
           </div>
+          {form.paymentMode === "prepaid_at_restaurant" && (
+            <p className="rounded-xl alert-info px-3 py-3 text-sm">
+              El cliente te paga la comida a ti. Al recoger, tú le pagas {formatMxn(shippingFee)} de envío al repartidor. El repartidor no cobra nada en el domicilio.
+            </p>
+          )}
           {form.paymentMode === "collect_on_delivery" && (
             <p className="rounded-xl alert-info px-3 py-3 text-sm">
               Recibes {formatMxn(foodMxn)} en efectivo del repartidor. Él cobra {formatMxn(clientTotal)} al cliente.

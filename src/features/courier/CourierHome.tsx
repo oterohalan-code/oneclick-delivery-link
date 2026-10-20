@@ -43,6 +43,7 @@ interface OrderRow {
   shipping_fee: number; distance_km: number | null;
   food_amount_cents?: number | null;
   shipping_amount_cents?: number | null;
+  payment_mode?: string | null;
   flow?: unknown;
   restaurant_id: string; courier_id: string | null; created_at: string;
 }
@@ -391,8 +392,15 @@ export function CourierHome() {
                     <div className="text-sm mt-1">👤 <span className="font-medium">{o.customer_name}</span></div>
                   )}
                   <div className="mt-3 rounded-xl bg-bone px-3 py-2">
-                    <MoneyLine label="Adelantas al restaurante" amount={formatMxn(orderMoney(o).food)} />
-                    <MoneyLine label="Cobras al cliente" amount={formatMxn(orderMoney(o).total)} />
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-primary">{orderMoney(o).prepaid ? "Pagado en restaurante" : "Pago en domicilio"}</p>
+                    {orderMoney(o).prepaid ? (
+                      <MoneyLine label="El restaurante te paga al recoger" amount={formatMxn(orderMoney(o).restaurantPaysShipping)} />
+                    ) : (
+                      <>
+                        <MoneyLine label="Adelantas al restaurante" amount={formatMxn(orderMoney(o).food)} />
+                        <MoneyLine label="Cobras al cliente" amount={formatMxn(orderMoney(o).collect)} />
+                      </>
+                    )}
                     <MoneyLine label="Tu envío" amount={formatMxn(orderMoney(o).shipping)} strong />
                   </div>
                   {!batchMode && (
@@ -695,13 +703,15 @@ function ActiveOrderView({ order, restaurant, courier, onChange, onBack }: {
       )}
 
       {order.status === "assigned" && savedFirst && (
-        <FlowCard step="03" title="Recogida" subtitle="Confirma que ya tienes el pedido y que entregaste el dinero.">
+        <FlowCard step="03" title="Recogida" subtitle={money.prepaid ? "Confirma que ya tienes el pedido y que recibiste tu envío." : "Confirma que ya tienes el pedido y que entregaste el dinero."}>
           <p className="mb-3 rounded-xl alert-warning px-3 py-2 text-sm">
-            Entregas {formatMxn(money.food)} en efectivo al restaurante.
+            {money.prepaid
+              ? `Comida pagada en el restaurante. El restaurante te paga ${formatMxn(money.restaurantPaysShipping)} de envío.`
+              : `Entregas ${formatMxn(money.food)} en efectivo al restaurante.`}
           </p>
           <div className="space-y-2">
             <CheckRow checked={gotFood} label="Producto recibido" onChange={(value) => toggleCheck("productReceived", value)} />
-            <CheckRow checked={paidRestaurant} label="Anticipo entregado" onChange={(value) => toggleCheck("advancePaid", value)} />
+            <CheckRow checked={paidRestaurant} label={money.prepaid ? "Envío recibido del restaurante" : "Anticipo entregado"} onChange={(value) => toggleCheck("advancePaid", value)} />
           </div>
           <div className="mt-3">
             <FlowButton disabled={busy || !gotFood || !paidRestaurant} onClick={goInTransit}>
@@ -738,10 +748,10 @@ function ActiveOrderView({ order, restaurant, courier, onChange, onBack }: {
 
       {order.status === "in_transit" && savedSecond && (
         <FlowCard step="05" title="Entrega y cobro" subtitle="Marca la entrega y el dinero que cobraste.">
-          <p className="mb-3 text-lg font-semibold text-primary">Cobra al cliente {formatMxn(money.total)}</p>
+          <p className="mb-3 text-lg font-semibold text-primary">{money.prepaid ? "Ya pagado: no cobres nada" : `Cobra al cliente ${formatMxn(money.collect)}`}</p>
           <div className="space-y-2">
             <CheckRow checked={deliveredFood} label="Entregué el pedido" onChange={(value) => toggleCheck("foodDelivered", value)} />
-            <CheckRow checked={collected} label={`Cobré ${formatMxn(money.total)}`} onChange={(value) => toggleCheck("cashCollected", value)} />
+            <CheckRow checked={collected} label={money.prepaid ? "Confirmo que no había cobro" : `Cobré ${formatMxn(money.collect)}`} onChange={(value) => toggleCheck("cashCollected", value)} />
           </div>
           <label className="mt-3 block text-sm">
             <span className="text-graphite">Incidencia</span>
@@ -776,8 +786,14 @@ function ActiveOrderView({ order, restaurant, courier, onChange, onBack }: {
       {order.status === "delivered" && (
         <FlowCard step="06" title="Pedido finalizado">
           <div className="mb-3 rounded-xl alert-success px-3 py-3 text-sm">Entrega confirmada</div>
-          <MoneyLine label="Cobro registrado" amount={formatMxn(money.total)} />
-          <MoneyLine label="Anticipo recuperado" amount={formatMxn(money.food)} />
+          {money.prepaid ? (
+            <MoneyLine label="Envío pagado por el restaurante" amount={formatMxn(money.restaurantPaysShipping)} />
+          ) : (
+            <>
+              <MoneyLine label="Cobro registrado" amount={formatMxn(money.collect)} />
+              <MoneyLine label="Anticipo recuperado" amount={formatMxn(money.food)} />
+            </>
+          )}
           <MoneyLine label="Tu envío" amount={formatMxn(money.shipping)} strong />
           {onBack && <div className="mt-3"><FlowButton onClick={onBack}>Volver a pedidos</FlowButton></div>}
         </FlowCard>

@@ -113,6 +113,7 @@ export function RestaurantProfile({ place, preview = false, demo = false }: { pl
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
   const [sending, setSending] = useState(false);
+  const [payMode, setPayMode] = useState<"collect_on_delivery" | "prepaid_at_restaurant">("collect_on_delivery");
   const [sent, setSent] = useState(false);
   const chosen = place.menu.flatMap((item) => {
     const count = qty[item.name] ?? 0;
@@ -198,6 +199,7 @@ export function RestaurantProfile({ place, preview = false, demo = false }: { pl
                   _customer_phone: phone,
                   _dropoff_address: packDropoff(address || "Casa del cliente", parsedLink.lat, parsedLink.lng, parsedLink.url),
                   _items: chosen,
+                  _payment_mode: payMode,
                 });
                 setSending(false);
                 if (error) return toast.error(error.message);
@@ -232,6 +234,18 @@ export function RestaurantProfile({ place, preview = false, demo = false }: { pl
               {lat != null && lng != null && (
                 <a className="block text-sm text-primary" href={googleMapsPlaceUrl({ lat, lng }) ?? "#"} target="_blank" rel="noopener noreferrer">Ver el punto en Google Maps</a>
               )}
+              <fieldset className="space-y-2">
+                <legend className="text-sm font-medium">¿Cómo pagas la comida?</legend>
+                {([
+                  ["collect_on_delivery", "Pago en mi domicilio", "Pagas comida y envío al repartidor al recibir."],
+                  ["prepaid_at_restaurant", "Pago al restaurante", "Pagas la comida directo al restaurante; el restaurante paga el envío al repartidor."],
+                ] as const).map(([value, label, hint]) => (
+                  <label key={value} className={`flex cursor-pointer gap-3 rounded-xl border px-3 py-2 text-sm ${payMode === value ? "border-primary bg-primary/5" : "border-hairline"}`}>
+                    <input type="radio" name="payMode" className="mt-1 accent-primary" checked={payMode === value} onChange={() => setPayMode(value)} />
+                    <span><span className="block font-medium">{label}</span><span className="text-graphite">{hint}</span></span>
+                  </label>
+                ))}
+              </fieldset>
               <Button type="submit" className="h-12 w-full" disabled={sending || foodTotal <= 0 || !mapsLink.trim()}>
                 Enviar pedido {foodTotal > 0 ? formatMxn(foodTotal) : ""}
               </Button>
