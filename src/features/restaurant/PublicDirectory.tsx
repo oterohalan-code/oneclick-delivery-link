@@ -89,13 +89,17 @@ export function PublicDirectory({ selectedId }: { selectedId?: string }) {
   );
 }
 
-function RestaurantProfile({ place }: { place: PublicRestaurant }) {
+export function RestaurantProfile({ place, preview = false }: { place: PublicRestaurant; preview?: boolean }) {
   const photo = publicMediaUrl(place.facade_url);
   const logo = publicMediaUrl(place.logo_url);
   const orderUrl = whatsappOrderUrl(place.phone, place.name);
   return (
     <div className="mx-auto max-w-lg">
-      <Link to="/" search={(previous) => ({ ...previous, local: undefined })} className="text-sm text-graphite">Volver a restaurantes</Link>
+      {preview ? (
+        <p className="text-sm font-medium text-graphite">Así lo ve el cliente</p>
+      ) : (
+        <Link to="/" search={(previous) => ({ ...previous, local: undefined })} className="text-sm text-graphite">Volver a restaurantes</Link>
+      )}
       <div className="mt-3 overflow-hidden rounded-2xl border border-hairline bg-white">
         <div className="h-48 bg-bone">
           {photo && <img src={photo} alt="" className="h-full w-full object-cover" />}
@@ -113,15 +117,21 @@ function RestaurantProfile({ place }: { place: PublicRestaurant }) {
           <h2 className="mt-5 font-semibold">Menú</h2>
           <ul className="mt-2 divide-y divide-hairline">
             {place.menu.length === 0 && <li className="py-3 text-sm text-graphite">Este local todavía no publica platillos.</li>}
-            {place.menu.map((item) => (
-              <li key={`${item.name}-${item.price}`} className="flex items-start justify-between gap-3 py-3">
-                <div>
-                  <div className="font-medium">{item.name}</div>
-                  {item.description && <p className="text-sm text-graphite">{item.description}</p>}
-                </div>
-                <div className="font-semibold">{formatMxn(item.price)}</div>
-              </li>
-            ))}
+            {place.menu.map((item) => {
+              const dish = publicMediaUrl(item.image);
+              return (
+                <li key={`${item.name}-${item.price}`} className="flex items-start gap-3 py-3">
+                  <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-bone">
+                    {dish && <img src={dish} alt="" className="h-full w-full object-cover" />}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="font-medium">{item.name}</div>
+                    {item.description && <p className="text-sm text-graphite">{item.description}</p>}
+                  </div>
+                  <div className="font-semibold">{formatMxn(item.price)}</div>
+                </li>
+              );
+            })}
           </ul>
           {orderUrl && (
             <Button asChild className="mt-4 h-12 w-full">
