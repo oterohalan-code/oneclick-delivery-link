@@ -127,6 +127,7 @@ export function RestaurantOrderBoard({
         <MoneyLine label="Comida recibida" amount={formatMxn(money.food)} />
         <MoneyLine label="Envío del repartidor" amount={formatMxn(money.shipping)} />
         <MoneyLine label="Total del pedido" amount={formatMxn(money.total)} strong />
+        <p className="mt-2 text-sm text-graphite">{money.prepaid ? `Pagado en restaurante. Pagaste ${formatMxn(money.restaurantPaysShipping)} de envío al repartidor.` : "Pago en domicilio. El repartidor cobró al cliente."}</p>
         {shared.cashCollectedAt && <p className="mt-2 text-sm text-graphite">El repartidor registró el cobro.</p>}
         {shared.incidentNote && (
           <p className="mt-2 rounded-xl alert-warning px-3 py-2 text-sm">Incidencia: {shared.incidentNote}</p>
@@ -145,7 +146,9 @@ export function RestaurantOrderBoard({
         <MoneyLine label="Envío" amount={formatMxn(money.shipping)} />
         <MoneyLine label="Total" amount={formatMxn(money.total)} strong />
         <p className="mt-3 rounded-xl alert-info px-3 py-2 text-sm">
-          Pago en domicilio. La liga de la casa ya queda en el pedido.
+          {money.prepaid
+            ? `Pagado en restaurante. Al recoger, le pagas ${formatMxn(money.restaurantPaysShipping)} de envío al repartidor.`
+            : "Pago en domicilio. El repartidor te deja el efectivo de la comida y cobra al cliente."}
         </p>
         {googleMapsDirectionsUrl(dropoff) && (
           <a href={googleMapsDirectionsUrl(dropoff) ?? "#"} target="_blank" rel="noopener noreferrer" className="mt-3 block rounded-xl border border-hairline px-3 py-2 text-sm text-primary">
@@ -200,7 +203,12 @@ export function RestaurantOrderBoard({
         <div className="rounded-xl alert-info px-3 py-3 text-sm">
           Primera liga registrada en el pedido. {courierSaved ? `${courierName || "El repartidor"} ya la guardó.` : `Esperando a que ${courierName || "el repartidor"} la guarde.`}
         </div>
-        {cashNoted && <p className="mt-2 text-sm text-graphite">El repartidor marcó producto recibido y anticipo entregado.</p>}
+        <p className="mt-2 rounded-xl alert-warning px-3 py-2 text-sm">
+          {money.prepaid
+            ? `Pagado en restaurante: entrega la comida y paga ${formatMxn(money.restaurantPaysShipping)} de envío al repartidor.`
+            : `Pago en domicilio: el repartidor te entrega ${formatMxn(money.food)} en efectivo de la comida.`}
+        </p>
+        {cashNoted && <p className="mt-2 text-sm text-graphite">{money.prepaid ? "El repartidor marcó producto recibido y envío pagado." : "El repartidor marcó producto recibido y anticipo entregado."}</p>}
         {shared.incidentNote && (
           <p className="mt-2 rounded-xl alert-warning px-3 py-2 text-sm">Incidencia: {shared.incidentNote}</p>
         )}
@@ -242,7 +250,7 @@ export function RestaurantOrderBoard({
       <div className="rounded-xl alert-info px-3 py-3 text-sm">
         Segunda liga registrada. El cliente puede abrir Google Maps. Esperando la entrega.
       </div>
-      <MoneyLine label="Total a cobrar" amount={formatMxn(money.total)} strong />
+      <MoneyLine label={money.prepaid ? "Cobro en domicilio (ya pagado)" : "Total a cobrar en domicilio"} amount={formatMxn(money.collect)} strong />
       {shared.courierSecondSavedAt && <p className="mt-2 text-sm text-graphite">El repartidor guardó la liga del domicilio.</p>}
       {shared.incidentNote && (
         <p className="mt-2 rounded-xl alert-warning px-3 py-2 text-sm">Incidencia: {shared.incidentNote}</p>
