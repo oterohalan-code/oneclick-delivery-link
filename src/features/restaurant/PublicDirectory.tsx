@@ -113,6 +113,7 @@ export function RestaurantProfile({ place, preview = false, demo = false }: { pl
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
   const [sending, setSending] = useState(false);
+  const [payMode, setPayMode] = useState<"collect_on_delivery" | "prepaid_at_restaurant">("collect_on_delivery");
   const [sent, setSent] = useState(false);
   const chosen = place.menu.flatMap((item) => {
     const count = qty[item.name] ?? 0;
