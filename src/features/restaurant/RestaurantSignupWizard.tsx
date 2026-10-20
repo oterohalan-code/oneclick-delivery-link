@@ -10,6 +10,7 @@ import { AddressSearch } from "@/components/AddressSearch";
 import { MapView, reverseGeocode } from "@/components/MapView";
 import { DEFAULT_COUNTRY } from "@/lib/countries";
 import { supabase } from "@/integrations/supabase/client";
+import { compressImage } from "@/lib/restaurant-media";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
 import {
@@ -124,17 +125,16 @@ export function RestaurantSignupWizard() {
     if (file.size > 8 * 1024 * 1024) return toast.error("La imagen no debe pesar más de 8MB");
 
     setUploading(true);
-    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-    const path = `${user.id}/facade-${Date.now()}.${ext}`;
-    const { error } = await supabase.storage
-      .from("restaurant-photos")
-      .upload(path, file, { upsert: true, contentType: file.type });
-    setUploading(false);
-
-    if (error) return toast.error(error.message);
-    setFacadeUrl(path);
-    setFacadePreview(URL.createObjectURL(file));
-    toast.success("Foto subida");
+    try {
+      const image = await compressImage(file);
+      setFacadeUrl(image);
+      setFacadePreview(image);
+      toast.success("Foto lista");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "No se pudo guardar la foto");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const onFinish = async (e: React.FormEvent) => {
