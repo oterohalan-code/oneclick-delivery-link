@@ -10,3 +10,7 @@ Verification: public search and signup selection; authenticated administrator fi
 - [x] Verify owner saving and reloading the details without changing orders or memberships.
 
 Verification: authenticated owner saved Taquería El Güero and reloaded its persisted name; existing address preserved pending the real Manzanillo address. Mobile fields render without horizontal overflow; no browser errors; build OK.
+
+# Remove Cancun operational data
+- [ ] Cancel the Cancun courier order and clear Cancun location references while preserving accounts and El Güero.
+- [ ] Verify cancellation and absence of Cancun operational locations.
