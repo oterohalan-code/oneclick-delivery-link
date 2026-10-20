@@ -19,6 +19,7 @@ import { Link } from "@tanstack/react-router";
 import { BUSINESS, formatMxn } from "@/lib/business";
 import { copyText, customerMapsWhatsAppText, isEmbeddedPreview, whatsappChatUrl } from "@/lib/maps";
 import { RestaurantOrderBoard } from "./RestaurantOrderBoard";
+import { RestaurantMenuEditor } from "./RestaurantMenuEditor";
 import { parseOrderFlow } from "@/lib/order-flow";
 
 interface Restaurant {
@@ -273,6 +274,8 @@ export function RestaurantHome() {
         <p className="text-sm text-muted-foreground">Bienvenido,</p>
         <h1 className="font-display text-2xl font-bold">{rest.name}</h1>
       </div>
+
+      <RestaurantMenuEditor />
 
       <Card className="p-6 bg-gradient-to-br from-primary to-primary-glow text-primary-foreground border-0 shadow-glow">
         <h2 className="font-display text-xl font-semibold">¿Necesitas un repartidor?</h2>

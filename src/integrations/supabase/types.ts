@@ -772,6 +772,9 @@ export type Database = {
           category: string | null
           created_at: string
           facade_url: string | null
+          logo_url: string | null
+          hours: string | null
+          menu: Json
           id: string
           lat: number | null
           lng: number | null
@@ -786,6 +789,9 @@ export type Database = {
           category?: string | null
           created_at?: string
           facade_url?: string | null
+          logo_url?: string | null
+          hours?: string | null
+          menu?: Json
           id?: string
           lat?: number | null
           lng?: number | null
@@ -800,6 +806,9 @@ export type Database = {
           category?: string | null
           created_at?: string
           facade_url?: string | null
+          logo_url?: string | null
+          hours?: string | null
+          menu?: Json
           id?: string
           lat?: number | null
           lng?: number | null
@@ -1218,7 +1227,11 @@ export type Database = {
         Returns: {
           address: string
           category: string
+          facade_url: string
+          hours: string
           id: string
+          logo_url: string
+          menu: Json
           name: string
           phone: string
         }[]
