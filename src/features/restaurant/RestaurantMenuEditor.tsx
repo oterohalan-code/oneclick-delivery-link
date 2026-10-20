@@ -50,8 +50,8 @@ export function RestaurantMenuEditor() {
     setBusy(true);
     try {
       const image = await compressImage(file);
-      const column = kind === "logo" ? "logo_url" : "facade_url";
-      const { error } = await supabase.from("restaurants").update({ [column]: image }).eq("id", row.id);
+      const patch = kind === "logo" ? { logo_url: image } : { facade_url: image };
+      const { error } = await supabase.from("restaurants").update(patch).eq("id", row.id);
       setBusy(false);
       if (error) return toast.error(error.message);
       toast.success(kind === "logo" ? "Logo guardado" : "Foto guardada");
