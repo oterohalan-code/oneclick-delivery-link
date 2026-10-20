@@ -55,6 +55,8 @@ export function CourierHome() {
   const [courier, setCourier] = useState<Courier | null>(null);
   const [feed, setFeed] = useState<OrderRow[]>([]);
   const [active, setActive] = useState<OrderRow | null>(null);
+  const [doneOrder, setDoneOrder] = useState<OrderRow | null>(null);
+  const [hideDone, setHideDone] = useState(false);
   const [activeList, setActiveList] = useState<OrderRow[]>([]);
   const [restaurants, setRestaurants] = useState<Record<string, { name: string; phone: string; facadeUrl: string | null }>>({});
   const [loading, setLoading] = useState(true);
@@ -80,6 +82,18 @@ export function CourierHome() {
       const list = (actives as any) ?? [];
       setActiveList(list);
       setActive(list[0] ?? null);
+      let finished: OrderRow | null = null;
+      if (!list.length) {
+        const { data: lastDone } = await supabase.from("orders").select("*")
+          .eq("courier_id", (c as any).id)
+          .eq("status", "delivered")
+          .order("delivered_at", { ascending: false })
+          .limit(1);
+        finished = ((lastDone as any) ?? [])[0] ?? null;
+        setDoneOrder(finished);
+      } else {
+        setDoneOrder(null);
+      }
 
       const { data: pend } = await supabase.rpc("get_available_orders", { _limit: 30 });
       // RPC no devuelve PII (customer_name/phone, notes, amount_to_collect): se carga al aceptar.
@@ -91,7 +105,11 @@ export function CourierHome() {
         amount_to_collect: Number(o.amount_to_collect ?? 0),
       })));
 
-      const ids = Array.from(new Set([...(pend ?? []).map((o: any) => o.restaurant_id), ...list.map((o: any) => o.restaurant_id)]));
+      const ids = Array.from(new Set([
+        ...(pend ?? []).map((o: any) => o.restaurant_id),
+        ...list.map((o: any) => o.restaurant_id),
+        ...(finished ? [finished.restaurant_id] : []),
+      ]));
       if (ids.length) {
         const { data: rs } = await supabase.from("restaurants").select("id,name,phone,facade_url").in("id", ids);
         const map: Record<string, { name: string; phone: string; facadeUrl: string | null }> = {};
@@ -229,6 +247,18 @@ export function CourierHome() {
     );
   }
 
+  if (doneOrder && !hideDone) {
+    return (
+      <ActiveOrderView
+        order={doneOrder}
+        restaurant={restaurants[doneOrder.restaurant_id]}
+        courier={courier}
+        onChange={load}
+        onBack={() => setHideDone(true)}
+      />
+    );
+  }
+
   // Sort feed by distance from courier (si tiene ubicación)
   const sorted = feed
     .filter((o) => o.pickup_lat != null && o.pickup_lng != null)
@@ -348,7 +378,10 @@ export function CourierHome() {
                       ) : (
                         <div className="h-12 w-12 rounded-lg bg-muted grid place-items-center text-muted-foreground text-lg">🍽️</div>
                       )}
-                      <div className="font-semibold truncate">{r?.name ?? "Restaurante"}</div>
+                      <div className="min-w-0">
+                    <div className="text-xs font-semibold uppercase tracking-wide text-primary">01 Oferta</div>
+                    <div className="font-semibold truncate">Pedido #{orderCode(o)} · {r?.name ?? "Restaurante"}</div>
+                  </div>
                     </div>
                     <Badge variant="secondary">{dist.toFixed(1)} km</Badge>
                   </div>
@@ -443,11 +476,12 @@ export function CourierHome() {
 }
 
 
-function ActiveOrderView({ order, restaurant, courier, onChange }: {
+function ActiveOrderView({ order, restaurant, courier, onChange, onBack }: {
   order: OrderRow;
   restaurant?: { name: string; phone: string; facadeUrl: string | null };
   courier: Courier;
   onChange: () => void;
+  onBack?: () => void;
 }) {
   const { session } = useAuth();
   const setOrderStatusRpc = useServerFn(setOrderStatusFn);
@@ -463,6 +497,8 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
   const [deliveredFood, setDeliveredFood] = useState(!!shared.foodDeliveredAt);
   const [collected, setCollected] = useState(!!shared.cashCollectedAt);
   const [incident, setIncident] = useState(shared.incidentNote ?? "");
+  const [pastedFirst, setPastedFirst] = useState("");
+  const [pastedSecond, setPastedSecond] = useState("");
   const savedFirst = !!shared.courierFirstSavedAt;
   const savedSecond = !!shared.courierSecondSavedAt;
 
@@ -593,6 +629,7 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
     foodDelivered?: boolean;
     cashCollected?: boolean;
     incidentNote?: string;
+    linkUrl?: string;
   }) => {
     const token = session?.access_token;
     if (!token) { toast.error("Sesión expirada."); return false; }
@@ -626,7 +663,7 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
 
   return (
     <div className="space-y-4">
-      <FlowCard title={`Pedido #${code}`} step={goingToPickup ? "Hacia el restaurante" : "Hacia el cliente"}>
+      <FlowCard title={`Pedido #${code}`} step={order.status === "delivered" ? "06" : goingToPickup ? "02" : "04"}>
         <p className="text-sm font-medium">{restaurant?.name ?? "Restaurante"}</p>
         <p className="text-sm text-graphite">{goingToPickup ? order.pickup_address : order.dropoff_address}</p>
         {eta != null && <p className="mt-1 text-xs text-graphite">ETA {formatEta(eta)}</p>}
@@ -644,7 +681,16 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
               <a href={shared.restaurantFirstUrl || pickupMaps || "#"} target="_blank" rel="noopener noreferrer">Abrir restaurante en Maps</a>
             </Button>
           )}
-          <FlowButton onClick={() => persist({ action: "courier_first_saved" })}>Guardar primera liga</FlowButton>
+          <label className="mb-3 block text-sm">
+            <span className="text-graphite">Pegar primera liga</span>
+            <input
+              value={pastedFirst}
+              onChange={(event) => setPastedFirst(event.target.value)}
+              placeholder="https://maps.google.com/..."
+              className="mt-1 h-11 w-full rounded-xl border border-hairline bg-white px-3"
+            />
+          </label>
+          <FlowButton onClick={() => persist({ action: "courier_first_saved", linkUrl: pastedFirst.trim() || undefined })}>Guardar primera liga</FlowButton>
         </FlowCard>
       )}
 
@@ -677,7 +723,16 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
               <a href={shared.restaurantSecondUrl || dropoffMaps || "#"} target="_blank" rel="noopener noreferrer">Abrir destino en Maps</a>
             </Button>
           )}
-          <FlowButton onClick={() => persist({ action: "courier_second_saved" })}>Guardar segunda liga</FlowButton>
+          <label className="mb-3 block text-sm">
+            <span className="text-graphite">Pegar segunda liga</span>
+            <input
+              value={pastedSecond}
+              onChange={(event) => setPastedSecond(event.target.value)}
+              placeholder="https://maps.google.com/..."
+              className="mt-1 h-11 w-full rounded-xl border border-hairline bg-white px-3"
+            />
+          </label>
+          <FlowButton onClick={() => persist({ action: "courier_second_saved", linkUrl: pastedSecond.trim() || undefined })}>Guardar segunda liga</FlowButton>
         </FlowCard>
       )}
 
@@ -724,6 +779,7 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
           <MoneyLine label="Cobro registrado" amount={formatMxn(money.total)} />
           <MoneyLine label="Anticipo recuperado" amount={formatMxn(money.food)} />
           <MoneyLine label="Tu envío" amount={formatMxn(money.shipping)} strong />
+          {onBack && <div className="mt-3"><FlowButton onClick={onBack}>Volver a pedidos</FlowButton></div>}
         </FlowCard>
       )}
 

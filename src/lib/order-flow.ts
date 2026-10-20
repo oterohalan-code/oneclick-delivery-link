@@ -42,7 +42,9 @@ export type OrderFlow = {
   restaurantSecondSentAt?: string;
   restaurantSecondUrl?: string;
   courierFirstSavedAt?: string;
+  courierFirstUrl?: string;
   courierSecondSavedAt?: string;
+  courierSecondUrl?: string;
   productReceivedAt?: string;
   advancePaidAt?: string;
   foodDeliveredAt?: string;
