@@ -1207,11 +1207,14 @@ export type Database = {
           dropoff_lat: number
           dropoff_lng: number
           external_order_id: string
+          food_amount_cents: number
           id: string
+          payment_mode: string
           pickup_address: string
           pickup_lat: number
           pickup_lng: number
           restaurant_id: string
+          shipping_amount_cents: number
           shipping_fee: number
           status: Database["public"]["Enums"]["order_status"]
         }[]
