@@ -13,6 +13,10 @@ export const Route = createFileRoute("/auth/reset")({
     meta: [
       { title: "Restablecer contraseña — 1Click" },
       { name: "description", content: "Define una nueva contraseña para tu cuenta de 1Click." },
+      { property: "og:title", content: "Restablecer contraseña — 1Click" },
+      { property: "og:description", content: "Define una nueva contraseña para tu cuenta de 1Click." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),

@@ -12,6 +12,10 @@ export const Route = createFileRoute("/app/insights")({
     meta: [
       { title: "Métricas del restaurante · 1Click" },
       { name: "description", content: "Ventas, pedidos y desempeño de tu restaurante en 1Click." },
+      { property: "og:title", content: "Métricas del restaurante · 1Click" },
+      { property: "og:description", content: "Ventas, pedidos y desempeño de tu restaurante en 1Click." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),

@@ -6,6 +6,14 @@ import { AdminHome } from "@/features/admin/AdminHome";
 import { Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/app/")({
+  head: () => ({ meta: [
+    { title: "Inicio — 1Click" },
+    { name: "description", content: "Gestiona tu operación de entregas en 1Click." },
+    { property: "og:title", content: "Inicio — 1Click" },
+    { property: "og:description", content: "Gestiona tu operación de entregas en 1Click." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: AppHome,
 });
 

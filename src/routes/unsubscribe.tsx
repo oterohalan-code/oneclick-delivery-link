@@ -10,6 +10,10 @@ export const Route = createFileRoute("/unsubscribe")({
     meta: [
       { title: "Cancelar suscripción — 1Click" },
       { name: "description", content: "Gestiona tu suscripción a correos de 1Click." },
+      { property: "og:title", content: "Cancelar suscripción — 1Click" },
+      { property: "og:description", content: "Gestiona tu suscripción a correos de 1Click." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),

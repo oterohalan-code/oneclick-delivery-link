@@ -12,6 +12,14 @@ import { Loader2 } from "lucide-react";
 import { CourierOnboarding } from "@/features/courier/CourierOnboarding";
 
 export const Route = createFileRoute("/app/profile")({
+  head: () => ({ meta: [
+    { title: "Mi perfil — 1Click" },
+    { name: "description", content: "Gestiona los datos de tu perfil en 1Click." },
+    { property: "og:title", content: "Mi perfil — 1Click" },
+    { property: "og:description", content: "Gestiona los datos de tu perfil en 1Click." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: ProfilePage,
 });
 

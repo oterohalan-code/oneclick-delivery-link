@@ -363,3 +363,14 @@ button > *, [role="button"] > * {
   .premium-app main > div > div:first-child h1 { font-size: 1.5rem; }
   input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea { font-size: 1rem; }
 }
+
+/* Compact but readable operational tabs and legal document rhythm. */
+@media (max-width: 640px) {
+  .premium-app [role="tab"] { font-size: .75rem; padding-inline: .5rem; min-width: 0; }
+}
+main.prose { line-height: 1.8; }
+main.prose h1 { font-size: 2rem; margin-bottom: 1.5rem; }
+main.prose h2 { font-size: 1.25rem; margin-top: 2rem; margin-bottom: .75rem; }
+main.prose p, main.prose ul { margin-bottom: 1rem; }
+main.prose ul { padding-left: 1.25rem; list-style: disc; }
+main.prose a { color: var(--primary); }
