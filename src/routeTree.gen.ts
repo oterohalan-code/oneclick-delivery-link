@@ -14,6 +14,8 @@ import { Route as AppRouteImport } from './routes/app'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as FlujoRouteImport } from './routes/flujo'
 import { Route as RepartidorRouteImport } from './routes/repartidor'
+import { Route as RepartidorEjemploRouteImport } from './routes/repartidor.ejemplo'
+import { Route as RestauranteRouteImport } from './routes/restaurante'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as RestaurantesRouteImport } from './routes/restaurantes'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
@@ -64,6 +66,16 @@ const FlujoRoute = FlujoRouteImport.update({
 const RepartidorRoute = RepartidorRouteImport.update({
   id: '/repartidor',
   path: '/repartidor',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RepartidorEjemploRoute = RepartidorEjemploRouteImport.update({
+  id: '/repartidor/ejemplo',
+  path: '/repartidor/ejemplo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RestauranteRoute = RestauranteRouteImport.update({
+  id: '/restaurante',
+  path: '/restaurante',
   getParentRoute: () => rootRouteImport,
 } as any)
 const McpRoute = McpRouteImport.update({
@@ -209,6 +221,8 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRouteWithChildren
   '/flujo': typeof FlujoRoute
   '/repartidor': typeof RepartidorRoute
+  '/repartidor/ejemplo': typeof RepartidorEjemploRoute
+  '/restaurante': typeof RestauranteRoute
   '/mcp': typeof McpRoute
   '/restaurantes': typeof RestaurantesRoute
   '/unsubscribe': typeof UnsubscribeRoute
@@ -241,6 +255,8 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRouteWithChildren
   '/flujo': typeof FlujoRoute
   '/repartidor': typeof RepartidorRoute
+  '/repartidor/ejemplo': typeof RepartidorEjemploRoute
+  '/restaurante': typeof RestauranteRoute
   '/mcp': typeof McpRoute
   '/restaurantes': typeof RestaurantesRoute
   '/unsubscribe': typeof UnsubscribeRoute
@@ -275,6 +291,8 @@ export interface FileRoutesById {
   '/auth': typeof AuthRouteWithChildren
   '/flujo': typeof FlujoRoute
   '/repartidor': typeof RepartidorRoute
+  '/repartidor/ejemplo': typeof RepartidorEjemploRoute
+  '/restaurante': typeof RestauranteRoute
   '/mcp': typeof McpRoute
   '/restaurantes': typeof RestaurantesRoute
   '/unsubscribe': typeof UnsubscribeRoute
@@ -310,6 +328,8 @@ export interface FileRouteTypes {
     | '/auth'
     | '/flujo'
     | '/repartidor'
+    | '/repartidor/ejemplo'
+    | '/restaurante'
     | '/mcp'
     | '/restaurantes'
     | '/unsubscribe'
@@ -342,6 +362,8 @@ export interface FileRouteTypes {
     | '/auth'
     | '/flujo'
     | '/repartidor'
+    | '/repartidor/ejemplo'
+    | '/restaurante'
     | '/mcp'
     | '/restaurantes'
     | '/unsubscribe'
@@ -375,6 +397,8 @@ export interface FileRouteTypes {
     | '/auth'
     | '/flujo'
     | '/repartidor'
+    | '/repartidor/ejemplo'
+    | '/restaurante'
     | '/mcp'
     | '/restaurantes'
     | '/unsubscribe'
@@ -409,6 +433,8 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRouteWithChildren
   FlujoRoute: typeof FlujoRoute
   RepartidorRoute: typeof RepartidorRoute
+  RepartidorEjemploRoute: typeof RepartidorEjemploRoute
+  RestauranteRoute: typeof RestauranteRoute
   McpRoute: typeof McpRoute
   RestaurantesRoute: typeof RestaurantesRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
@@ -464,6 +490,20 @@ declare module '@tanstack/react-router' {
       path: '/repartidor'
       fullPath: '/repartidor'
       preLoaderRoute: typeof RepartidorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/repartidor/ejemplo': {
+      id: '/repartidor/ejemplo'
+      path: '/repartidor/ejemplo'
+      fullPath: '/repartidor/ejemplo'
+      preLoaderRoute: typeof RepartidorEjemploRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/restaurante': {
+      id: '/restaurante'
+      path: '/restaurante'
+      fullPath: '/restaurante'
+      preLoaderRoute: typeof RestauranteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mcp': {
@@ -689,6 +729,8 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRouteWithChildren,
   FlujoRoute: FlujoRoute,
   RepartidorRoute: RepartidorRoute,
+  RepartidorEjemploRoute: RepartidorEjemploRoute,
+  RestauranteRoute: RestauranteRoute,
   McpRoute: McpRoute,
   RestaurantesRoute: RestaurantesRoute,
   UnsubscribeRoute: UnsubscribeRoute,

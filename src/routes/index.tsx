@@ -38,14 +38,11 @@ function Landing() {
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between gap-3">
           <Logo size="md" tone="bone" />
           <nav className="flex items-center gap-2 sm:gap-4 text-sm">
-            <Link to="/auth" search={{ role: "restaurant" }} className="hidden sm:inline text-navy-foreground/80 hover:text-navy-foreground">
+            <Link to="/restaurante" className="text-navy-foreground/80 hover:text-navy-foreground">
               Soy restaurante
             </Link>
-            <Link to="/auth" search={{ role: "courier" }} className="hidden sm:inline text-navy-foreground/80 hover:text-navy-foreground">
-              Soy repartidor
-            </Link>
             <Link to="/repartidor" className="text-navy-foreground/80 hover:text-navy-foreground">
-              Probar repartidor
+              Soy repartidor
             </Link>
             <Link to="/auth" className="hidden sm:inline text-navy-foreground/80 hover:text-navy-foreground">
               Iniciar sesión
