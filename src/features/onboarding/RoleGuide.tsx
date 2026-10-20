@@ -91,7 +91,7 @@ export function RoleGuide({
         <Button asChild className="h-12 w-full">
           <Link to="/auth" search={{ role }}>{cta}</Link>
         </Button>
-        <p className="text-center text-xs text-graphite">{BUSINESS.coverageLabel}. El pedido se paga en efectivo.</p>
+        <p className="text-center text-xs text-graphite">{BUSINESS.coverageLabel}. La comida se paga en el restaurante o en domicilio; el cobro es del restaurante.</p>
       </main>
     </div>
   );
