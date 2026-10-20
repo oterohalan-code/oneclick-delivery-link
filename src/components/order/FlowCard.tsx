@@ -25,7 +25,7 @@ export function FlowCard({
   children: ReactNode;
 }) {
   return (
-    <section className="rounded-2xl border border-hairline bg-paper p-5 shadow-[var(--shadow-soft)]">
+    <section className="rounded-lg border border-hairline bg-paper p-5 shadow-[var(--shadow-soft)]">
       {step ? <StepHeading step={step} title={title} subtitle={subtitle} /> : <h2 className="mb-3 text-xl font-semibold text-ink">{title}</h2>}
       {children}
     </section>
@@ -51,7 +51,7 @@ export function CheckRow({
   onChange: (next: boolean) => void;
 }) {
   return (
-    <label className="flex items-center gap-3 rounded-xl border border-hairline bg-bone px-3 py-2.5 text-sm">
+    <label className="flex items-center gap-3 rounded-lg border border-hairline bg-bone px-3 py-2.5 text-sm">
       <input
         type="checkbox"
         className="h-4 w-4 accent-primary"

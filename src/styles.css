@@ -55,11 +55,11 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
 
-  --color-navy: #0E3140;
-  --color-navy-foreground: #F7F4EF;
+  --color-navy: var(--navy);
+  --color-navy-foreground: var(--navy-foreground);
 
-  --font-display: "Fraunces", "Georgia", serif;
-  --font-sans: "Inter Tight", "Inter", system-ui, sans-serif;
+  --font-display: "Manrope", system-ui, sans-serif;
+  --font-sans: "Manrope", system-ui, sans-serif;
 
   --shadow-soft: 0 1px 2px rgb(15 36 48 / 0.04), 0 4px 14px -4px rgb(15 36 48 / 0.08);
   --shadow-elegant: 0 1px 2px rgb(15 36 48 / 0.05), 0 16px 40px -12px rgb(15 36 48 / 0.16);
@@ -69,16 +69,21 @@
 }
 
 :root {
-  --radius: 0.875rem;
+  --radius: 0.5rem;
+  --navy: oklch(0.29 0.04 220);
+  --navy-foreground: oklch(0.99 0.002 230);
+  --hero-foreground: oklch(0.99 0 0);
+  --hero-scrim: oklch(0.19 0.015 230 / 0.72);
+  --surface-line: color-mix(in oklab, var(--ink) 4%, transparent);
 
   /* Screen mocks: navy bar, cool paper, orange actions */
-  --ink: #0F2430;
-  --bone: #F5F7F9;
-  --paper: #FFFFFF;
-  --ember: #D9531A;
-  --ember-foreground: #FFFFFF;
-  --graphite: #5A6872;
-  --hairline: #E2E7EB;
+  --ink: oklch(0.27 0.025 230);
+  --bone: oklch(0.975 0.003 230);
+  --paper: oklch(1 0 0);
+  --ember: oklch(0.58 0.17 40);
+  --ember-foreground: oklch(1 0 0);
+  --graphite: oklch(0.49 0.018 230);
+  --hairline: oklch(0.90 0.008 230);
 
   --background: var(--bone);
   --foreground: var(--ink);
@@ -91,15 +96,15 @@
   --popover: var(--paper);
   --popover-foreground: var(--ink);
 
-  --primary: #D9531A;
-  --primary-foreground: #FFFFFF;
-  --primary-glow: #EC7440;
+  --primary: var(--ember);
+  --primary-foreground: var(--ember-foreground);
+  --primary-glow: oklch(0.65 0.17 42);
 
-  --secondary: #EEF2F5;
+  --secondary: oklch(0.948 0.007 230);
   --secondary-foreground: var(--ink);
-  --muted: #EEF2F5;
+  --muted: var(--secondary);
   --muted-foreground: var(--graphite);
-  --accent: #FBEDE5;
+  --accent: oklch(0.96 0.025 50);
   --accent-foreground: var(--ink);
 
   --destructive: oklch(0.55 0.18 25);
@@ -114,10 +119,10 @@
   --ring: var(--ember);
 
   /* Glass tokens */
-  --glass-bg: color-mix(in oklab, white 60%, transparent);
-  --glass-bg-strong: color-mix(in oklab, white 78%, transparent);
+  --glass-bg: color-mix(in oklab, var(--paper) 82%, transparent);
+  --glass-bg-strong: color-mix(in oklab, var(--paper) 94%, transparent);
   --glass-bg-dark: color-mix(in oklab, var(--ink) 55%, transparent);
-  --glass-border: color-mix(in oklab, white 70%, transparent);
+  --glass-border: color-mix(in oklab, var(--paper) 70%, transparent);
   --glass-border-dark: color-mix(in oklab, white 12%, transparent);
 
   /* Mesh — bone field with a copper point, same as the logo mocks */
@@ -190,7 +195,7 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
-    background-image: radial-gradient(at 0% 0%, var(--mesh-2), transparent 45%), radial-gradient(at 100% 0%, var(--mesh-1), transparent 40%);
+    background-image: none;
     background-attachment: fixed;
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
@@ -199,7 +204,7 @@
   }
   h1, h2, h3, h4 {
     font-family: var(--font-display);
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
     font-weight: 600;
     line-height: 1.15;
     text-wrap: balance;
@@ -226,13 +231,13 @@
     -webkit-backdrop-filter: blur(20px) saturate(140%);
     border: 1px solid var(--glass-border-dark);
   }
-  .text-display { font-family: var(--font-display); letter-spacing: -0.03em; }
+  .text-display { font-family: var(--font-display); letter-spacing: 0; }
   .tabular { font-variant-numeric: tabular-nums; }
   .text-mono-tight { font-feature-settings: "ss01", "cv11", "tnum"; }
   .eyebrow {
     font-size: 0.6875rem;
     font-weight: 600;
-    letter-spacing: 0.22em;
+    letter-spacing: 0;
     text-transform: uppercase;
     color: var(--ember);
   }
@@ -321,9 +326,7 @@ button > *, [role="button"] > * {
   z-index: 1;
 }
 .btn-shimmer::before { z-index: 0; }
-button:active, button:focus, [role="button"]:active, [role="button"]:focus {
-  color: inherit;
-}
+/* Variant foreground colors remain authoritative in every interaction state. */
 
 /* Reduced motion */
 @media (prefers-reduced-motion: reduce) {
@@ -333,3 +336,41 @@ button:active, button:focus, [role="button"]:active, [role="button"]:focus {
   }
 }
 
+
+/* Premium visual language shared by public and operational screens. */
+.directory-hero { position: relative; isolation: isolate; overflow: hidden; min-height: 320px; display: flex; align-items: center; background: var(--navy); color: var(--hero-foreground); }
+.directory-hero::after { content: ""; position: absolute; inset: 0; z-index: -1; background: linear-gradient(90deg, var(--hero-scrim), transparent); }
+.directory-hero h1 { max-width: 620px; font-size: 2.75rem; line-height: 1.16; font-weight: 700; }
+.directory-hero p { color: var(--hero-foreground); opacity: .86; }
+.directory-search { box-shadow: var(--shadow-elegant); }
+.premium-app main > div > div:first-child h1 { font-size: 1.875rem; line-height: 1.25; }
+.premium-app main h2, .premium-app main h3 { font-weight: 700; }
+.premium-app main { font-variant-numeric: tabular-nums; }
+.premium-app main .shadow-glow { box-shadow: var(--shadow-soft); }
+.premium-app main .bg-gradient-to-br { background-image: none; background-color: var(--navy); }
+.premium-app main .bg-gradient-to-br button { color: var(--secondary-foreground); }
+.premium-app main .bg-gradient-to-br button:hover { background-color: var(--secondary); }
+.premium-app main .bg-gradient-to-br a { color: var(--navy-foreground); }
+.premium-app main .bg-gradient-to-br a:hover { color: var(--ink); }
+.premium-nav { background: var(--glass-bg-strong); border: 1px solid var(--hairline); box-shadow: var(--shadow-elegant); backdrop-filter: blur(16px); }
+.premium-app main table th { color: var(--graphite); font-size: .75rem; font-weight: 600; background: var(--secondary); }
+.premium-app main table td { padding-top: 1rem; padding-bottom: 1rem; }
+.premium-app main section { scroll-margin-top: 6rem; }
+@media (max-width: 640px) {
+  .directory-hero { min-height: 300px; }
+  .directory-hero h1 { font-size: 2rem; max-width: 310px; }
+  .directory-hero::after { background: var(--hero-scrim); }
+  .premium-app main > div > div:first-child h1 { font-size: 1.5rem; }
+  input:not([type=checkbox]):not([type=radio]):not([type=file]), textarea { font-size: 1rem; }
+}
+
+/* Compact but readable operational tabs and legal document rhythm. */
+@media (max-width: 640px) {
+  .premium-app [role="tab"] { font-size: .75rem; padding-inline: .5rem; min-width: 0; }
+}
+main.prose { line-height: 1.8; }
+main.prose h1 { font-size: 2rem; margin-bottom: 1.5rem; }
+main.prose h2 { font-size: 1.25rem; margin-top: 2rem; margin-bottom: .75rem; }
+main.prose p, main.prose ul { margin-bottom: 1rem; }
+main.prose ul { padding-left: 1.25rem; list-style: disc; }
+main.prose a { color: var(--primary); }

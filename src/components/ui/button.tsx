@@ -5,35 +5,35 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-semibold tracking-[-0.01em] transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center gap-2 whitespace-nowrap text-sm font-semibold tracking-normal transition-[background-color,color,border-color,box-shadow,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
   {
     variants: {
       variant: {
         // Premium signature — primary pill with shimmer + lift (auto-adapts dark)
         default:
-          "btn-shimmer rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary active:text-primary-foreground shadow-button hover:shadow-button-hover active:scale-[0.98]",
+          "btn-shimmer rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary active:text-primary-foreground shadow-button hover:shadow-button-hover active:scale-[0.98]",
         premium:
-          "btn-shimmer rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary active:text-primary-foreground shadow-button hover:shadow-button-hover active:scale-[0.98]",
+          "btn-shimmer rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 hover:text-primary-foreground active:bg-primary active:text-primary-foreground shadow-button hover:shadow-button-hover active:scale-[0.98]",
         // Glass / translucent — guarantee contrast in all states
         glass:
-          "rounded-full glass-strong text-foreground hover:text-foreground active:text-foreground  transition border-2 border-foreground/20 hover:border-foreground/40 hover:bg-[var(--glass-bg-strong)]",
+          "rounded-lg glass-strong text-foreground hover:text-foreground active:text-foreground  transition border-2 border-foreground/20 hover:border-foreground/40 hover:bg-[var(--glass-bg-strong)]",
         // Outline elegant — invert on hover but keep readable on focus/active
         outline:
-          "rounded-xl border border-border bg-card text-foreground shadow-sm hover:border-foreground/30 hover:bg-secondary hover:text-foreground active:bg-secondary active:text-foreground",
+          "rounded-lg border border-border bg-card text-foreground shadow-sm hover:border-foreground/30 hover:bg-secondary hover:text-foreground active:bg-secondary active:text-foreground",
         // Subtle / secondary
         secondary:
-          "rounded-xl bg-secondary text-secondary-foreground hover:bg-secondary/70 hover:text-secondary-foreground active:text-secondary-foreground",
+          "rounded-lg bg-secondary text-secondary-foreground hover:bg-secondary/70 hover:text-secondary-foreground active:text-secondary-foreground",
         // Destructive
         destructive:
-          "rounded-xl bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:text-destructive-foreground active:text-destructive-foreground shadow-sm",
+          "rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:text-destructive-foreground active:text-destructive-foreground shadow-sm",
         // Ghost minimal — keep text legible against hover background
         ghost:
-          "rounded-xl text-foreground hover:bg-secondary hover:text-accent-foreground active:bg-accent active:text-accent-foreground",
+          "rounded-lg text-foreground hover:bg-secondary hover:text-accent-foreground active:bg-accent active:text-accent-foreground",
         // Inline link with animated underline
         link: "text-foreground underline-offset-4 hover:underline hover:text-foreground active:text-foreground relative",
         // Ember accent — copper warmth, used sparingly
         ember:
-          "btn-shimmer rounded-xl bg-ember text-ember-foreground hover:bg-ember/90 hover:text-ember-foreground active:text-ember-foreground shadow-button hover:shadow-button-hover ",
+          "btn-shimmer rounded-lg bg-ember text-ember-foreground hover:bg-ember/90 hover:text-ember-foreground active:text-ember-foreground shadow-button hover:shadow-button-hover ",
       },
       size: {
         default: "h-10 px-5 py-2",

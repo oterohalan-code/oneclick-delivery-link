@@ -16,7 +16,7 @@ export const Route = createFileRoute("/.lovable/oauth/consent")({
   validateSearch: (s: Record<string, unknown>) => ({
     authorization_id: typeof s.authorization_id === "string" ? s.authorization_id : "",
   }),
-  head: () => ({ meta: [{ title: "Conectar con 1Click" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({ meta: [{ title: "Conectar con 1Click" }, { name: "description", content: "Autoriza la conexión de tu asistente con 1Click." }, { property: "og:title", content: "Conectar con 1Click" }, { property: "og:description", content: "Autoriza la conexión de tu asistente con 1Click." }, { property: "og:type", content: "website" }, { name: "twitter:card", content: "summary" }, { name: "robots", content: "noindex" }] }),
   beforeLoad: async ({ search, location }) => {
     if (!search.authorization_id) throw new Error("Falta el identificador de autorización.");
     const { data } = await supabase.auth.getSession();

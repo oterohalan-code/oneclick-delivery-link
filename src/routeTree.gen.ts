@@ -30,6 +30,7 @@ import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
 import { Route as LegalTermsRouteImport } from './routes/legal.terms'
 import { Route as TTokenRouteImport } from './routes/t.$token'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
+import { Route as ApiPublicMenuRequestAlertRouteImport } from './routes/api/public/menu-request-alert'
 import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicPaymentsMercadopagoRouteImport } from './routes/api/public/payments/mercadopago'
 import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
@@ -146,6 +147,12 @@ const DotlovableOauthConsentRoute = DotlovableOauthConsentRouteImport.update({
   path: '/.lovable/oauth/consent',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicMenuRequestAlertRoute =
+  ApiPublicMenuRequestAlertRouteImport.update({
+    id: '/api/public/menu-request-alert',
+    path: '/api/public/menu-request-alert',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
   id: '/lovable/email/suppression',
   path: '/lovable/email/suppression',
@@ -219,6 +226,7 @@ export interface FileRoutesByFullPath {
   '/t/$token': typeof TTokenRoute
   '/app/': typeof AppIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/api/public/menu-request-alert': typeof ApiPublicMenuRequestAlertRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/payments/mercadopago': typeof ApiPublicPaymentsMercadopagoRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -250,6 +258,7 @@ export interface FileRoutesByTo {
   '/t/$token': typeof TTokenRoute
   '/app': typeof AppIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/api/public/menu-request-alert': typeof ApiPublicMenuRequestAlertRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/payments/mercadopago': typeof ApiPublicPaymentsMercadopagoRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -283,6 +292,7 @@ export interface FileRoutesById {
   '/t/$token': typeof TTokenRoute
   '/app/': typeof AppIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
+  '/api/public/menu-request-alert': typeof ApiPublicMenuRequestAlertRoute
   '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/api/public/payments/mercadopago': typeof ApiPublicPaymentsMercadopagoRoute
   '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
@@ -317,6 +327,7 @@ export interface FileRouteTypes {
     | '/t/$token'
     | '/app/'
     | '/.lovable/oauth/consent'
+    | '/api/public/menu-request-alert'
     | '/lovable/email/suppression'
     | '/api/public/payments/mercadopago'
     | '/api/public/payments/webhook'
@@ -348,6 +359,7 @@ export interface FileRouteTypes {
     | '/t/$token'
     | '/app'
     | '/.lovable/oauth/consent'
+    | '/api/public/menu-request-alert'
     | '/lovable/email/suppression'
     | '/api/public/payments/mercadopago'
     | '/api/public/payments/webhook'
@@ -380,6 +392,7 @@ export interface FileRouteTypes {
     | '/t/$token'
     | '/app/'
     | '/.lovable/oauth/consent'
+    | '/api/public/menu-request-alert'
     | '/lovable/email/suppression'
     | '/api/public/payments/mercadopago'
     | '/api/public/payments/webhook'
@@ -405,6 +418,7 @@ export interface RootRouteChildren {
   LegalTermsRoute: typeof LegalTermsRoute
   TTokenRoute: typeof TTokenRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
+  ApiPublicMenuRequestAlertRoute: typeof ApiPublicMenuRequestAlertRoute
   LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   ApiPublicPaymentsMercadopagoRoute: typeof ApiPublicPaymentsMercadopagoRoute
   ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
@@ -565,6 +579,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DotlovableOauthConsentRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/menu-request-alert': {
+      id: '/api/public/menu-request-alert'
+      path: '/api/public/menu-request-alert'
+      fullPath: '/api/public/menu-request-alert'
+      preLoaderRoute: typeof ApiPublicMenuRequestAlertRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/email/suppression': {
       id: '/lovable/email/suppression'
       path: '/lovable/email/suppression'
@@ -678,6 +699,7 @@ const rootRouteChildren: RootRouteChildren = {
   LegalTermsRoute: LegalTermsRoute,
   TTokenRoute: TTokenRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
+  ApiPublicMenuRequestAlertRoute: ApiPublicMenuRequestAlertRoute,
   LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   ApiPublicPaymentsMercadopagoRoute: ApiPublicPaymentsMercadopagoRoute,
   ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,

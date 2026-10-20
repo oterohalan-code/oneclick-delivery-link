@@ -15,6 +15,14 @@ import {
 } from "@/lib/rpc/membership.functions";
 
 export const Route = createFileRoute("/app/wallet")({
+  head: () => ({ meta: [
+    { title: "Membresía — 1Click" },
+    { name: "description", content: "Consulta tu membresía y tus pagos en 1Click." },
+    { property: "og:title", content: "Membresía — 1Click" },
+    { property: "og:description", content: "Consulta tu membresía y tus pagos en 1Click." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   validateSearch: (search: Record<string, unknown>): { checkout?: string; ref?: string } => ({
     checkout: typeof search.checkout === "string" ? search.checkout : undefined,
     ref: typeof search.ref === "string" ? search.ref : undefined,

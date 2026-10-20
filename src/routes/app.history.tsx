@@ -11,6 +11,14 @@ import { formatMxn } from "@/lib/business";
 import { parseOrderFlow } from "@/lib/order-flow";
 
 export const Route = createFileRoute("/app/history")({
+  head: () => ({ meta: [
+    { title: "Historial — 1Click" },
+    { name: "description", content: "Consulta el historial de tus pedidos y entregas en 1Click." },
+    { property: "og:title", content: "Historial — 1Click" },
+    { property: "og:description", content: "Consulta el historial de tus pedidos y entregas en 1Click." },
+    { property: "og:type", content: "website" },
+    { name: "twitter:card", content: "summary" },
+  ] }),
   component: HistoryPage,
 });
 

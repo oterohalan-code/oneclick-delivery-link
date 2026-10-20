@@ -15,6 +15,10 @@ export const Route = createFileRoute("/app/refer")({
     meta: [
       { title: "Invita y gana · 1Click" },
       { name: "description", content: "Comparte tu código de referido y gana recompensas en tu monedero." },
+      { property: "og:title", content: "Invita y gana · 1Click" },
+      { property: "og:description", content: "Comparte tu código de referido y gana recompensas en tu monedero." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
