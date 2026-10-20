@@ -443,7 +443,19 @@ const FlowActionSchema = z.object({
   foodDelivered: z.boolean().optional(),
   cashCollected: z.boolean().optional(),
   incidentNote: z.string().trim().max(300).optional(),
+  linkUrl: z.string().trim().max(500).optional(),
 });
+
+function savedMapsUrl(value: string | undefined): string | undefined {
+  if (!value) return undefined;
+  try {
+    const url = new URL(value);
+    if (url.protocol !== "https:") return undefined;
+    return url.toString();
+  } catch {
+    return undefined;
+  }
+}
 
 function stamp(on: boolean | undefined, previous: string | undefined): string | undefined {
   if (on === undefined) return previous;
@@ -521,9 +533,11 @@ export const recordOrderFlow = createServerFn({ method: "POST" })
       if (data.action === "courier_first_saved") {
         if (order.status !== "assigned") return { ok: false as const, message: "Esta liga es para la recogida." };
         next.courierFirstSavedAt = current.courierFirstSavedAt ?? new Date().toISOString();
+        next.courierFirstUrl = savedMapsUrl(data.linkUrl) ?? current.restaurantFirstUrl ?? pickupUrl ?? undefined;
       } else if (data.action === "courier_second_saved") {
         if (order.status !== "in_transit") return { ok: false as const, message: "Esta liga es para la entrega." };
         next.courierSecondSavedAt = current.courierSecondSavedAt ?? new Date().toISOString();
+        next.courierSecondUrl = savedMapsUrl(data.linkUrl) ?? current.restaurantSecondUrl ?? dropoffUrl ?? undefined;
       } else if (data.action === "courier_checks") {
         if (order.status === "assigned") {
           next.productReceivedAt = stamp(data.productReceived, current.productReceivedAt);
