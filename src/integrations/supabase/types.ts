@@ -515,7 +515,6 @@ export type Database = {
           eta_minutes: number | null
           external_order_id: string | null
           food_amount_cents: number | null
-          flow: Json
           id: string
           notes: string | null
           payment_mode: string | null
@@ -554,7 +553,6 @@ export type Database = {
           eta_minutes?: number | null
           external_order_id?: string | null
           food_amount_cents?: number | null
-          flow?: Json
           id?: string
           notes?: string | null
           payment_mode?: string | null
@@ -593,7 +591,6 @@ export type Database = {
           eta_minutes?: number | null
           external_order_id?: string | null
           food_amount_cents?: number | null
-          flow?: Json
           id?: string
           notes?: string | null
           payment_mode?: string | null
@@ -766,51 +763,12 @@ export type Database = {
         }
         Relationships: []
       }
-      menu_requests: {
-        Row: {
-          created_at: string
-          customer_name: string
-          customer_phone: string
-          dropoff_address: string
-          food_total: number
-          id: string
-          items: Json
-          restaurant_id: string
-          status: string
-        }
-        Insert: {
-          created_at?: string
-          customer_name: string
-          customer_phone: string
-          dropoff_address: string
-          food_total: number
-          id?: string
-          items: Json
-          restaurant_id: string
-          status?: string
-        }
-        Update: {
-          created_at?: string
-          customer_name?: string
-          customer_phone?: string
-          dropoff_address?: string
-          food_total?: number
-          id?: string
-          items?: Json
-          restaurant_id?: string
-          status?: string
-        }
-        Relationships: []
-      }
       restaurants: {
         Row: {
           address: string
           category: string | null
           created_at: string
           facade_url: string | null
-          logo_url: string | null
-          hours: string | null
-          menu: Json
           id: string
           lat: number | null
           lng: number | null
@@ -825,9 +783,6 @@ export type Database = {
           category?: string | null
           created_at?: string
           facade_url?: string | null
-          logo_url?: string | null
-          hours?: string | null
-          menu?: Json
           id?: string
           lat?: number | null
           lng?: number | null
@@ -842,9 +797,6 @@ export type Database = {
           category?: string | null
           created_at?: string
           facade_url?: string | null
-          logo_url?: string | null
-          hours?: string | null
-          menu?: Json
           id?: string
           lat?: number | null
           lng?: number | null
@@ -1200,10 +1152,6 @@ export type Database = {
           pickup_lng: number
           restaurant_id: string
           shipping_fee: number
-          food_amount_cents: number
-          shipping_amount_cents: number
-          amount_to_collect: number
-          external_order_id: string
           status: Database["public"]["Enums"]["order_status"]
         }[]
       }
@@ -1237,10 +1185,6 @@ export type Database = {
           pickup_lat: number
           pickup_lng: number
           restaurant_name: string
-          restaurant_phone: string
-          food_mxn: number
-          shipping_mxn: number
-          total_mxn: number
           status: Database["public"]["Enums"]["order_status"]
         }[]
       }
@@ -1257,30 +1201,6 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
-      }
-      place_menu_request: {
-        Args: {
-          _customer_name: string
-          _customer_phone: string
-          _dropoff_address: string
-          _items: Json
-          _restaurant_id: string
-        }
-        Returns: string
-      }
-      list_public_restaurants: {
-        Args: never
-        Returns: {
-          address: string
-          category: string
-          facade_url: string
-          hours: string
-          id: string
-          logo_url: string
-          menu: Json
-          name: string
-          phone: string
-        }[]
       }
       is_order_participant: {
         Args: { _order_id: string; _user_id: string }
