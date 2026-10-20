@@ -21,6 +21,14 @@ export function surgeLabel(r: SurgeReason): string {
   return SURGE_LABELS[r];
 }
 
+export const SHIPPING_BANDS = [
+  { untilKm: 3, fee: 40 },
+  { untilKm: 5, fee: 50 },
+  { untilKm: 7, fee: 60 },
+  { untilKm: 9, fee: 70 },
+  { untilKm: 11, fee: 80 },
+] as const;
+
 function baseByKm(km: number): number {
   if (!Number.isFinite(km) || km <= 0) return 0;
   if (km <= 3) return 40;
