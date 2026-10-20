@@ -515,6 +515,7 @@ export type Database = {
           eta_minutes: number | null
           external_order_id: string | null
           food_amount_cents: number | null
+          flow: Json
           id: string
           notes: string | null
           payment_mode: string | null
@@ -553,6 +554,7 @@ export type Database = {
           eta_minutes?: number | null
           external_order_id?: string | null
           food_amount_cents?: number | null
+          flow?: Json
           id?: string
           notes?: string | null
           payment_mode?: string | null
@@ -591,6 +593,7 @@ export type Database = {
           eta_minutes?: number | null
           external_order_id?: string | null
           food_amount_cents?: number | null
+          flow?: Json
           id?: string
           notes?: string | null
           payment_mode?: string | null
@@ -1152,6 +1155,10 @@ export type Database = {
           pickup_lng: number
           restaurant_id: string
           shipping_fee: number
+          food_amount_cents: number
+          shipping_amount_cents: number
+          amount_to_collect: number
+          external_order_id: string
           status: Database["public"]["Enums"]["order_status"]
         }[]
       }
@@ -1185,6 +1192,10 @@ export type Database = {
           pickup_lat: number
           pickup_lng: number
           restaurant_name: string
+          restaurant_phone: string
+          food_mxn: number
+          shipping_mxn: number
+          total_mxn: number
           status: Database["public"]["Enums"]["order_status"]
         }[]
       }
@@ -1201,6 +1212,16 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      list_public_restaurants: {
+        Args: never
+        Returns: {
+          address: string
+          category: string
+          id: string
+          name: string
+          phone: string
+        }[]
       }
       is_order_participant: {
         Args: { _order_id: string; _user_id: string }

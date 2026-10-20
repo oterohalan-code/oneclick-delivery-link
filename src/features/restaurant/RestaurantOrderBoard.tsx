@@ -1,6 +1,8 @@
 import { useState } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
 import { formatMxn } from "@/lib/business";
+import { useAuth } from "@/lib/auth-context";
 import {
   courierPickupMessage,
   customerEnRouteMessage,
@@ -8,10 +10,13 @@ import {
   openWhatsApp,
   orderCode,
   orderMoney,
+  parseOrderFlow,
   readFlowFlag,
   writeFlowFlag,
+  type OrderFlow,
 } from "@/lib/order-flow";
 import { copyText } from "@/lib/maps";
+import { recordOrderFlow } from "@/lib/rpc/orders.functions";
 import { CheckRow, FlowButton, FlowCard, MoneyLine } from "@/components/order/FlowCard";
 
 export type RestaurantBoardOrder = {
@@ -38,20 +43,49 @@ export function RestaurantOrderBoard({
   restaurantName,
   courierName,
   courierPhone,
+  flow,
+  onSaved,
   onCancel,
+  persist = true,
 }: {
   order: RestaurantBoardOrder;
   restaurantName: string;
   courierName: string | null;
   courierPhone: string | null;
+  flow?: OrderFlow;
+  onSaved?: () => void;
   onCancel?: () => void;
+  persist?: boolean;
 }) {
+  const { session } = useAuth();
+  const record = useServerFn(recordOrderFlow);
   const code = orderCode(order);
   const money = orderMoney(order);
+  const shared = parseOrderFlow(flow);
   const [tick, setTick] = useState(0);
-  const firstSent = readFlowFlag(order.id, "restaurant-first");
-  const secondSent = readFlowFlag(order.id, "restaurant-second");
+  const [busy, setBusy] = useState(false);
+  const firstSent = persist ? !!shared.restaurantFirstSentAt : readFlowFlag(order.id, "restaurant-first");
+  const secondSent = persist ? !!shared.restaurantSecondSentAt : readFlowFlag(order.id, "restaurant-second");
   void tick;
+
+  const save = async (action: "restaurant_first_sent" | "restaurant_second_sent") => {
+    if (!persist) {
+      writeFlowFlag(order.id, action === "restaurant_first_sent" ? "restaurant-first" : "restaurant-second");
+      setTick((value) => value + 1);
+      return;
+    }
+    const token = session?.access_token;
+    if (!token) return toast.error("Sesión expirada.");
+    setBusy(true);
+    const res = await record({
+      headers: { Authorization: `Bearer ${token}` },
+      data: { orderId: order.id, action },
+    }).catch(() => null);
+    setBusy(false);
+    if (!res?.ok) return toast.error(res?.message ?? "No se pudo guardar.");
+    toast.success("Quedó registrado en el pedido.");
+    onSaved?.();
+  };
 
   const pickup = { lat: order.pickup_lat, lng: order.pickup_lng, address: order.pickup_address };
   const dropoff = { lat: order.dropoff_lat, lng: order.dropoff_lng, address: order.dropoff_address };
@@ -80,10 +114,8 @@ export function RestaurantOrderBoard({
     }
   };
 
-  const mark = (flag: string) => {
-    writeFlowFlag(order.id, flag);
-    setTick((value) => value + 1);
-  };
+  const courierSaved = !!shared.courierFirstSavedAt;
+  const cashNoted = !!shared.productReceivedAt && !!shared.advancePaidAt;
 
   if (order.status === "delivered") {
     return (
@@ -94,6 +126,10 @@ export function RestaurantOrderBoard({
         <MoneyLine label="Comida recibida" amount={formatMxn(money.food)} />
         <MoneyLine label="Envío del repartidor" amount={formatMxn(money.shipping)} />
         <MoneyLine label="Total del pedido" amount={formatMxn(money.total)} strong />
+        {shared.cashCollectedAt && <p className="mt-2 text-sm text-graphite">El repartidor registró el cobro.</p>}
+        {shared.incidentNote && (
+          <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-950">Incidencia: {shared.incidentNote}</p>
+        )}
       </FlowCard>
     );
   }
@@ -130,7 +166,7 @@ export function RestaurantOrderBoard({
         </p>
         <FlowButton onClick={shareCourier}>Abrir WhatsApp para enviar</FlowButton>
         <div className="mt-2">
-          <FlowButton variant="outline" onClick={() => mark("restaurant-first")}>
+          <FlowButton disabled={busy} variant="outline" onClick={() => save("restaurant_first_sent")}>
             Confirmar que envié la liga
           </FlowButton>
         </div>
@@ -142,8 +178,12 @@ export function RestaurantOrderBoard({
     return (
       <FlowCard step="03" title="Hacia el restaurante">
         <div className="rounded-xl bg-sky-50 px-3 py-3 text-sm text-sky-900">
-          Primera liga registrada. Esperando a que {courierName || "el repartidor"} recoja el pedido.
+          Primera liga registrada en el pedido. {courierSaved ? `${courierName || "El repartidor"} ya la guardó.` : `Esperando a que ${courierName || "el repartidor"} la guarde.`}
         </div>
+        {cashNoted && <p className="mt-2 text-sm text-graphite">El repartidor marcó producto recibido y anticipo entregado.</p>}
+        {shared.incidentNote && (
+          <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-950">Incidencia: {shared.incidentNote}</p>
+        )}
       </FlowCard>
     );
   }
@@ -156,7 +196,7 @@ export function RestaurantOrderBoard({
         </div>
         <FlowButton onClick={shareCustomer}>Abrir WhatsApp para enviar</FlowButton>
         <div className="mt-2">
-          <FlowButton variant="outline" onClick={() => mark("restaurant-second")}>
+          <FlowButton disabled={busy} variant="outline" onClick={() => save("restaurant_second_sent")}>
             Confirmar que envié la liga
           </FlowButton>
         </div>
@@ -170,6 +210,10 @@ export function RestaurantOrderBoard({
         Segunda liga registrada. El cliente puede abrir Google Maps. Esperando la entrega.
       </div>
       <MoneyLine label="Total a cobrar" amount={formatMxn(money.total)} strong />
+      {shared.courierSecondSavedAt && <p className="mt-2 text-sm text-graphite">El repartidor guardó la liga del domicilio.</p>}
+      {shared.incidentNote && (
+        <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-950">Incidencia: {shared.incidentNote}</p>
+      )}
     </FlowCard>
   );
 }

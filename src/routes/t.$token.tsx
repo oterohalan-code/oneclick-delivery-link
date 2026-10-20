@@ -40,6 +40,10 @@ type Tracking = {
   location_updated_at: string | null;
   courier_name: string | null;
   courier_score: number | null;
+  restaurant_phone?: string | null;
+  food_mxn?: number | null;
+  shipping_mxn?: number | null;
+  total_mxn?: number | null;
 };
 
 const STATUS_STEPS = [
@@ -221,6 +225,26 @@ function TrackingContent({ data }: { data: Tracking }) {
       <GlassCard variant="strong" className="p-2 overflow-hidden">
         <MapView pins={pins} showRoute={pins.length >= 2} height="320px" />
       </GlassCard>
+
+      {(data.food_mxn != null || data.total_mxn != null) && (
+        <GlassCard variant="strong" className="p-5">
+          <div className="flex justify-between text-sm text-muted-foreground"><span>Comida</span><span>${Number(data.food_mxn ?? 0).toFixed(0)}</span></div>
+          <div className="mt-1 flex justify-between text-sm text-muted-foreground"><span>Envío</span><span>${Number(data.shipping_mxn ?? 0).toFixed(0)}</span></div>
+          <div className="mt-2 flex justify-between border-t pt-2 font-semibold"><span>Total</span><span>${Number(data.total_mxn ?? 0).toFixed(0)}</span></div>
+          {isDelivered && <p className="mt-2 text-sm text-emerald-800">Cobro confirmado por el repartidor</p>}
+        </GlassCard>
+      )}
+
+      {data.restaurant_phone && (
+        <a
+          href={`https://wa.me/${data.restaurant_phone.replace(/\D/g, "")}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="block rounded-xl border border-primary px-4 py-3 text-center text-sm font-semibold text-primary"
+        >
+          Contactar restaurante
+        </a>
+      )}
 
       <GlassCard variant="strong" className="p-5 space-y-3">
         <Row
