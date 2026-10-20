@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import { copyText, customerMapsWhatsAppText, isEmbeddedPreview, whatsappChatUrl 
 import { RestaurantOrderBoard } from "./RestaurantOrderBoard";
 import { RestaurantMenuEditor } from "./RestaurantMenuEditor";
 import { parseOrderFlow } from "@/lib/order-flow";
+import { unpackDropoff } from "@/lib/restaurant-media";
 
 interface Restaurant {
   id: string; name: string; address: string; lat: number | null; lng: number | null;
@@ -63,6 +64,8 @@ export function RestaurantHome() {
   const [requests, setRequests] = useState<{ id: string; customer_name: string; customer_phone: string; dropoff_address: string; food_total: number; items: { name?: string; qty?: number }[] }[]>([]);
   const [chatOrderId, setChatOrderId] = useState<string | null>(null);
   const [courierByOrder, setCourierByOrder] = useState<Record<string, CourierInfo>>({});
+  const seenRequests = useRef<Set<string>>(new Set());
+  const requestsReady = useRef(false);
   const getCourierForOrderRpc = useServerFn(getCourierForOrder);
   const getCourierStatsRpc = useServerFn(getCourierStats);
 
@@ -81,12 +84,32 @@ export function RestaurantHome() {
         .eq("restaurant_id", r.id)
         .eq("status", "new")
         .order("created_at", { ascending: false });
-      setRequests((incoming as any) ?? []);
+      const incomingRows = (incoming as any) ?? [];
+      setRequests(incomingRows);
+      const fresh = incomingRows.filter((request: { id: string }) => !seenRequests.current.has(request.id));
+      if (requestsReady.current) {
+        fresh.forEach((request: { id: string; customer_name: string; food_total: number }) => {
+          toast.success(`Nuevo pedido de ${request.customer_name}`);
+          if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+            new Notification("Nuevo pedido en 1Click", {
+              body: `${request.customer_name} · ${formatMxn(Number(request.food_total))}`,
+            });
+          }
+        });
+      }
+      incomingRows.forEach((request: { id: string }) => seenRequests.current.add(request.id));
+      requestsReady.current = true;
     }
     setLoading(false);
   };
 
   useEffect(() => { load(); }, [user?.id]);
+
+  useEffect(() => {
+    if (!rest?.id) return;
+    const timer = window.setInterval(load, 12000);
+    return () => window.clearInterval(timer);
+  }, [rest?.id]);
 
   useEffect(() => {
     if (!rest?.id) return;
@@ -345,25 +368,28 @@ export function RestaurantHome() {
           {requests.map((request) => (
             <Card key={request.id} className="p-4">
               <div className="font-medium">{request.customer_name} · {request.customer_phone}</div>
-              <p className="text-sm text-graphite">{request.dropoff_address}</p>
+              <p className="text-sm text-graphite">{unpackDropoff(request.dropoff_address).address}</p>
               <p className="mt-1 text-sm">{formatMxn(Number(request.food_total))} en comida</p>
               <Button
                 className="mt-3 h-11 w-full"
                 onClick={() => {
                   const items = Array.isArray(request.items) ? request.items : [];
                   const notes = items.map((item) => `${item.qty ?? 1} ${item.name ?? ""}`).join(", ").slice(0, 500);
+                  const dropoff = unpackDropoff(request.dropoff_address);
                   setSeed({
                     customer_name: request.customer_name,
                     customer_phone: request.customer_phone,
-                    dropoff_address: request.dropoff_address,
+                    dropoff_address: dropoff.address,
                     amount: String(Number(request.food_total)),
                     notes,
                     requestId: request.id,
+                    lat: dropoff.lat,
+                    lng: dropoff.lng,
                   });
                   setOpen(true);
                 }}
               >
-                Armar envío
+                Pedir repartidor
               </Button>
             </Card>
           ))}

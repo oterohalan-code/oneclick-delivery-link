@@ -171,13 +171,22 @@ export function haversine(a: { lat: number; lng: number }, b: { lat: number; lng
 }
 
 // Nominatim address search
+const MANZANILLO_POINT = { lat: MANZANILLO[0], lng: MANZANILLO[1] };
+
+export function isInManzanillo(lat: number, lng: number): boolean {
+  return haversine(MANZANILLO_POINT, { lat, lng }) <= 40;
+}
+
 export async function searchAddress(q: string): Promise<Array<{ display_name: string; lat: number; lng: number }>> {
   if (q.trim().length < 3) return [];
-  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=mx&q=${encodeURIComponent(q + " Manzanillo, Colima, México")}`;
+  const viewbox = "-104.55,19.30,-104.10,18.90";
+  const url = `https://nominatim.openstreetmap.org/search?format=json&limit=5&countrycodes=mx&bounded=1&viewbox=${viewbox}&q=${encodeURIComponent(q + " Manzanillo, Colima, México")}`;
   const r = await fetch(url, { headers: { Accept: "application/json" } });
   if (!r.ok) return [];
   const data = (await r.json()) as Array<{ display_name: string; lat: string; lon: string }>;
-  return data.map((d) => ({ display_name: d.display_name, lat: parseFloat(d.lat), lng: parseFloat(d.lon) }));
+  return data
+    .map((d) => ({ display_name: d.display_name, lat: parseFloat(d.lat), lng: parseFloat(d.lon) }))
+    .filter((d) => isInManzanillo(d.lat, d.lng));
 }
 
 // Reverse geocoding: coordinates -> human-readable address
