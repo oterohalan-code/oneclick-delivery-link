@@ -824,6 +824,7 @@ export type Database = {
           lat: number | null
           lng: number | null
           logo_url: string | null
+          maps_url: string | null
           menu: Json
           name: string
           phone: string
@@ -841,6 +842,7 @@ export type Database = {
           lat?: number | null
           lng?: number | null
           logo_url?: string | null
+          maps_url?: string | null
           menu?: Json
           name: string
           phone: string
@@ -858,6 +860,7 @@ export type Database = {
           lat?: number | null
           lng?: number | null
           logo_url?: string | null
+          maps_url?: string | null
           menu?: Json
           name?: string
           phone?: string
