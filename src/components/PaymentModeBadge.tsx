@@ -19,7 +19,7 @@ export function PaymentModeBadge() {
     return (
       <Badge
         variant="outline"
-        className="border-orange-400 bg-orange-100 text-orange-800 hover:bg-orange-100"
+        className="alert-warning hover:bg-[var(--warning)]/20"
       >
         <FlaskConical className="h-3 w-3 mr-1" />
         Modo prueba
@@ -30,7 +30,7 @@ export function PaymentModeBadge() {
   return (
     <Badge
       variant="outline"
-      className="border-green-500 bg-green-100 text-green-800 hover:bg-green-100"
+      className="alert-success hover:bg-[var(--success)]/20"
     >
       <ShieldCheck className="h-3 w-3 mr-1" />
       Pagos reales

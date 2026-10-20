@@ -12,7 +12,11 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/app/refer")({
   component: ReferPage,
   head: () => ({
-    meta: [{ title: "Invita y gana · 1Click" }],
+    meta: [
+      { title: "Invita y gana · 1Click" },
+      { name: "description", content: "Comparte tu código de referido y gana recompensas en tu monedero." },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
   }),
 });
 

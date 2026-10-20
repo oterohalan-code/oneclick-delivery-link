@@ -125,62 +125,62 @@
   --mesh-2: color-mix(in srgb, #0E3140 6%, transparent);
   --mesh-3: color-mix(in srgb, #0E3140 4%, transparent);
 
-  --sidebar: #1A1614;
-  --sidebar-foreground: #F5F2EB;
-  --sidebar-primary: #B8693A;
-  --sidebar-primary-foreground: #F5F2EB;
-  --sidebar-accent: #2A2420;
-  --sidebar-accent-foreground: #F5F2EB;
-  --sidebar-border: #2A2420;
-  --sidebar-ring: #B8693A;
+  --sidebar: #0E3140;
+  --sidebar-foreground: #F7F4EF;
+  --sidebar-primary: #D9531A;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #123C4E;
+  --sidebar-accent-foreground: #F7F4EF;
+  --sidebar-border: #123C4E;
+  --sidebar-ring: #D9531A;
 }
 
 .dark {
-  /* Same mock palette, inverted: ink field, bone type, copper point */
-  --background: #1A1614;
-  --foreground: #F5F2EB;
-  --bone: #F5F2EB;
-  --paper: #241F1C;
-  --ink: #F5F2EB;
-  --graphite: #B7AFA6;
-  --hairline: color-mix(in srgb, #F5F2EB 12%, transparent);
-  --ember: #C47A4A;
-  --ember-foreground: #1A1614;
+  /* Same palette, inverted: deep navy field, bone type, ember point */
+  --background: #0B1F29;
+  --foreground: #F7F4EF;
+  --bone: #F7F4EF;
+  --paper: #102A38;
+  --ink: #F7F4EF;
+  --graphite: #8FA3AD;
+  --hairline: color-mix(in srgb, #F7F4EF 12%, transparent);
+  --ember: #EC7440;
+  --ember-foreground: #0B1F29;
 
-  --brand: #F5F2EB;
-  --brand-foreground: #1A1614;
-  --card: #241F1C;
-  --card-foreground: #F5F2EB;
-  --popover: #241F1C;
-  --popover-foreground: #F5F2EB;
-  --primary: #F5F2EB;
-  --primary-foreground: #1A1614;
-  --primary-glow: #E7E0D6;
-  --secondary: #2A2420;
-  --secondary-foreground: #F5F2EB;
-  --muted: #2A2420;
-  --muted-foreground: #B7AFA6;
-  --accent: #3A2C24;
-  --accent-foreground: #F5F2EB;
-  --border: color-mix(in srgb, #F5F2EB 12%, transparent);
-  --input: color-mix(in srgb, #F5F2EB 16%, transparent);
-  --ring: #C47A4A;
+  --brand: #F7F4EF;
+  --brand-foreground: #0B1F29;
+  --card: #102A38;
+  --card-foreground: #F7F4EF;
+  --popover: #102A38;
+  --popover-foreground: #F7F4EF;
+  --primary: #EC7440;
+  --primary-foreground: #0B1F29;
+  --primary-glow: #F28C5F;
+  --secondary: #16333F;
+  --secondary-foreground: #F7F4EF;
+  --muted: #16333F;
+  --muted-foreground: #8FA3AD;
+  --accent: #3A2418;
+  --accent-foreground: #F7F4EF;
+  --border: color-mix(in srgb, #F7F4EF 12%, transparent);
+  --input: color-mix(in srgb, #F7F4EF 16%, transparent);
+  --ring: #EC7440;
 
-  --glass-bg: color-mix(in srgb, #241F1C 72%, transparent);
-  --glass-bg-strong: color-mix(in srgb, #241F1C 88%, transparent);
-  --glass-bg-dark: color-mix(in srgb, #1A1614 78%, transparent);
-  --glass-border: color-mix(in srgb, #F5F2EB 14%, transparent);
-  --glass-border-dark: color-mix(in srgb, #F5F2EB 10%, transparent);
+  --glass-bg: color-mix(in srgb, #102A38 72%, transparent);
+  --glass-bg-strong: color-mix(in srgb, #102A38 88%, transparent);
+  --glass-bg-dark: color-mix(in srgb, #0B1F29 78%, transparent);
+  --glass-border: color-mix(in srgb, #F7F4EF 14%, transparent);
+  --glass-border-dark: color-mix(in srgb, #F7F4EF 10%, transparent);
 
-  --mesh-1: color-mix(in srgb, #B8693A 32%, transparent);
-  --mesh-2: color-mix(in srgb, #1A1614 40%, transparent);
-  --mesh-3: color-mix(in srgb, #C47A4A 18%, transparent);
+  --mesh-1: color-mix(in srgb, #D9531A 32%, transparent);
+  --mesh-2: color-mix(in srgb, #0E3140 40%, transparent);
+  --mesh-3: color-mix(in srgb, #EC7440 18%, transparent);
 
-  --sidebar: #120F0D;
-  --sidebar-foreground: #F5F2EB;
-  --sidebar-accent: #2A2420;
-  --sidebar-accent-foreground: #F5F2EB;
-  --sidebar-border: color-mix(in srgb, #F5F2EB 10%, transparent);
+  --sidebar: #0A232F;
+  --sidebar-foreground: #F7F4EF;
+  --sidebar-accent: #123C4E;
+  --sidebar-accent-foreground: #F7F4EF;
+  --sidebar-border: color-mix(in srgb, #F7F4EF 10%, transparent);
 }
 
 @layer base {
@@ -237,6 +237,22 @@
     color: var(--ember);
   }
   .hairline { border-color: var(--hairline); }
+  /* Status alerts — unified tokens, no raw palette colors */
+  .alert-warning {
+    background: color-mix(in srgb, var(--warning) 16%, var(--paper));
+    color: var(--ink);
+    border: 1px solid color-mix(in srgb, var(--warning) 35%, transparent);
+  }
+  .alert-success {
+    background: color-mix(in srgb, var(--success) 13%, var(--paper));
+    color: var(--success);
+    border: 1px solid color-mix(in srgb, var(--success) 30%, transparent);
+  }
+  .alert-info {
+    background: color-mix(in srgb, var(--color-navy) 5%, var(--paper));
+    color: var(--ink);
+    border: 1px solid var(--hairline);
+  }
   .shadow-button { box-shadow: var(--shadow-button); }
   .shadow-button-hover:hover { box-shadow: var(--shadow-button-hover); }
   .shadow-elegant { box-shadow: var(--shadow-elegant); }
@@ -257,8 +273,8 @@
     100% { transform: translateX(220%); }
   }
   @keyframes ember-pulse {
-    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 color-mix(in srgb, #B8693A 60%, transparent); }
-    50% { opacity: 0.85; box-shadow: 0 0 0 8px color-mix(in srgb, #B8693A 0%, transparent); }
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 color-mix(in srgb, var(--ember) 60%, transparent); }
+    50% { opacity: 0.85; box-shadow: 0 0 0 8px color-mix(in srgb, var(--ember) 0%, transparent); }
   }
   .pulse-ember { animation: ember-pulse 1.8s ease-out infinite; }
   .btn-shimmer { position: relative; overflow: hidden; isolation: isolate; }

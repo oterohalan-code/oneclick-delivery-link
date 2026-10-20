@@ -6,7 +6,13 @@ import { GlassCard } from "@/components/ui/glass-card";
 export const Route = createFileRoute("/unsubscribe")({
   validateSearch: (s: Record<string, unknown>) => ({ token: typeof s.token === "string" ? s.token : "" }),
   component: UnsubscribePage,
-  head: () => ({ meta: [{ title: "Cancelar suscripción — 1-Click" }] }),
+  head: () => ({
+    meta: [
+      { title: "Cancelar suscripción — 1Click" },
+      { name: "description", content: "Gestiona tu suscripción a correos de 1Click." },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
 });
 
 function UnsubscribePage() {

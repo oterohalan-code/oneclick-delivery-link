@@ -20,8 +20,12 @@ export const Route = createFileRoute("/")({
   component: Landing,
   head: () => ({
     meta: [
-      { title: "One Click — Restaurantes en Manzanillo" },
+      { title: "1Click — Restaurantes en Manzanillo" },
       { name: "description", content: "Encuentra un restaurante en Manzanillo y pide por WhatsApp." },
+      { property: "og:title", content: "1Click — Restaurantes en Manzanillo" },
+      { property: "og:description", content: "Encuentra un restaurante en Manzanillo y pide por WhatsApp." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
 });

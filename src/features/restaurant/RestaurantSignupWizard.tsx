@@ -296,7 +296,7 @@ export function RestaurantSignupWizard() {
                   alt="Fachada"
                   className="w-full h-48 object-cover"
                 />
-                <span className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-white text-sm">
+                <span className="absolute inset-0 bg-ink/50 opacity-0 group-hover:opacity-100 transition flex items-center justify-center text-bone text-sm">
                   Cambiar foto
                 </span>
               </button>

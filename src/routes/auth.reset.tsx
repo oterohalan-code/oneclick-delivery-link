@@ -9,7 +9,13 @@ import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth/reset")({
   component: ResetPage,
-  head: () => ({ meta: [{ title: "Restablecer contraseña — 1-Click" }] }),
+  head: () => ({
+    meta: [
+      { title: "Restablecer contraseña — 1Click" },
+      { name: "description", content: "Define una nueva contraseña para tu cuenta de 1Click." },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
+  }),
 });
 
 function ResetPage() {
