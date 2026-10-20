@@ -5,6 +5,12 @@ export type OrderMoney = {
   food: number;
   shipping: number;
   total: number;
+  /** true when the customer already paid the food at the restaurant. */
+  prepaid: boolean;
+  /** Cash the courier collects from the customer at the door. */
+  collect: number;
+  /** Shipping the restaurant pays the courier at pickup. */
+  restaurantPaysShipping: number;
 };
 
 export function orderCode(order: { id: string; external_order_id?: string | null }): string {
@@ -17,6 +23,7 @@ export function orderMoney(order: {
   shipping_fee?: number | null;
   food_amount_cents?: number | null;
   shipping_amount_cents?: number | null;
+  payment_mode?: string | null;
 }): OrderMoney {
   const shipping =
     order.shipping_amount_cents != null
@@ -27,7 +34,16 @@ export function orderMoney(order: {
     order.food_amount_cents != null
       ? order.food_amount_cents / 100
       : Math.max(0, total - shipping);
-  return { food, shipping, total: total || food + shipping };
+  const prepaid = order.payment_mode === "prepaid_at_restaurant";
+  const full = prepaid ? food + shipping : total || food + shipping;
+  return {
+    food,
+    shipping,
+    total: full,
+    prepaid,
+    collect: prepaid ? 0 : full,
+    restaurantPaysShipping: prepaid ? shipping : 0,
+  };
 }
 
 export function maskPhone(phone: string | null | undefined): string {
@@ -92,9 +108,16 @@ export function courierPickupMessage(input: {
     input.pickup.address ? `Dirección: ${input.pickup.address}` : "",
     url ? `Liga al restaurante: ${url}` : "",
     input.customerName ? `Cliente: ${input.customerName}` : "",
-    `Adelantas al restaurante ${formatMxn(input.money.food)}.`,
-    `Cobras al cliente ${formatMxn(input.money.total)}.`,
-    `Tu envío ${formatMxn(input.money.shipping)}.`,
+    ...(input.money.prepaid
+      ? [
+          "La comida ya está pagada en el restaurante. No cobras nada al cliente.",
+          `El restaurante te paga tu envío al recoger: ${formatMxn(input.money.shipping)}.`,
+        ]
+      : [
+          `Adelantas al restaurante ${formatMxn(input.money.food)}.`,
+          `Cobras al cliente ${formatMxn(input.money.collect)}.`,
+          `Tu envío ${formatMxn(input.money.shipping)}.`,
+        ]),
   ]
     .filter(Boolean)
     .join("\n");
@@ -109,7 +132,9 @@ export function customerEnRouteMessage(input: {
     "Tu comida ya va en camino.",
     "Este es el enlace de Google Maps para seguir el recorrido a tu domicilio.",
     url ?? "",
-    `Total a pagar al repartidor: ${formatMxn(input.money.total)}.`,
+    input.money.prepaid
+      ? "Tu pedido ya está pagado. No pagas nada al repartidor."
+      : `Total a pagar al repartidor: ${formatMxn(input.money.collect)}.`,
   ]
     .filter(Boolean)
     .join("\n");
