@@ -46,11 +46,11 @@ interface CourierInfo {
 }
 
 const STATUS_META: Record<string, { label: string; color: string; icon: any }> = {
-  pending: { label: "Buscando repartidor", color: "bg-warning/20 text-warning-foreground", icon: Clock },
+  pending: { label: "Buscando repartidor", color: "alert-warning", icon: Clock },
   assigned: { label: "Asignado", color: "bg-accent text-accent-foreground", icon: Package },
-  in_transit: { label: "En camino", color: "bg-primary/20 text-primary", icon: Truck },
-  delivered: { label: "Entregado", color: "bg-success/20 text-success-foreground", icon: CheckCircle2 },
-  cancelled: { label: "Cancelado", color: "bg-destructive/20 text-destructive", icon: Clock },
+  in_transit: { label: "En camino", color: "bg-primary/15 text-primary", icon: Truck },
+  delivered: { label: "Entregado", color: "alert-success", icon: CheckCircle2 },
+  cancelled: { label: "Cancelado", color: "bg-destructive/15 text-destructive", icon: Clock },
 };
 
 export function RestaurantHome() {

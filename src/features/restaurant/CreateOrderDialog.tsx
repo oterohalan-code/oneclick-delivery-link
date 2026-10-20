@@ -258,7 +258,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated, s
             <div className="flex justify-between gap-3 py-1"><span className="text-graphite">Teléfono</span><span>+52 {form.customer_phone}</span></div>
             <div className="py-1 text-graphite">{addressLoading ? "Obteniendo dirección…" : form.dropoff_address}</div>
           </div>
-          <div className="rounded-xl bg-amber-50 px-3 py-3 text-sm">
+          <div className="rounded-xl alert-warning px-3 py-3 text-sm">
             <div className="text-xs uppercase tracking-wide text-amber-900">Modalidad de pago</div>
             <Select value={form.paymentMode} onValueChange={(v) => setForm({ ...form, paymentMode: v as PaymentMode })}>
               <SelectTrigger className="mt-2 bg-white"><SelectValue /></SelectTrigger>

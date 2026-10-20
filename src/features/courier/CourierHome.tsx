@@ -293,7 +293,7 @@ export function CourierHome() {
           <p className="font-display text-2xl font-bold">${Number(courier.wallet_balance).toFixed(2)}</p>
         </div>
         <div className="flex flex-col items-end gap-1">
-          <Badge className={subActive ? "bg-success/20 text-success-foreground" : "bg-accent text-accent-foreground"}>
+          <Badge className={subActive ? "alert-success" : "bg-accent text-accent-foreground"}>
             {subActive ? "Membresía activa" : "Sin membresía"}
           </Badge>
           {(courier as any).stats_total_deliveries > 0 && (
