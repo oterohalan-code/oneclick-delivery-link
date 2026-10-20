@@ -44,6 +44,9 @@ function Landing() {
             <Link to="/auth" search={{ role: "courier" }} className="hidden sm:inline text-navy-foreground/80 hover:text-navy-foreground">
               Soy repartidor
             </Link>
+            <Link to="/repartidor" className="text-navy-foreground/80 hover:text-navy-foreground">
+              Probar repartidor
+            </Link>
             <Link to="/auth" className="hidden sm:inline text-navy-foreground/80 hover:text-navy-foreground">
               Iniciar sesión
             </Link>

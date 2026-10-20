@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as FlujoRouteImport } from './routes/flujo'
+import { Route as RepartidorRouteImport } from './routes/repartidor'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as RestaurantesRouteImport } from './routes/restaurantes'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
@@ -58,6 +59,11 @@ const AuthRoute = AuthRouteImport.update({
 const FlujoRoute = FlujoRouteImport.update({
   id: '/flujo',
   path: '/flujo',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RepartidorRoute = RepartidorRouteImport.update({
+  id: '/repartidor',
+  path: '/repartidor',
   getParentRoute: () => rootRouteImport,
 } as any)
 const McpRoute = McpRouteImport.update({
@@ -202,6 +208,7 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
   '/flujo': typeof FlujoRoute
+  '/repartidor': typeof RepartidorRoute
   '/mcp': typeof McpRoute
   '/restaurantes': typeof RestaurantesRoute
   '/unsubscribe': typeof UnsubscribeRoute
@@ -233,6 +240,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
   '/flujo': typeof FlujoRoute
+  '/repartidor': typeof RepartidorRoute
   '/mcp': typeof McpRoute
   '/restaurantes': typeof RestaurantesRoute
   '/unsubscribe': typeof UnsubscribeRoute
@@ -266,6 +274,7 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
   '/flujo': typeof FlujoRoute
+  '/repartidor': typeof RepartidorRoute
   '/mcp': typeof McpRoute
   '/restaurantes': typeof RestaurantesRoute
   '/unsubscribe': typeof UnsubscribeRoute
@@ -300,6 +309,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/auth'
     | '/flujo'
+    | '/repartidor'
     | '/mcp'
     | '/restaurantes'
     | '/unsubscribe'
@@ -331,6 +341,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/flujo'
+    | '/repartidor'
     | '/mcp'
     | '/restaurantes'
     | '/unsubscribe'
@@ -363,6 +374,7 @@ export interface FileRouteTypes {
     | '/app'
     | '/auth'
     | '/flujo'
+    | '/repartidor'
     | '/mcp'
     | '/restaurantes'
     | '/unsubscribe'
@@ -396,6 +408,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
   FlujoRoute: typeof FlujoRoute
+  RepartidorRoute: typeof RepartidorRoute
   McpRoute: typeof McpRoute
   RestaurantesRoute: typeof RestaurantesRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
@@ -444,6 +457,13 @@ declare module '@tanstack/react-router' {
       path: '/flujo'
       fullPath: '/flujo'
       preLoaderRoute: typeof FlujoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/repartidor': {
+      id: '/repartidor'
+      path: '/repartidor'
+      fullPath: '/repartidor'
+      preLoaderRoute: typeof RepartidorRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mcp': {
@@ -668,6 +688,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
   FlujoRoute: FlujoRoute,
+  RepartidorRoute: RepartidorRoute,
   McpRoute: McpRoute,
   RestaurantesRoute: RestaurantesRoute,
   UnsubscribeRoute: UnsubscribeRoute,
