@@ -9,7 +9,11 @@ import { EmptyState } from "@/components/ui/empty-state";
 export const Route = createFileRoute("/app/insights")({
   component: InsightsPage,
   head: () => ({
-    meta: [{ title: "Métricas del restaurante · 1Click" }],
+    meta: [
+      { title: "Métricas del restaurante · 1Click" },
+      { name: "description", content: "Ventas, pedidos y desempeño de tu restaurante en 1Click." },
+      { name: "robots", content: "noindex, nofollow" },
+    ],
   }),
 });
 

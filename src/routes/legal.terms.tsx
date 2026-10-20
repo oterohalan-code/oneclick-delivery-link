@@ -5,6 +5,10 @@ export const Route = createFileRoute("/legal/terms")({
     meta: [
       { title: "Términos y Condiciones — 1Click" },
       { name: "description", content: "Términos y condiciones de uso de 1Click." },
+      { property: "og:title", content: "Términos y Condiciones — 1Click" },
+      { property: "og:description", content: "Términos y condiciones de uso de 1Click." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "index,follow" },
     ],
   }),

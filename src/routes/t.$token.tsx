@@ -16,6 +16,10 @@ export const Route = createFileRoute("/t/$token")({
     meta: [
       { title: "Sigue tu pedido — 1Click" },
       { name: "description", content: "Rastrea tu pedido en tiempo real." },
+      { property: "og:title", content: "Sigue tu pedido — 1Click" },
+      { property: "og:description", content: "Rastrea tu pedido en tiempo real." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
