@@ -24,12 +24,12 @@ function CourierGuidePage() {
       lede="Recibe ofertas de restaurantes cercanos, acepta las que te convienen y cobra la tarifa completa. Sin comisiones por pedido: solo una membresía fija al mes."
       steps={[
         "Te das de alta y activas la membresía.",
-        "Aceptas la oferta. Ahí ves cuánto adelantas, cuánto cobras y cuánto es tu envío.",
-        "Vas al restaurante, recibes la comida y dejas el efectivo de la comida.",
+        "Aceptas la oferta. Ahí ves si la comida ya está pagada o se cobra en domicilio, y cuánto es tu envío.",
+        "Vas al restaurante y recoges la comida. Si se paga en domicilio, dejas el efectivo de la comida.",
         "Abres la liga de la casa y llevas el pedido.",
-        "Cobras al cliente la comida más el envío. El envío es tu pago.",
+        "Si se paga en domicilio, cobras al cliente la comida más el envío. El envío es tu pago.",
       ]}
-      feeLead="Tu pago es la tarifa de envío. La comida no es ganancia: la dejas en el restaurante y la cobras de nuevo en la casa."
+      feeLead="Tu pago es la tarifa de envío. El cobro de la comida es del restaurante, no de la plataforma: la comida no es ganancia."
       membership={{
         priceMxn: BUSINESS.membership.courierMonthlyMxn,
         note: "Pago fijo mensual. Sin ella no se pueden aceptar pedidos.",

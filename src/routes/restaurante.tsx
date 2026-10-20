@@ -25,11 +25,11 @@ function RestaurantGuidePage() {
       steps={[
         "Das de alta el local, el menú y las fotos.",
         "El cliente arma su pedido y pega la liga de Google Maps de su casa.",
-        "Tú pides el repartidor. Él te deja el efectivo de la comida al recoger.",
-        "Mandas la liga del local y después la liga de la casa.",
-        "El repartidor cobra al cliente la comida y el envío.",
+        "Al pedir el repartidor eliges cómo se paga la comida: el cliente ya te pagó en el restaurante, o paga en su domicilio.",
+        "Si paga en domicilio, el repartidor te deja el efectivo de la comida al recoger y lo cobra al cliente en la entrega.",
+        "Sigues el pedido en vivo hasta que se entrega.",
       ]}
-      feeLead="El envío lo paga el cliente al recibir y se queda el repartidor. 1Click no cobra comisión por la comida."
+      feeLead="El cobro de la comida lo hace tu restaurante directamente, no la plataforma. 1Click no toca tu dinero ni cobra comisión por la comida."
       membership={{
         priceMxn: BUSINESS.membership.restaurantMonthlyMxn,
         note: "Pago fijo mensual. Sin ella no se puede pedir repartidor.",
