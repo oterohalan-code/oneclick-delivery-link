@@ -275,8 +275,6 @@ export function RestaurantHome() {
         <h1 className="font-display text-2xl font-bold">{rest.name}</h1>
       </div>
 
-      <RestaurantMenuEditor />
-
       <Card className="p-6 bg-gradient-to-br from-primary to-primary-glow text-primary-foreground border-0 shadow-glow">
         <h2 className="font-display text-xl font-semibold">¿Necesitas un repartidor?</h2>
         <p className="text-sm opacity-80 mt-1">
@@ -326,6 +324,8 @@ export function RestaurantHome() {
           </div>
         )}
       </div>
+
+      <RestaurantMenuEditor />
 
       <CreateOrderDialog open={open} onOpenChange={setOpen} restaurant={rest} onCreated={load} />
       {chatOrderId && chatOrder && (
