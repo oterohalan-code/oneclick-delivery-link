@@ -6,7 +6,11 @@ export const Route = createFileRoute("/repartidor")({
   head: () => ({
     meta: [
       { title: "Repartidores — 1Click" },
-      { name: "description", content: "Cómo trabaja un repartidor en Manzanillo y cuánto gana por envío." },
+      { name: "description", content: `Gana el 100% de cada envío en Manzanillo. Membresía ${formatMxn(BUSINESS.membership.courierMonthlyMxn)} al mes.` },
+      { property: "og:title", content: "Repartidores — 1Click" },
+      { property: "og:description", content: "Gana el 100% de cada envío en Manzanillo." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: CourierGuidePage,
@@ -16,8 +20,8 @@ function CourierGuidePage() {
   return (
     <RoleGuide
       eyebrow="Para repartidores"
-      title="Cobras el envío. La comida la adelantas y la recuperas en la entrega."
-      lede="Ves la oferta, aceptas y haces dos recorridos: al restaurante y a la casa del cliente."
+      title="Cada envío es 100% tuyo."
+      lede="Recibe ofertas de restaurantes cercanos, acepta las que te convienen y cobra la tarifa completa. Sin comisiones por pedido: solo una membresía fija al mes."
       steps={[
         "Te das de alta y activas la membresía.",
         "Aceptas la oferta. Ahí ves cuánto adelantas, cuánto cobras y cuánto es tu envío.",
@@ -26,7 +30,16 @@ function CourierGuidePage() {
         "Cobras al cliente la comida más el envío. El envío es tu pago.",
       ]}
       feeLead="Tu pago es la tarifa de envío. La comida no es ganancia: la dejas en el restaurante y la cobras de nuevo en la casa."
-      membership={`La membresía del repartidor es ${formatMxn(BUSINESS.membership.courierMonthlyMxn)} al mes. Sin ella no se pueden aceptar pedidos.`}
+      membership={{
+        priceMxn: BUSINESS.membership.courierMonthlyMxn,
+        note: "Pago fijo mensual. Sin ella no se pueden aceptar pedidos.",
+        benefits: [
+          "100% de la tarifa de envío para ti",
+          "Recargos de hora pico y fin de semana incluidos",
+          "Pedidos ilimitados en tu zona",
+          "Rutas con mapa y soporte directo",
+        ],
+      }}
       cta="Iniciar alta de repartidor"
       role="courier"
       extra={

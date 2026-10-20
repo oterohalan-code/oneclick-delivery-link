@@ -21,7 +21,7 @@ export function RoleGuide({
   lede: string;
   steps: string[];
   feeLead: string;
-  membership: string;
+  membership: { priceMxn: number; note: string; benefits: string[] };
   cta: string;
   role: "restaurant" | "courier";
   extra?: ReactNode;
@@ -67,7 +67,23 @@ export function RoleGuide({
             </li>
           </ul>
           <p className="mt-3 text-sm text-graphite">De 1 a 3 pm y de 7 a 10 pm el envío suma 20%. Antes de las 6 am suma 15%. Sábado y domingo, fuera de esas horas, suma 10%.</p>
-          <p className="mt-3 text-sm">{membership}</p>
+        </section>
+
+        <section className="rounded-2xl bg-navy p-5 text-navy-foreground shadow-lg">
+          <p className="text-xs font-medium uppercase tracking-widest text-primary">Membresía 1Click</p>
+          <div className="mt-2 flex items-end gap-2">
+            <span className="text-4xl font-semibold tabular-nums">{formatMxn(membership.priceMxn)}</span>
+            <span className="pb-1 text-sm text-navy-foreground/70">MXN / mes</span>
+          </div>
+          <p className="mt-2 text-sm text-navy-foreground/80">{membership.note}</p>
+          <ul className="mt-4 space-y-2 text-sm">
+            {membership.benefits.map((b) => (
+              <li key={b} className="flex gap-2">
+                <span className="text-primary">✓</span>
+                <span>{b}</span>
+              </li>
+            ))}
+          </ul>
         </section>
 
         {extra}
