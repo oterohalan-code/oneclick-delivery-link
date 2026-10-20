@@ -379,8 +379,9 @@ export function CourierHome() {
                         <div className="h-12 w-12 rounded-lg bg-muted grid place-items-center text-muted-foreground text-lg">🍽️</div>
                       )}
                       <div className="min-w-0">
-                    <div className="text-xs font-semibold uppercase tracking-wide text-primary">01 Oferta</div>
-                    <div className="font-semibold truncate">Pedido #{orderCode(o)} · {r?.name ?? "Restaurante"}</div>
+                    <div className="text-3xl font-semibold leading-none text-primary">01</div>
+                    <div className="font-semibold truncate">Oferta · #{orderCode(o)}</div>
+                    <div className="truncate text-sm text-graphite">{r?.name ?? "Restaurante"}</div>
                   </div>
                     </div>
                     <Badge variant="secondary">{dist.toFixed(1)} km</Badge>
@@ -670,7 +671,7 @@ function ActiveOrderView({ order, restaurant, courier, onChange, onBack }: {
       </FlowCard>
 
       {order.status === "assigned" && !savedFirst && (
-        <FlowCard step="02" title="Reserva pendiente">
+        <FlowCard step="02" title="Reserva pendiente" subtitle="Abre el restaurante en Maps y guarda la primera liga.">
           <p className="mb-3 text-sm text-graphite">
             {shared.restaurantFirstSentAt
               ? "El restaurante ya mandó esta liga. Ábrela y guárdala en el pedido."
@@ -695,7 +696,7 @@ function ActiveOrderView({ order, restaurant, courier, onChange, onBack }: {
       )}
 
       {order.status === "assigned" && savedFirst && (
-        <FlowCard step="03" title="Recogida">
+        <FlowCard step="03" title="Recogida" subtitle="Confirma que ya tienes el pedido y que entregaste el dinero.">
           <p className="mb-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-950">
             Entregas {formatMxn(money.food)} en efectivo al restaurante.
           </p>
@@ -712,7 +713,7 @@ function ActiveOrderView({ order, restaurant, courier, onChange, onBack }: {
       )}
 
       {order.status === "in_transit" && !savedSecond && (
-        <FlowCard step="04" title="Segundo recorrido">
+        <FlowCard step="04" title="Segundo recorrido" subtitle="Abre el domicilio del cliente y guarda la segunda liga.">
           <p className="mb-3 text-sm text-graphite">
             {shared.restaurantSecondSentAt
               ? "El restaurante ya mandó al cliente la liga del domicilio."
@@ -737,7 +738,7 @@ function ActiveOrderView({ order, restaurant, courier, onChange, onBack }: {
       )}
 
       {order.status === "in_transit" && savedSecond && (
-        <FlowCard step="05" title="Entrega y cobro">
+        <FlowCard step="05" title="Entrega y cobro" subtitle="Marca la entrega y el dinero que cobraste.">
           <p className="mb-3 text-lg font-semibold text-primary">Cobra al cliente {formatMxn(money.total)}</p>
           <div className="space-y-2">
             <CheckRow checked={deliveredFood} label="Entregué el pedido" onChange={(value) => toggleCheck("foodDelivered", value)} />

@@ -165,9 +165,8 @@ export function RestaurantOrderBoard({
     });
     const pickupUrl = googleMapsDirectionsUrl(pickup);
     return (
-      <FlowCard step="03" title="Hacia el restaurante">
-        <p className="mb-2 text-sm">Repartidor asignado: <strong>{courierName || "Asignado"}</strong></p>
-        <p className="mb-3 text-sm text-graphite">Comparte la primera liga para que llegue al local.</p>
+      <FlowCard step="03" title="Hacia el restaurante" subtitle="Comparte la primera liga para que el repartidor llegue al local.">
+        <p className="mb-3 text-sm">Repartidor asignado: <strong>{courierName || "Asignado"}</strong></p>
         {pickupUrl && (
           <a href={pickupUrl} target="_blank" rel="noopener noreferrer" className="mb-3 block rounded-xl border border-hairline px-3 py-2 text-sm text-primary">
             Abrir liga de Google Maps
@@ -202,7 +201,7 @@ export function RestaurantOrderBoard({
     const clientText = customerEnRouteMessage({ dropoff, money });
     const dropoffUrl = googleMapsDirectionsUrl(dropoff);
     return (
-      <FlowCard step="04" title="Hacia el cliente">
+      <FlowCard step="04" title="Hacia el cliente" subtitle="Comparte la segunda liga para el recorrido a la casa.">
         <div className="mb-3 rounded-xl bg-emerald-50 px-3 py-3 text-sm text-emerald-800">
           Pedido recogido. Comparte la segunda liga para que el cliente vea el recorrido a su casa.
         </div>

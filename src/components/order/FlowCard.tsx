@@ -1,21 +1,32 @@
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 
+export function StepHeading({ step, title, subtitle }: { step: string; title: string; subtitle?: string }) {
+  return (
+    <div className="mb-4 flex gap-3">
+      <div className="text-3xl font-semibold leading-none text-primary">{step}</div>
+      <div>
+        <h2 className="text-xl font-semibold leading-tight text-ink">{title}</h2>
+        {subtitle && <p className="mt-1 text-sm text-graphite">{subtitle}</p>}
+      </div>
+    </div>
+  );
+}
+
 export function FlowCard({
   step,
   title,
+  subtitle,
   children,
 }: {
   step?: string;
   title: string;
+  subtitle?: string;
   children: ReactNode;
 }) {
   return (
     <section className="rounded-2xl border border-hairline bg-paper p-4 shadow-sm">
-      <div className="mb-3 flex items-baseline justify-between gap-3">
-        <h3 className="text-base font-semibold text-ink">{title}</h3>
-        {step && <span className="text-xs font-semibold uppercase tracking-wide text-primary">{step}</span>}
-      </div>
+      {step ? <StepHeading step={step} title={title} subtitle={subtitle} /> : <h2 className="mb-3 text-xl font-semibold text-ink">{title}</h2>}
       {children}
     </section>
   );

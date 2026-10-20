@@ -16,6 +16,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth-context";
 import type { PaymentMode } from "@/lib/order-money";
 import { formatMxn } from "@/lib/business";
+import { StepHeading } from "@/components/order/FlowCard";
 
 const schema = z.object({
   customer_name: z.string().trim().min(2, "Nombre del cliente requerido").max(80),
@@ -159,8 +160,8 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
   return (
     <Dialog open={open} onOpenChange={(next) => { if (!next) resetAndClose(); else onOpenChange(next); }}>
       <DialogContent className="max-w-lg max-h-[90vh] overflow-auto">
-        <DialogHeader>
-          <DialogTitle>{step === 1 ? "01  Datos del pedido" : "02  Revisar y solicitar"}</DialogTitle>
+        <DialogHeader className="sr-only">
+          <DialogTitle>{step === 1 ? "Datos del pedido" : "Revisar y solicitar"}</DialogTitle>
         </DialogHeader>
         {step === 1 ? (
         <form
@@ -170,7 +171,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
             if (readyForReview()) setStep(2);
           }}
         >
-          <p className="text-sm text-muted-foreground">Captura al cliente, la dirección y cuánto cuesta la comida.</p>
+          <StepHeading step="01" title="Datos del pedido" subtitle="Captura al cliente, la dirección y cuánto cuesta la comida." />
           <div>
             <Label>Cliente</Label>
             <Input
@@ -225,7 +226,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
         </form>
         ) : (
         <form onSubmit={submit} className="space-y-4">
-          <p className="text-sm text-muted-foreground">Confirma los datos y pide el repartidor.</p>
+          <StepHeading step="02" title="Revisar y solicitar" subtitle="Confirma los datos y pide el repartidor." />
           <div className="rounded-xl border border-hairline bg-bone px-3 py-2 text-sm">
             <div className="flex justify-between gap-3 py-1"><span className="text-graphite">Restaurante</span><span>{restaurant.name}</span></div>
             <div className="flex justify-between gap-3 py-1"><span className="text-graphite">Cliente</span><span>{form.customer_name}</span></div>
