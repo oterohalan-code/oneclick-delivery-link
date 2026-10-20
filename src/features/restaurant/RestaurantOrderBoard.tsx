@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { toast } from "sonner";
-import { formatMxn } from "@/lib/business";
+import { BUSINESS, formatMxn } from "@/lib/business";
 import { useAuth } from "@/lib/auth-context";
 import {
   courierPickupMessage,
@@ -37,6 +37,7 @@ export type RestaurantBoardOrder = {
   food_amount_cents?: number | null;
   shipping_amount_cents?: number | null;
   payment_mode?: string | null;
+  tracking_token?: string | null;
 };
 
 export function RestaurantOrderBoard({
@@ -107,7 +108,7 @@ export function RestaurantOrderBoard({
   };
 
   const shareCustomer = async () => {
-    const text = customerEnRouteMessage({ dropoff, money });
+    const text = customerEnRouteMessage({ dropoff, money, trackingUrl: order.tracking_token ? `${BUSINESS.publicSiteUrl}/t/${order.tracking_token}` : null });
     const opened = openWhatsApp(order.customer_phone, text);
     if (!opened) {
       const ok = await copyText(text);
@@ -217,7 +218,7 @@ export function RestaurantOrderBoard({
   }
 
   if (order.status === "in_transit" && !secondSent) {
-    const clientText = customerEnRouteMessage({ dropoff, money });
+    const clientText = customerEnRouteMessage({ dropoff, money, trackingUrl: order.tracking_token ? `${BUSINESS.publicSiteUrl}/t/${order.tracking_token}` : null });
     const dropoffUrl = googleMapsDirectionsUrl(dropoff);
     return (
       <FlowCard step="04" title="Hacia el cliente" subtitle="Comparte la segunda liga para el recorrido a la casa.">
