@@ -766,6 +766,42 @@ export type Database = {
         }
         Relationships: []
       }
+      menu_requests: {
+        Row: {
+          created_at: string
+          customer_name: string
+          customer_phone: string
+          dropoff_address: string
+          food_total: number
+          id: string
+          items: Json
+          restaurant_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          customer_name: string
+          customer_phone: string
+          dropoff_address: string
+          food_total: number
+          id?: string
+          items: Json
+          restaurant_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          customer_name?: string
+          customer_phone?: string
+          dropoff_address?: string
+          food_total?: number
+          id?: string
+          items?: Json
+          restaurant_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
       restaurants: {
         Row: {
           address: string
@@ -1221,6 +1257,16 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      place_menu_request: {
+        Args: {
+          _customer_name: string
+          _customer_phone: string
+          _dropoff_address: string
+          _items: Json
+          _restaurant_id: string
+        }
+        Returns: string
       }
       list_public_restaurants: {
         Args: never

@@ -59,6 +59,8 @@ export function RestaurantHome() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
+  const [seed, setSeed] = useState<{ customer_name: string; customer_phone: string; dropoff_address: string; amount: string; notes: string; requestId?: string } | null>(null);
+  const [requests, setRequests] = useState<{ id: string; customer_name: string; customer_phone: string; dropoff_address: string; food_total: number; items: { name?: string; qty?: number }[] }[]>([]);
   const [chatOrderId, setChatOrderId] = useState<string | null>(null);
   const [courierByOrder, setCourierByOrder] = useState<Record<string, CourierInfo>>({});
   const getCourierForOrderRpc = useServerFn(getCourierForOrder);
@@ -73,6 +75,13 @@ export function RestaurantHome() {
         .from("orders").select("*").eq("restaurant_id", r.id)
         .order("created_at", { ascending: false }).limit(20);
       setOrders((o as any) ?? []);
+      const { data: incoming } = await supabase
+        .from("menu_requests")
+        .select("id,customer_name,customer_phone,dropoff_address,food_total,items")
+        .eq("restaurant_id", r.id)
+        .eq("status", "new")
+        .order("created_at", { ascending: false });
+      setRequests((incoming as any) ?? []);
     }
     setLoading(false);
   };
@@ -86,6 +95,11 @@ export function RestaurantHome() {
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "orders", filter: `restaurant_id=eq.${rest.id}` },
+        () => { load(); },
+      )
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "menu_requests", filter: `restaurant_id=eq.${rest.id}` },
         () => { load(); },
       )
       .subscribe();
@@ -325,9 +339,51 @@ export function RestaurantHome() {
         )}
       </div>
 
+      {requests.length > 0 && (
+        <section className="space-y-2">
+          <h3 className="text-lg font-semibold">Pedidos del menú</h3>
+          {requests.map((request) => (
+            <Card key={request.id} className="p-4">
+              <div className="font-medium">{request.customer_name} · {request.customer_phone}</div>
+              <p className="text-sm text-graphite">{request.dropoff_address}</p>
+              <p className="mt-1 text-sm">{formatMxn(Number(request.food_total))} en comida</p>
+              <Button
+                className="mt-3 h-11 w-full"
+                onClick={() => {
+                  const items = Array.isArray(request.items) ? request.items : [];
+                  const notes = items.map((item) => `${item.qty ?? 1} ${item.name ?? ""}`).join(", ").slice(0, 500);
+                  setSeed({
+                    customer_name: request.customer_name,
+                    customer_phone: request.customer_phone,
+                    dropoff_address: request.dropoff_address,
+                    amount: String(Number(request.food_total)),
+                    notes,
+                    requestId: request.id,
+                  });
+                  setOpen(true);
+                }}
+              >
+                Armar envío
+              </Button>
+            </Card>
+          ))}
+        </section>
+      )}
+
       <RestaurantMenuEditor />
 
-      <CreateOrderDialog open={open} onOpenChange={setOpen} restaurant={rest} onCreated={load} />
+      <CreateOrderDialog
+        open={open}
+        onOpenChange={(value) => { setOpen(value); if (!value) setSeed(null); }}
+        restaurant={rest}
+        seed={seed}
+        onCreated={async () => {
+          if (seed?.requestId) {
+            await supabase.from("menu_requests").update({ status: "accepted" }).eq("id", seed.requestId);
+          }
+          load();
+        }}
+      />
       {chatOrderId && chatOrder && (
         <OrderChat
           open={!!chatOrderId}

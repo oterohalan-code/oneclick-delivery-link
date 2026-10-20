@@ -18,6 +18,7 @@ import {
 import { copyText, googleMapsDirectionsUrl } from "@/lib/maps";
 import { recordOrderFlow } from "@/lib/rpc/orders.functions";
 import { CheckRow, FlowButton, FlowCard, MoneyLine } from "@/components/order/FlowCard";
+import { MapView } from "@/components/MapView";
 
 export type RestaurantBoardOrder = {
   id: string;
@@ -167,6 +168,11 @@ export function RestaurantOrderBoard({
     return (
       <FlowCard step="03" title="Hacia el restaurante" subtitle="Comparte la primera liga para que el repartidor llegue al local.">
         <p className="mb-3 text-sm">Repartidor asignado: <strong>{courierName || "Asignado"}</strong></p>
+        {order.pickup_lat != null && order.pickup_lng != null && (
+          <div className="mb-3 h-40 overflow-hidden rounded-xl">
+            <MapView pins={[{ lat: order.pickup_lat, lng: order.pickup_lng, label: restaurantName }]} height="100%" />
+          </div>
+        )}
         {pickupUrl && (
           <a href={pickupUrl} target="_blank" rel="noopener noreferrer" className="mb-3 block rounded-xl border border-hairline px-3 py-2 text-sm text-primary">
             Abrir liga de Google Maps
@@ -205,6 +211,11 @@ export function RestaurantOrderBoard({
         <div className="mb-3 rounded-xl bg-emerald-50 px-3 py-3 text-sm text-emerald-800">
           Pedido recogido. Comparte la segunda liga para que el cliente vea el recorrido a su casa.
         </div>
+        {order.dropoff_lat != null && order.dropoff_lng != null && (
+          <div className="mb-3 h-40 overflow-hidden rounded-xl">
+            <MapView pins={[{ lat: order.dropoff_lat, lng: order.dropoff_lng, label: "Cliente" }]} height="100%" />
+          </div>
+        )}
         {dropoffUrl && (
           <a href={dropoffUrl} target="_blank" rel="noopener noreferrer" className="mb-3 block rounded-xl border border-hairline px-3 py-2 text-sm text-primary">
             Abrir liga de Google Maps
