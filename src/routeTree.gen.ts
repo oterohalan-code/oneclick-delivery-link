@@ -13,10 +13,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AppRouteImport } from './routes/app'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as FlujoRouteImport } from './routes/flujo'
-import { Route as RepartidorRouteImport } from './routes/repartidor'
-import { Route as RepartidorEjemploRouteImport } from './routes/repartidor.ejemplo'
-import { Route as RestauranteRouteImport } from './routes/restaurante'
 import { Route as McpRouteImport } from './routes/mcp'
+import { Route as RepartidorRouteImport } from './routes/repartidor'
+import { Route as RestauranteRouteImport } from './routes/restaurante'
 import { Route as RestaurantesRouteImport } from './routes/restaurantes'
 import { Route as UnsubscribeRouteImport } from './routes/unsubscribe'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
@@ -31,6 +30,7 @@ import { Route as AuthResetRouteImport } from './routes/auth.reset'
 import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as LegalPrivacyRouteImport } from './routes/legal.privacy'
 import { Route as LegalTermsRouteImport } from './routes/legal.terms'
+import { Route as RepartidorEjemploRouteImport } from './routes/repartidor.ejemplo'
 import { Route as TTokenRouteImport } from './routes/t.$token'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as ApiPublicMenuRequestAlertRouteImport } from './routes/api/public/menu-request-alert'
@@ -64,24 +64,19 @@ const FlujoRoute = FlujoRouteImport.update({
   path: '/flujo',
   getParentRoute: () => rootRouteImport,
 } as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RepartidorRoute = RepartidorRouteImport.update({
   id: '/repartidor',
   path: '/repartidor',
   getParentRoute: () => rootRouteImport,
 } as any)
-const RepartidorEjemploRoute = RepartidorEjemploRouteImport.update({
-  id: '/repartidor/ejemplo',
-  path: '/repartidor/ejemplo',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const RestauranteRoute = RestauranteRouteImport.update({
   id: '/restaurante',
   path: '/restaurante',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const McpRoute = McpRouteImport.update({
-  id: '/mcp',
-  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RestaurantesRoute = RestaurantesRouteImport.update({
@@ -155,6 +150,11 @@ const LegalTermsRoute = LegalTermsRouteImport.update({
   path: '/legal/terms',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RepartidorEjemploRoute = RepartidorEjemploRouteImport.update({
+  id: '/ejemplo',
+  path: '/ejemplo',
+  getParentRoute: () => RepartidorRoute,
+} as any)
 const TTokenRoute = TTokenRouteImport.update({
   id: '/t/$token',
   path: '/t/$token',
@@ -227,10 +227,9 @@ export interface FileRoutesByFullPath {
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
   '/flujo': typeof FlujoRoute
-  '/repartidor': typeof RepartidorRoute
-  '/repartidor/ejemplo': typeof RepartidorEjemploRoute
-  '/restaurante': typeof RestauranteRoute
   '/mcp': typeof McpRoute
+  '/repartidor': typeof RepartidorRouteWithChildren
+  '/restaurante': typeof RestauranteRoute
   '/restaurantes': typeof RestaurantesRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -244,6 +243,7 @@ export interface FileRoutesByFullPath {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/repartidor/ejemplo': typeof RepartidorEjemploRoute
   '/t/$token': typeof TTokenRoute
   '/app/': typeof AppIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -262,10 +262,9 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteWithChildren
   '/flujo': typeof FlujoRoute
-  '/repartidor': typeof RepartidorRoute
-  '/repartidor/ejemplo': typeof RepartidorEjemploRoute
-  '/restaurante': typeof RestauranteRoute
   '/mcp': typeof McpRoute
+  '/repartidor': typeof RepartidorRouteWithChildren
+  '/restaurante': typeof RestauranteRoute
   '/restaurantes': typeof RestaurantesRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -279,6 +278,7 @@ export interface FileRoutesByTo {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/repartidor/ejemplo': typeof RepartidorEjemploRoute
   '/t/$token': typeof TTokenRoute
   '/app': typeof AppIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -299,10 +299,9 @@ export interface FileRoutesById {
   '/app': typeof AppRouteWithChildren
   '/auth': typeof AuthRouteWithChildren
   '/flujo': typeof FlujoRoute
-  '/repartidor': typeof RepartidorRoute
-  '/repartidor/ejemplo': typeof RepartidorEjemploRoute
-  '/restaurante': typeof RestauranteRoute
   '/mcp': typeof McpRoute
+  '/repartidor': typeof RepartidorRouteWithChildren
+  '/restaurante': typeof RestauranteRoute
   '/restaurantes': typeof RestaurantesRoute
   '/unsubscribe': typeof UnsubscribeRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -316,6 +315,7 @@ export interface FileRoutesById {
   '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/legal/privacy': typeof LegalPrivacyRoute
   '/legal/terms': typeof LegalTermsRoute
+  '/repartidor/ejemplo': typeof RepartidorEjemploRoute
   '/t/$token': typeof TTokenRoute
   '/app/': typeof AppIndexRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
@@ -337,10 +337,9 @@ export interface FileRouteTypes {
     | '/app'
     | '/auth'
     | '/flujo'
-    | '/repartidor'
-    | '/repartidor/ejemplo'
-    | '/restaurante'
     | '/mcp'
+    | '/repartidor'
+    | '/restaurante'
     | '/restaurantes'
     | '/unsubscribe'
     | '/.well-known/oauth-protected-resource'
@@ -354,6 +353,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/legal/privacy'
     | '/legal/terms'
+    | '/repartidor/ejemplo'
     | '/t/$token'
     | '/app/'
     | '/.lovable/oauth/consent'
@@ -372,10 +372,9 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/flujo'
-    | '/repartidor'
-    | '/repartidor/ejemplo'
-    | '/restaurante'
     | '/mcp'
+    | '/repartidor'
+    | '/restaurante'
     | '/restaurantes'
     | '/unsubscribe'
     | '/.well-known/oauth-protected-resource'
@@ -389,6 +388,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/legal/privacy'
     | '/legal/terms'
+    | '/repartidor/ejemplo'
     | '/t/$token'
     | '/app'
     | '/.lovable/oauth/consent'
@@ -408,10 +408,9 @@ export interface FileRouteTypes {
     | '/app'
     | '/auth'
     | '/flujo'
-    | '/repartidor'
-    | '/repartidor/ejemplo'
-    | '/restaurante'
     | '/mcp'
+    | '/repartidor'
+    | '/restaurante'
     | '/restaurantes'
     | '/unsubscribe'
     | '/.well-known/oauth-protected-resource'
@@ -425,6 +424,7 @@ export interface FileRouteTypes {
     | '/email/unsubscribe'
     | '/legal/privacy'
     | '/legal/terms'
+    | '/repartidor/ejemplo'
     | '/t/$token'
     | '/app/'
     | '/.lovable/oauth/consent'
@@ -445,10 +445,9 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
   FlujoRoute: typeof FlujoRoute
-  RepartidorRoute: typeof RepartidorRoute
-  RepartidorEjemploRoute: typeof RepartidorEjemploRoute
-  RestauranteRoute: typeof RestauranteRoute
   McpRoute: typeof McpRoute
+  RepartidorRoute: typeof RepartidorRouteWithChildren
+  RestauranteRoute: typeof RestauranteRoute
   RestaurantesRoute: typeof RestaurantesRoute
   UnsubscribeRoute: typeof UnsubscribeRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -499,6 +498,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof FlujoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/repartidor': {
       id: '/repartidor'
       path: '/repartidor'
@@ -506,25 +512,11 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RepartidorRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/repartidor/ejemplo': {
-      id: '/repartidor/ejemplo'
-      path: '/repartidor/ejemplo'
-      fullPath: '/repartidor/ejemplo'
-      preLoaderRoute: typeof RepartidorEjemploRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/restaurante': {
       id: '/restaurante'
       path: '/restaurante'
       fullPath: '/restaurante'
       preLoaderRoute: typeof RestauranteRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/mcp': {
-      id: '/mcp'
-      path: '/mcp'
-      fullPath: '/mcp'
-      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/restaurantes': {
@@ -624,6 +616,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/legal/terms'
       preLoaderRoute: typeof LegalTermsRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/repartidor/ejemplo': {
+      id: '/repartidor/ejemplo'
+      path: '/ejemplo'
+      fullPath: '/repartidor/ejemplo'
+      preLoaderRoute: typeof RepartidorEjemploRouteImport
+      parentRoute: typeof RepartidorRoute
     }
     '/t/$token': {
       id: '/t/$token'
@@ -744,15 +743,26 @@ const AuthRouteChildren: AuthRouteChildren = {
 
 const AuthRouteWithChildren = AuthRoute._addFileChildren(AuthRouteChildren)
 
+interface RepartidorRouteChildren {
+  RepartidorEjemploRoute: typeof RepartidorEjemploRoute
+}
+
+const RepartidorRouteChildren: RepartidorRouteChildren = {
+  RepartidorEjemploRoute: RepartidorEjemploRoute,
+}
+
+const RepartidorRouteWithChildren = RepartidorRoute._addFileChildren(
+  RepartidorRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
   FlujoRoute: FlujoRoute,
-  RepartidorRoute: RepartidorRoute,
-  RepartidorEjemploRoute: RepartidorEjemploRoute,
-  RestauranteRoute: RestauranteRoute,
   McpRoute: McpRoute,
+  RepartidorRoute: RepartidorRouteWithChildren,
+  RestauranteRoute: RestauranteRoute,
   RestaurantesRoute: RestaurantesRoute,
   UnsubscribeRoute: UnsubscribeRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
