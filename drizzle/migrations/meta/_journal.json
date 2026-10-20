@@ -8,6 +8,13 @@
       "when": 1792485539579,
       "tag": "0000_apply_order_flow_menu",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792530972024,
+      "tag": "0001_menu_request_payment_mode",
+      "breakpoints": true
     }
   ]
 }

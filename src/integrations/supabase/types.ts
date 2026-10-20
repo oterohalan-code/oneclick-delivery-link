@@ -418,6 +418,7 @@ export type Database = {
           food_total: number
           id: string
           items: Json
+          payment_mode: string
           restaurant_id: string
           status: string
         }
@@ -429,6 +430,7 @@ export type Database = {
           food_total: number
           id?: string
           items: Json
+          payment_mode?: string
           restaurant_id: string
           status?: string
         }
@@ -440,6 +442,7 @@ export type Database = {
           food_total?: number
           id?: string
           items?: Json
+          payment_mode?: string
           restaurant_id?: string
           status?: string
         }
@@ -1297,6 +1300,7 @@ export type Database = {
           _customer_phone: string
           _dropoff_address: string
           _items: Json
+          _payment_mode?: string
           _restaurant_id: string
         }
         Returns: string
