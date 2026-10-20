@@ -61,7 +61,7 @@ export function RestaurantHome() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [seed, setSeed] = useState<OrderSeed | null>(null);
-  const [requests, setRequests] = useState<{ id: string; customer_name: string; customer_phone: string; dropoff_address: string; food_total: number; items: { name?: string; qty?: number }[] }[]>([]);
+  const [requests, setRequests] = useState<{ id: string; customer_name: string; customer_phone: string; dropoff_address: string; food_total: number; payment_mode?: string | null; items: { name?: string; qty?: number }[] }[]>([]);
   const [chatOrderId, setChatOrderId] = useState<string | null>(null);
   const [courierByOrder, setCourierByOrder] = useState<Record<string, CourierInfo>>({});
   const seenRequests = useRef<Set<string>>(new Set());
@@ -80,7 +80,7 @@ export function RestaurantHome() {
       setOrders((o as any) ?? []);
       const { data: incoming } = await supabase
         .from("menu_requests")
-        .select("id,customer_name,customer_phone,dropoff_address,food_total,items")
+        .select("id,customer_name,customer_phone,dropoff_address,food_total,items,payment_mode")
         .eq("restaurant_id", r.id)
         .eq("status", "new")
         .order("created_at", { ascending: false });
@@ -373,6 +373,9 @@ export function RestaurantHome() {
                 <a className="mt-1 block text-sm text-primary" href={unpackDropoff(request.dropoff_address).mapsUrl ?? "#"} target="_blank" rel="noopener noreferrer">Liga de la casa</a>
               )}
               <p className="mt-1 text-sm">{formatMxn(Number(request.food_total))} en comida</p>
+              <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-primary">
+                {request.payment_mode === "prepaid_at_restaurant" ? "Paga al restaurante · tú pagas el envío al repartidor" : "Paga en domicilio"}
+              </p>
               <Button
                 className="mt-3 h-11 w-full"
                 onClick={() => {
@@ -389,6 +392,7 @@ export function RestaurantHome() {
                     lat: dropoff.lat,
                     lng: dropoff.lng,
                     mapsUrl: dropoff.mapsUrl,
+                    paymentMode: request.payment_mode === "prepaid_at_restaurant" ? "prepaid_at_restaurant" : "collect_on_delivery",
                   });
                   setOpen(true);
                 }}
