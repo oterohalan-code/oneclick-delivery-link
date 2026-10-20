@@ -6,9 +6,10 @@ import { GlassCard } from "@/components/ui/glass-card";
 import { MeshBackground } from "@/components/MeshBackground";
 import { Logo } from "@/components/Logo";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CheckCircle2, MapPin, Package, Bike, Clock, Star, Timer, Navigation } from "lucide-react";
+import { CheckCircle2, MapPin, Package, Bike } from "lucide-react";
 import { formatEta, timeAgo } from "@/lib/eta";
 import { googleMapsPlaceUrl } from "@/lib/maps";
+import { formatMxn } from "@/lib/business";
 
 export const Route = createFileRoute("/t/$token")({
   head: () => ({
@@ -136,172 +137,62 @@ function TrackingContent({ data }: { data: Tracking }) {
     pins.push({ lat: data.courier_lat, lng: data.courier_lng, label: "🛵 Courier" });
   }
 
+  const homeMaps = googleMapsPlaceUrl({
+    lat: data.dropoff_lat,
+    lng: data.dropoff_lng,
+    address: data.dropoff_address,
+  });
+  const phoneDigits = (data.restaurant_phone ?? "").replace(/\D/g, "");
+  const restaurantWa = phoneDigits
+    ? `https://wa.me/${phoneDigits.length === 10 ? `52${phoneDigits}` : phoneDigits}`
+    : null;
+
   return (
-    <div className="space-y-4">
-      <GlassCard variant="strong" className="p-5 spring-in">
-        <div className="flex items-start justify-between gap-3 mb-1">
-          <div>
-            <p className="text-xs uppercase tracking-widest text-muted-foreground">
-              {data.restaurant_name ?? "Tu pedido"}
-            </p>
-            <h1 className="text-2xl font-semibold mt-1">
-              {isDelivered ? "Pedido entregado" : STATUS_STEPS[stepIndex].label}
-            </h1>
-            {isDelivered && (
-              <p className="mt-2 rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
-                Entrega registrada por el repartidor
-              </p>
-            )}
-          </div>
-          {!isDelivered && (
-            <div className="flex items-center gap-1 text-xs text-muted-foreground bg-muted/40 px-2 py-1 rounded-full">
-              <Clock className="h-3 w-3" /> En vivo
-            </div>
-          )}
-        </div>
-
-        {/* Step indicator */}
-        <div className="mt-5 flex items-center gap-2">
-          {STATUS_STEPS.map((step, i) => {
-            const Icon = step.icon;
-            const active = i <= stepIndex;
-            const current = i === stepIndex && !isDelivered;
-            return (
-              <div key={step.key} className="flex-1 flex flex-col items-center gap-1.5">
-                <div
-                  className={`h-9 w-9 rounded-full flex items-center justify-center transition-all ${
-                    active
-                      ? "bg-primary text-primary-foreground shadow-md"
-                      : "bg-muted text-muted-foreground"
-                  } ${current ? "ring-4 ring-primary/20 animate-pulse" : ""}`}
-                >
-                  <Icon className="h-4 w-4" />
-                </div>
-                <span
-                  className={`text-[10px] text-center leading-tight ${
-                    active ? "text-foreground font-medium" : "text-muted-foreground"
-                  }`}
-                >
-                  {step.label}
-                </span>
-              </div>
-            );
-          })}
-        </div>
-      </GlassCard>
-
-      {/* ETA + Courier card — solo cuando hay courier asignado y no entregado */}
-      {!isDelivered && stepIndex >= 1 && (data.courier_name || data.eta_minutes != null) && (
-        <GlassCard variant="strong" className="p-5 spring-in">
-          <div className="flex items-center justify-between gap-4">
-            <div className="min-w-0 flex-1">
-              <p className="text-xs uppercase tracking-widest text-muted-foreground">Tu courier</p>
-              <p className="font-semibold mt-1 truncate">🛵 {data.courier_name ?? "En camino"}</p>
-              {data.courier_score != null && data.courier_score > 0 && (
-                <div className="flex items-center gap-1 mt-1 text-xs text-muted-foreground">
-                  <Star className="h-3 w-3 fill-warning text-warning" />
-                  <span className="font-medium text-foreground">{Number(data.courier_score).toFixed(1)}</span>
-                  <span>/ 100</span>
-                </div>
-              )}
-              <p className="text-[10px] text-muted-foreground mt-1">
-                Última señal {timeAgo(data.location_updated_at)}
-              </p>
-            </div>
-            {data.eta_minutes != null && (
-              <div className="text-right shrink-0">
-                <div className="flex items-center justify-end gap-1 text-xs text-muted-foreground">
-                  <Timer className="h-3 w-3" /> ETA
-                </div>
-                <p className="font-display text-2xl font-bold text-primary leading-tight mt-0.5">
-                  {formatEta(data.eta_minutes)}
-                </p>
-              </div>
-            )}
-          </div>
-        </GlassCard>
-      )}
-
-      <GlassCard variant="strong" className="p-2 overflow-hidden">
-        <MapView pins={pins} showRoute={pins.length >= 2} height="320px" />
-      </GlassCard>
+    <div className="mx-auto max-w-lg space-y-4">
+      <section className="rounded-2xl border border-hairline bg-white p-4">
+        <p className="text-sm text-graphite">{data.restaurant_name ?? "Tu pedido"}</p>
+        <h1 className="mt-1 text-2xl font-semibold">
+          {isDelivered ? "Pedido entregado" : STATUS_STEPS[stepIndex].label}
+        </h1>
+        {isDelivered ? (
+          <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-3 text-sm text-emerald-800">
+            Entrega registrada por el repartidor
+          </p>
+        ) : (
+          <p className="mt-2 text-sm text-graphite">
+            {data.courier_name ? `${data.courier_name} lleva tu pedido.` : "Estamos buscando repartidor."}
+            {data.eta_minutes != null ? ` Llega en ${formatEta(data.eta_minutes)}.` : ""}
+            {data.location_updated_at ? ` Última señal ${timeAgo(data.location_updated_at)}.` : ""}
+          </p>
+        )}
+      </section>
 
       {(data.food_mxn != null || data.total_mxn != null) && (
-        <GlassCard variant="strong" className="p-5">
-          <div className="flex justify-between text-sm text-muted-foreground"><span>Comida</span><span>${Number(data.food_mxn ?? 0).toFixed(0)}</span></div>
-          <div className="mt-1 flex justify-between text-sm text-muted-foreground"><span>Envío</span><span>${Number(data.shipping_mxn ?? 0).toFixed(0)}</span></div>
-          <div className="mt-2 flex justify-between border-t pt-2 font-semibold"><span>Total</span><span>${Number(data.total_mxn ?? 0).toFixed(0)}</span></div>
-          {isDelivered && <p className="mt-2 text-sm text-emerald-800">Cobro confirmado por el repartidor</p>}
-        </GlassCard>
+        <section className="rounded-2xl border border-hairline bg-white p-4 text-sm">
+          <div className="flex justify-between py-1"><span>Comida</span><span>{formatMxn(Number(data.food_mxn ?? 0))}</span></div>
+          <div className="flex justify-between py-1 text-graphite"><span>Envío</span><span>{formatMxn(Number(data.shipping_mxn ?? 0))}</span></div>
+          <div className="mt-2 flex justify-between border-t border-hairline pt-2 font-semibold"><span>Total</span><span>{formatMxn(Number(data.total_mxn ?? 0))}</span></div>
+          {isDelivered && <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-emerald-800">Cobro confirmado por el repartidor</p>}
+        </section>
       )}
 
-      {data.restaurant_phone && (
-        <a
-          href={`https://wa.me/${data.restaurant_phone.replace(/\D/g, "")}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="block rounded-xl border border-primary px-4 py-3 text-center text-sm font-semibold text-primary"
-        >
+      {!isDelivered && homeMaps && (
+        <a href={homeMaps} target="_blank" rel="noopener noreferrer" className="block rounded-xl border border-hairline bg-white px-4 py-3 text-center text-sm font-semibold text-primary">
+          Seguir recorrido en Google Maps
+        </a>
+      )}
+
+      {restaurantWa && (
+        <a href={restaurantWa} target="_blank" rel="noopener noreferrer" className="block rounded-xl border border-primary px-4 py-3 text-center text-sm font-semibold text-primary">
           Contactar restaurante
         </a>
       )}
 
-      <GlassCard variant="strong" className="p-5 space-y-3">
-        <Row
-          icon={MapPin}
-          label="Recogida"
-          value={data.pickup_address}
-          mapsUrl={googleMapsPlaceUrl({
-            lat: data.pickup_lat, lng: data.pickup_lng, address: data.pickup_address,
-          })}
-        />
-        <Row
-          icon={MapPin}
-          label="Entrega"
-          value={data.dropoff_address}
-          mapsUrl={googleMapsPlaceUrl({
-            lat: data.dropoff_lat, lng: data.dropoff_lng, address: data.dropoff_address,
-          })}
-        />
-      </GlassCard>
-
-      <p className="text-center text-xs text-muted-foreground pt-2">
-        Powered by <span className="font-semibold text-foreground">1Click</span> · Actualiza cada 10s
-      </p>
-    </div>
-  );
-}
-
-function Row({
-  icon: Icon,
-  label,
-  value,
-  mapsUrl,
-}: {
-  icon: typeof MapPin;
-  label: string;
-  value: string;
-  mapsUrl?: string | null;
-}) {
-  return (
-    <div className="flex items-start gap-3">
-      <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center flex-shrink-0">
-        <Icon className="h-4 w-4 text-muted-foreground" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="text-[10px] uppercase tracking-widest text-muted-foreground">{label}</p>
-        <p className="text-sm mt-0.5 truncate">{value}</p>
-        {mapsUrl && (
-          <a
-            href={mapsUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-1 mt-1 text-xs font-medium text-primary hover:underline"
-          >
-            <Navigation className="h-3 w-3" /> Abrir en Google Maps
-          </a>
-        )}
-      </div>
+      {!isDelivered && pins.length > 0 && (
+        <div className="h-56 overflow-hidden rounded-2xl">
+          <MapView pins={pins} showRoute={pins.length >= 2} height="100%" />
+        </div>
+      )}
     </div>
   );
 }
