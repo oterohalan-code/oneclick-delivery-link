@@ -5,11 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { parseMenu, publicMediaUrl, type MenuItem } from "@/lib/restaurant-media";
+import { parseMenu, publicMediaUrl, type MenuItem, type PublicRestaurant } from "@/lib/restaurant-media";
+import { RestaurantProfile } from "./PublicDirectory";
 
 type RestaurantRow = {
   id: string;
   name: string;
+  category: string | null;
+  address: string | null;
+  phone: string | null;
   hours: string | null;
   logo_url: string | null;
   facade_url: string | null;
@@ -27,7 +31,7 @@ export function RestaurantMenuEditor() {
     if (!user) return;
     const { data } = await supabase
       .from("restaurants")
-      .select("id,name,hours,logo_url,facade_url,menu")
+      .select("id,name,category,address,phone,hours,logo_url,facade_url,menu")
       .eq("user_id", user.id)
       .maybeSingle();
     if (!data) return;
@@ -58,6 +62,22 @@ export function RestaurantMenuEditor() {
     if (saveError) return toast.error(saveError.message);
     toast.success(kind === "logo" ? "Logo guardado" : "Foto guardada");
     load();
+  };
+
+  const uploadDish = async (index: number, file: File) => {
+    if (!user) return;
+    if (file.size > 8 * 1024 * 1024) return toast.error("La imagen no debe pesar más de 8MB");
+    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
+    const path = `${user.id}/dish-${Date.now()}.${ext}`;
+    setBusy(true);
+    const { error } = await supabase.storage.from("restaurant-media").upload(path, file, {
+      upsert: true,
+      contentType: file.type,
+    });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    setMenu((current) => current.map((item, i) => i === index ? { ...item, image: path } : item));
+    toast.success("Foto del platillo lista. Pulsa Guardar menú.");
   };
 
   const saveMenu = async () => {
@@ -91,13 +111,31 @@ export function RestaurantMenuEditor() {
       <div className="mt-4 space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="font-semibold">Menú</h3>
-          <Button type="button" variant="outline" size="sm" onClick={() => setMenu([...menu, { name: "", price: 0, description: "" }])}>
+          <Button type="button" variant="outline" size="sm" onClick={() => setMenu([...menu, { name: "", price: 0, description: "", image: "" }])}>
             Agregar platillo
           </Button>
         </div>
         {menu.length === 0 && <p className="text-sm text-graphite">Todavía no hay platillos.</p>}
         {menu.map((item, index) => (
           <div key={index} className="grid gap-2 rounded-xl border border-hairline p-3">
+            <div className="flex items-center gap-3">
+              <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-bone">
+                {publicMediaUrl(item.image) && <img src={publicMediaUrl(item.image) ?? ""} alt="" className="h-full w-full object-cover" />}
+              </div>
+              <label className="text-sm text-graphite">
+                Foto del platillo
+                <input
+                  className="mt-1 block w-full text-sm"
+                  type="file"
+                  accept="image/*"
+                  disabled={busy}
+                  onChange={(event) => {
+                    const file = event.target.files?.[0];
+                    if (file) uploadDish(index, file);
+                  }}
+                />
+              </label>
+            </div>
             <Input
               placeholder="Tacos de pescado"
               value={item.name}
@@ -122,8 +160,25 @@ export function RestaurantMenuEditor() {
         ))}
       </div>
       <Button className="mt-4 h-12 w-full" disabled={busy} onClick={saveMenu}>Guardar menú</Button>
+      <div className="mt-6">
+        <RestaurantProfile preview place={previewPlace(row, hours, menu)} />
+      </div>
     </section>
   );
+}
+
+function previewPlace(row: RestaurantRow, hours: string, menu: MenuItem[]): PublicRestaurant {
+  return {
+    id: row.id,
+    name: row.name,
+    category: row.category,
+    address: row.address,
+    phone: row.phone,
+    hours: hours.trim() || row.hours,
+    logo_url: row.logo_url,
+    facade_url: row.facade_url,
+    menu: menu.filter((item) => item.name.trim()),
+  };
 }
 
 function ImageField({ label, src, busy, onFile }: {

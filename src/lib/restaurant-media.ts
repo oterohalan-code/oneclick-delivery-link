@@ -2,6 +2,7 @@ export type MenuItem = {
   name: string;
   price: number;
   description: string;
+  image: string;
 };
 
 export type PublicRestaurant = {
@@ -28,7 +29,7 @@ export function parseMenu(value: unknown): MenuItem[] {
   if (!Array.isArray(value)) return [];
   return value.flatMap((item) => {
     if (!item || typeof item !== "object") return [];
-    const row = item as { name?: unknown; price?: unknown; description?: unknown };
+    const row = item as { name?: unknown; price?: unknown; description?: unknown; image?: unknown };
     const name = typeof row.name === "string" ? row.name.trim() : "";
     const price = Number(row.price);
     if (!name || !Number.isFinite(price)) return [];
@@ -36,6 +37,7 @@ export function parseMenu(value: unknown): MenuItem[] {
       name,
       price,
       description: typeof row.description === "string" ? row.description : "",
+      image: typeof row.image === "string" ? row.image : "",
     }];
   });
 }
