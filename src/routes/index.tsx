@@ -56,7 +56,7 @@ function Landing() {
         </div>
       </header>
 
-      <main className="px-4 sm:px-6 max-w-6xl mx-auto py-8">
+      <main className="px-4 sm:px-6 max-w-6xl mx-auto pt-0 pb-12">
         <PublicDirectory selectedId={local} />
       </main>
 

@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import directoryCover from "@/assets/directory-premium.jpg";
+import { Search, UtensilsCrossed } from "lucide-react";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { formatMxn } from "@/lib/business";
 import { packDropoff, parseMenu, publicMediaUrl, whatsappOrderUrl, type PublicRestaurant } from "@/lib/restaurant-media";
@@ -39,26 +42,33 @@ export function PublicDirectory({ selectedId }: { selectedId?: string }) {
 
   return (
     <div>
-      <h1 className="text-3xl font-semibold text-ink md:text-5xl">Encuentra tu restaurante en Manzanillo</h1>
-      <p className="mt-2 text-graphite">Antojos locales, en un solo lugar.</p>
-      <div className="mt-6 flex gap-2">
-        <input
+      <section className="directory-hero -mx-4 sm:-mx-6 px-6 sm:px-10 lg:px-14">
+        <img src={directoryCover} alt="Tacos y tostadas de cocina mexicana" width={1536} height={768} className="absolute inset-0 -z-10 h-full w-full object-cover" fetchPriority="high" />
+        <div className="py-10">
+          <h1>Encuentra tu restaurante en Manzanillo</h1>
+          <p className="mt-4 text-base">Antojos locales, en un solo lugar.</p>
+        </div>
+      </section>
+      <div className="directory-search relative mt-8 flex gap-2 rounded-lg">
+        <Search aria-hidden className="absolute left-4 top-4 h-5 w-5 text-muted-foreground" />
+        <Input
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Buscar por nombre o tipo de comida"
-          className="h-12 flex-1 rounded-xl border border-hairline bg-card px-4"
+          aria-label="Buscar restaurantes" className="h-14 min-w-0 flex-1 rounded-lg border border-hairline bg-card pl-12 pr-4"
         />
       </div>
       <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
         {categories.map((item) => (
-          <button
+          <Button
+            variant="outline"
             key={item}
             type="button"
             onClick={() => setCategory(item)}
-            className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition ${item === category ? "bg-primary text-primary-foreground shadow-button" : "bg-card text-ink border border-hairline hover:border-ink/30"}`}
+            className={`shrink-0 h-10 rounded-lg px-4 py-2 text-sm font-semibold transition ${item === category ? "bg-primary text-primary-foreground shadow-button" : "bg-card text-ink border border-hairline hover:border-ink/30"}`}
           >
             {item}
-          </button>
+          </Button>
         ))}
       </div>
       {!ready ? (
@@ -74,10 +84,10 @@ export function PublicDirectory({ selectedId }: { selectedId?: string }) {
                 <Link
                   to="/"
                   search={(previous) => ({ ...previous, local: place.id })}
-                  className="block overflow-hidden rounded-2xl border border-hairline bg-card"
+                  className="group block overflow-hidden rounded-lg border border-hairline bg-card shadow-soft transition-shadow hover:shadow-elegant"
                 >
-                  <div className="h-40 bg-bone">
-                    {photo && <img src={photo} alt="" className="h-full w-full object-cover" />}
+                  <div className="grid h-48 place-items-center bg-secondary">
+                    {photo ? <img src={photo} alt={place.name} loading="lazy" className="h-full w-full object-cover" /> : <UtensilsCrossed aria-hidden className="h-10 w-10 text-muted-foreground/40" />}
                   </div>
                   <div className="p-4">
                     <h2 className="text-lg font-semibold">{place.name}</h2>
@@ -162,7 +172,7 @@ export function RestaurantProfile({ place, preview = false, demo = false }: { pl
             })}
           </ul>
           {(!preview || demo) && sent && (
-            <div className="mt-4 rounded-xl bg-emerald-50 px-3 py-3 text-sm text-emerald-900">
+            <div className="mt-4 rounded-xl bg-success/10 px-3 py-3 text-sm text-success">
               Pedido recibido. {place.name} ya puede verlo y pedir al repartidor.
             </div>
           )}

@@ -8,10 +8,7 @@ interface MeshBackgroundProps {
  * Place as the first child of a relatively positioned container.
  */
 export function MeshBackground({ variant = "light", className = "" }: MeshBackgroundProps) {
-  const bg =
-    variant === "dark"
-      ? "bg-navy bg-[radial-gradient(at_20%_15%,color-mix(in_srgb,var(--ember)_22%,transparent),transparent_55%)]"
-      : "bg-background bg-[radial-gradient(at_15%_10%,color-mix(in_srgb,var(--ember)_10%,transparent),transparent_50%),radial-gradient(at_85%_20%,color-mix(in_srgb,var(--color-navy)_7%,transparent),transparent_55%)]";
+  const bg = variant === "dark" ? "bg-navy" : "bg-background";
   return (
     <div aria-hidden className={`pointer-events-none absolute inset-0 -z-10 overflow-hidden ${className}`}>
       <div className={`absolute inset-0 ${bg}`} />

@@ -43,11 +43,11 @@ function AppLayout() {
   ];
 
   return (
-    <div className="relative min-h-screen bg-background text-foreground pb-28">
+    <div className="premium-app relative min-h-screen bg-background text-foreground pb-28">
 
       <header className="sticky top-0 z-30 bg-navy text-navy-foreground">
         <div className="border-b border-navy-foreground/10 shadow-sm">
-          <div className="max-w-3xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+          <div className="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
             <Link to="/app" className="press">
               <Logo size="sm" tone="bone" />
             </Link>
@@ -67,15 +67,15 @@ function AppLayout() {
         </div>
       </header>
 
-      <main className="max-w-3xl mx-auto px-4 py-6 spring-in">
+      <main className="max-w-4xl mx-auto px-4 sm:px-8 py-8 spring-in">
         <Outlet />
       </main>
 
       <nav
-        className="fixed bottom-3 inset-x-3 z-40 max-w-3xl mx-auto"
+        className="fixed bottom-3 inset-x-3 z-40 max-w-4xl mx-auto"
         aria-label="Navegación principal"
       >
-        <div className="glass-strong rounded-2xl shadow-elegant px-1.5 py-1.5">
+        <div className="premium-nav rounded-xl px-1.5 py-1.5">
           <div className="grid" style={{ gridTemplateColumns: `repeat(${navItems.length}, minmax(0, 1fr))` }}>
             {navItems.map((it) => {
               const active = it.exact ? loc.pathname === it.to : loc.pathname.startsWith(it.to);
@@ -84,12 +84,12 @@ function AppLayout() {
                   key={it.to}
                   to={it.to}
                   aria-current={active ? "page" : undefined}
-                  className={`relative flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold tracking-wide rounded-xl press transition ${
-                    active ? "text-ember-foreground" : "text-foreground/75 hover:text-foreground"
+                  className={`relative flex flex-col items-center gap-0.5 py-2 text-[10px] font-semibold tracking-normal rounded-lg press transition ${
+                    active ? "text-primary" : "text-foreground/75 hover:text-foreground"
                   }`}
                 >
                   {active && (
-                    <span aria-hidden className="absolute inset-0 rounded-xl bg-ember shadow-button" />
+                    <span aria-hidden className="absolute inset-0 rounded-lg bg-accent" />
                   )}
                   <it.icon className="relative h-4 w-4" strokeWidth={1.6} />
                   <span className="relative">{it.label}</span>

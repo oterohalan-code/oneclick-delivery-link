@@ -7,7 +7,7 @@ import { Plus, Package, Truck, CheckCircle2, Clock, MessageCircle, Phone, Inbox,
 import { EmptyState } from "@/components/ui/empty-state";
 import { SkeletonList } from "@/components/ui/skeleton";
 import { RestaurantOnboarding } from "./RestaurantOnboarding";
-import { CreateOrderDialog } from "./CreateOrderDialog";
+import { CreateOrderDialog, type OrderSeed } from "./CreateOrderDialog";
 import { OrderChat } from "@/components/OrderChat";
 import { Badge } from "@/components/ui/badge";
 import { enablePush } from "@/lib/push";
@@ -60,7 +60,7 @@ export function RestaurantHome() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
-  const [seed, setSeed] = useState<{ customer_name: string; customer_phone: string; dropoff_address: string; amount: string; notes: string; requestId?: string } | null>(null);
+  const [seed, setSeed] = useState<OrderSeed | null>(null);
   const [requests, setRequests] = useState<{ id: string; customer_name: string; customer_phone: string; dropoff_address: string; food_total: number; items: { name?: string; qty?: number }[] }[]>([]);
   const [chatOrderId, setChatOrderId] = useState<string | null>(null);
   const [courierByOrder, setCourierByOrder] = useState<Record<string, CourierInfo>>({});

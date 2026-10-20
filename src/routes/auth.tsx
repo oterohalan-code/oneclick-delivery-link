@@ -119,7 +119,7 @@ function AuthPage() {
   };
 
   return (
-    <div className="relative min-h-screen bg-background text-foreground flex flex-col overflow-hidden">
+    <div className="premium-auth relative min-h-screen bg-background text-foreground flex flex-col overflow-hidden">
 
       <MeshBackground />
 
@@ -131,17 +131,17 @@ function AuthPage() {
       </header>
 
       <main className="flex-1 flex items-center justify-center px-6 pb-10">
-        <GlassCard variant="strong" className="w-full max-w-md p-8 animate-fade-in">
+        <GlassCard variant="strong" className="w-full max-w-md p-6 sm:p-8 animate-fade-in">
           <div className="eyebrow mb-3">Acceso</div>
           <h1 className="text-display text-3xl font-medium leading-tight">
-            Bienvenido <span className="italic font-light text-muted-foreground">de vuelta.</span>
+            Bienvenido <span className="font-medium text-muted-foreground">de vuelta.</span>
           </h1>
           <p className="text-sm text-muted-foreground mt-2">Entra o crea tu cuenta para continuar.</p>
 
           <Tabs value={tab} onValueChange={(v) => setTab(v as any)} className="mt-7">
-            <TabsList className="grid grid-cols-2 w-full bg-secondary/50 p-1 rounded-full h-auto">
-              <TabsTrigger value="login" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm py-2">Entrar</TabsTrigger>
-              <TabsTrigger value="signup" className="rounded-full data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm py-2">Crear cuenta</TabsTrigger>
+            <TabsList className="grid grid-cols-2 w-full bg-secondary/50 p-1 rounded-lg h-auto">
+              <TabsTrigger value="login" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm py-2">Entrar</TabsTrigger>
+              <TabsTrigger value="signup" className="rounded-lg data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm py-2">Crear cuenta</TabsTrigger>
             </TabsList>
 
             <TabsContent value="login" className="mt-6">
