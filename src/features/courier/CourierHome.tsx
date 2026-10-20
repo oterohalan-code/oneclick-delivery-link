@@ -59,7 +59,7 @@ export function CourierHome() {
   const [doneOrder, setDoneOrder] = useState<OrderRow | null>(null);
   const [hideDone, setHideDone] = useState(false);
   const [activeList, setActiveList] = useState<OrderRow[]>([]);
-  const [restaurants, setRestaurants] = useState<Record<string, { name: string; phone: string; facadeUrl: string | null }>>({});
+  const [restaurants, setRestaurants] = useState<Record<string, { name: string; phone: string; facadeUrl: string | null; mapsUrl: string | null }>>({});
   const [loading, setLoading] = useState(true);
   const [batchMode, setBatchMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -112,8 +112,8 @@ export function CourierHome() {
         ...(finished ? [finished.restaurant_id] : []),
       ]));
       if (ids.length) {
-        const { data: rs } = await supabase.from("restaurants").select("id,name,phone,facade_url").in("id", ids);
-        const map: Record<string, { name: string; phone: string; facadeUrl: string | null }> = {};
+        const { data: rs } = await supabase.from("restaurants").select("id,name,phone,facade_url,maps_url").in("id", ids);
+        const map: Record<string, { name: string; phone: string; facadeUrl: string | null; mapsUrl: string | null }> = {};
         await Promise.all(
           (rs ?? []).map(async (r: any) => {
             let signed: string | null = null;
@@ -125,7 +125,7 @@ export function CourierHome() {
                 .createSignedUrl(r.facade_url, 3600);
               signed = s?.signedUrl ?? null;
             }
-            map[r.id] = { name: r.name, phone: r.phone, facadeUrl: signed };
+            map[r.id] = { name: r.name, phone: r.phone, facadeUrl: signed, mapsUrl: r.maps_url ?? null };
           }),
         );
         setRestaurants(map);
@@ -486,7 +486,7 @@ export function CourierHome() {
 
 function ActiveOrderView({ order, restaurant, courier, onChange, onBack }: {
   order: OrderRow;
-  restaurant?: { name: string; phone: string; facadeUrl: string | null };
+  restaurant?: { name: string; phone: string; facadeUrl: string | null; mapsUrl?: string | null };
   courier: Courier;
   onChange: () => void;
   onBack?: () => void;
@@ -678,27 +678,13 @@ function ActiveOrderView({ order, restaurant, courier, onChange, onBack }: {
       </FlowCard>
 
       {order.status === "assigned" && !savedFirst && (
-        <FlowCard step="02" title="Reserva pendiente" subtitle="Abre el restaurante en Maps y guarda la primera liga.">
-          <p className="mb-3 text-sm text-graphite">
-            {shared.restaurantFirstSentAt
-              ? "El restaurante ya mandó esta liga. Ábrela y guárdala en el pedido."
-              : "Puedes abrir el restaurante en Maps. Cuando el restaurante confirme el envío, la liga queda en el pedido."}
-          </p>
-          {(shared.restaurantFirstUrl || pickupMaps) && (
+        <FlowCard step="02" title="Hacia el restaurante" subtitle="La ubicación del negocio ya viene en el pedido.">
+          {(restaurant?.mapsUrl || pickupMaps) && (
             <Button asChild variant="outline" className="mb-2 h-12 w-full">
-              <a href={shared.restaurantFirstUrl || pickupMaps || "#"} target="_blank" rel="noopener noreferrer">Abrir restaurante en Maps</a>
+              <a href={restaurant?.mapsUrl || pickupMaps || "#"} target="_blank" rel="noopener noreferrer">Abrir restaurante en Maps</a>
             </Button>
           )}
-          <label className="mb-3 block text-sm">
-            <span className="text-graphite">Pegar primera liga</span>
-            <input
-              value={pastedFirst}
-              onChange={(event) => setPastedFirst(event.target.value)}
-              placeholder="https://maps.google.com/..."
-              className="mt-1 h-11 w-full rounded-xl border border-hairline bg-card px-3"
-            />
-          </label>
-          <FlowButton onClick={() => persist({ action: "courier_first_saved", linkUrl: pastedFirst.trim() || undefined })}>Guardar primera liga</FlowButton>
+          <FlowButton onClick={() => persist({ action: "courier_first_saved", linkUrl: restaurant?.mapsUrl || pickupMaps || undefined })}>Voy en camino al restaurante</FlowButton>
         </FlowCard>
       )}
 
@@ -722,27 +708,13 @@ function ActiveOrderView({ order, restaurant, courier, onChange, onBack }: {
       )}
 
       {order.status === "in_transit" && !savedSecond && (
-        <FlowCard step="04" title="Segundo recorrido" subtitle="Abre el domicilio del cliente y guarda la segunda liga.">
-          <p className="mb-3 text-sm text-graphite">
-            {shared.restaurantSecondSentAt
-              ? "El restaurante ya mandó al cliente la liga del domicilio."
-              : "Abre el domicilio. La liga queda en el pedido cuando la guardas."}
-          </p>
-          {(shared.restaurantSecondUrl || dropoffMaps) && (
+        <FlowCard step="04" title="Hacia el cliente" subtitle="La ubicación del cliente ya viene en el pedido.">
+          {dropoffMaps && (
             <Button asChild variant="outline" className="mb-2 h-12 w-full">
-              <a href={shared.restaurantSecondUrl || dropoffMaps || "#"} target="_blank" rel="noopener noreferrer">Abrir destino en Maps</a>
+              <a href={dropoffMaps} target="_blank" rel="noopener noreferrer">Abrir domicilio en Maps</a>
             </Button>
           )}
-          <label className="mb-3 block text-sm">
-            <span className="text-graphite">Pegar segunda liga</span>
-            <input
-              value={pastedSecond}
-              onChange={(event) => setPastedSecond(event.target.value)}
-              placeholder="https://maps.google.com/..."
-              className="mt-1 h-11 w-full rounded-xl border border-hairline bg-card px-3"
-            />
-          </label>
-          <FlowButton onClick={() => persist({ action: "courier_second_saved", linkUrl: pastedSecond.trim() || undefined })}>Guardar segunda liga</FlowButton>
+          <FlowButton onClick={() => persist({ action: "courier_second_saved", linkUrl: dropoffMaps || undefined })}>Voy en camino al cliente</FlowButton>
         </FlowCard>
       )}
 
