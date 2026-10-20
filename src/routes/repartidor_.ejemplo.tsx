@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
@@ -32,8 +32,8 @@ function CourierMock() {
     <div className="min-h-screen bg-bone text-ink">
       <header className="bg-navy text-navy-foreground">
         <div className="mx-auto flex max-w-lg items-center justify-between px-4 py-3">
-          <Logo size="sm" tone="bone" />
-          <span className="text-sm">Repartidor de ejemplo</span>
+          <Link to="/" aria-label="Ir al inicio"><Logo size="sm" tone="bone" /></Link>
+          <Link to="/repartidor" className="text-sm">← Regresar</Link>
         </div>
       </header>
       <main className="mx-auto max-w-lg space-y-4 px-4 py-6">
