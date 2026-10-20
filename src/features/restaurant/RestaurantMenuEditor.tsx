@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { compressImage, parseMenu, publicMediaUrl, type MenuItem, type PublicRestaurant } from "@/lib/restaurant-media";
 import { RestaurantProfile } from "./PublicDirectory";
+import { parseGoogleMapsLink } from "@/lib/maps";
 
 type RestaurantRow = {
   id: string;
@@ -18,12 +19,14 @@ type RestaurantRow = {
   logo_url: string | null;
   facade_url: string | null;
   menu: unknown;
+  maps_url: string | null;
 };
 
 export function RestaurantMenuEditor() {
   const { user } = useAuth();
   const [row, setRow] = useState<RestaurantRow | null>(null);
   const [hours, setHours] = useState("");
+  const [mapsUrl, setMapsUrl] = useState("");
   const [category, setCategory] = useState("Mexicana");
   const [menu, setMenu] = useState<MenuItem[]>([]);
   const [busy, setBusy] = useState(false);
@@ -32,12 +35,13 @@ export function RestaurantMenuEditor() {
     if (!user) return;
     const { data } = await supabase
       .from("restaurants")
-      .select("id,name,category,address,phone,hours,logo_url,facade_url,menu")
+      .select("id,name,category,address,phone,hours,logo_url,facade_url,menu,maps_url")
       .eq("user_id", user.id)
       .maybeSingle();
     if (!data) return;
     setRow(data as RestaurantRow);
     setHours(data.hours ?? "");
+    setMapsUrl(data.maps_url ?? "");
     setCategory(data.category || "Mexicana");
     setMenu(parseMenu(data.menu));
   };
@@ -80,8 +84,13 @@ export function RestaurantMenuEditor() {
   const saveMenu = async () => {
     if (!row) return;
     const clean = menu.filter((item) => item.name.trim());
+    const link = mapsUrl.trim();
+    const parsedLink = link ? parseGoogleMapsLink(link) : null;
+    if (link && !parsedLink) return toast.error("La liga de Google Maps del negocio no es válida");
     setBusy(true);
     const { error } = await supabase.from("restaurants").update({
+      maps_url: link || null,
+      ...(parsedLink?.lat != null && parsedLink?.lng != null ? { lat: parsedLink.lat, lng: parsedLink.lng } : {}),
       hours: hours.trim() || null,
       category,
       menu: clean as never,
@@ -109,6 +118,11 @@ export function RestaurantMenuEditor() {
             <option key={item}>{item}</option>
           ))}
         </select>
+      </div>
+      <div className="mt-4">
+        <Label>Liga de Google Maps de tu negocio</Label>
+        <Input className="mt-1" value={mapsUrl} placeholder="https://maps.app.goo.gl/..." onChange={(event) => setMapsUrl(event.target.value)} />
+        <p className="mt-1 text-xs text-graphite">Se guarda una sola vez y se manda sola al repartidor en cada pedido.</p>
       </div>
       <div className="mt-4">
         <Label>Horario</Label>
