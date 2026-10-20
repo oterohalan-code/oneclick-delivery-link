@@ -125,14 +125,14 @@
   --mesh-2: color-mix(in srgb, #0E3140 6%, transparent);
   --mesh-3: color-mix(in srgb, #0E3140 4%, transparent);
 
-  --sidebar: #1A1614;
-  --sidebar-foreground: #F5F2EB;
-  --sidebar-primary: #B8693A;
-  --sidebar-primary-foreground: #F5F2EB;
-  --sidebar-accent: #2A2420;
-  --sidebar-accent-foreground: #F5F2EB;
-  --sidebar-border: #2A2420;
-  --sidebar-ring: #B8693A;
+  --sidebar: #0E3140;
+  --sidebar-foreground: #F7F4EF;
+  --sidebar-primary: #D9531A;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #123C4E;
+  --sidebar-accent-foreground: #F7F4EF;
+  --sidebar-border: #123C4E;
+  --sidebar-ring: #D9531A;
 }
 
 .dark {
@@ -172,9 +172,9 @@
   --glass-border: color-mix(in srgb, #F5F2EB 14%, transparent);
   --glass-border-dark: color-mix(in srgb, #F5F2EB 10%, transparent);
 
-  --mesh-1: color-mix(in srgb, #B8693A 32%, transparent);
-  --mesh-2: color-mix(in srgb, #1A1614 40%, transparent);
-  --mesh-3: color-mix(in srgb, #C47A4A 18%, transparent);
+  --mesh-1: color-mix(in srgb, #D9531A 32%, transparent);
+  --mesh-2: color-mix(in srgb, #0E3140 40%, transparent);
+  --mesh-3: color-mix(in srgb, #EC7440 18%, transparent);
 
   --sidebar: #120F0D;
   --sidebar-foreground: #F5F2EB;
@@ -237,6 +237,22 @@
     color: var(--ember);
   }
   .hairline { border-color: var(--hairline); }
+  /* Status alerts — unified tokens, no raw palette colors */
+  .alert-warning {
+    background: color-mix(in srgb, var(--warning) 16%, var(--paper));
+    color: var(--ink);
+    border: 1px solid color-mix(in srgb, var(--warning) 35%, transparent);
+  }
+  .alert-success {
+    background: color-mix(in srgb, var(--success) 13%, var(--paper));
+    color: var(--success);
+    border: 1px solid color-mix(in srgb, var(--success) 30%, transparent);
+  }
+  .alert-info {
+    background: color-mix(in srgb, var(--color-navy) 5%, var(--paper));
+    color: var(--ink);
+    border: 1px solid var(--hairline);
+  }
   .shadow-button { box-shadow: var(--shadow-button); }
   .shadow-button-hover:hover { box-shadow: var(--shadow-button-hover); }
   .shadow-elegant { box-shadow: var(--shadow-elegant); }
@@ -257,8 +273,8 @@
     100% { transform: translateX(220%); }
   }
   @keyframes ember-pulse {
-    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 color-mix(in srgb, #B8693A 60%, transparent); }
-    50% { opacity: 0.85; box-shadow: 0 0 0 8px color-mix(in srgb, #B8693A 0%, transparent); }
+    0%, 100% { opacity: 1; box-shadow: 0 0 0 0 color-mix(in srgb, var(--ember) 60%, transparent); }
+    50% { opacity: 0.85; box-shadow: 0 0 0 8px color-mix(in srgb, var(--ember) 0%, transparent); }
   }
   .pulse-ember { animation: ember-pulse 1.8s ease-out infinite; }
   .btn-shimmer { position: relative; overflow: hidden; isolation: isolate; }
