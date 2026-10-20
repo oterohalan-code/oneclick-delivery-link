@@ -14,6 +14,8 @@ async function loadLeaflet() {
         import("leaflet/dist/images/marker-icon-2x.png").then((m) => m.default),
         import("leaflet/dist/images/marker-shadow.png").then((m) => m.default),
       ]);
+      // Leaflet guesses icon paths from CSS; with bundled assets that breaks the pins.
+      delete (mod.Icon.Default.prototype as unknown as { _getIconUrl?: unknown })._getIconUrl;
       mod.Icon.Default.mergeOptions({ iconUrl, iconRetinaUrl: iconRetina, shadowUrl });
       return mod;
     })();
