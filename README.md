@@ -1,6 +1,6 @@
 # 1Click
 
-Desarrolla una aplicación web progresiva (PWA) llamada "1-Click" para conectar Restaurantes con Repartidores independientes en Cancún. El objetivo es profesionalizar la logística que actualmente ocurre en grupos de WhatsApp.
+Desarrolla una aplicación web progresiva (PWA) llamada "1-Click" para conectar Restaurantes con Repartidores independientes en Manzanillo. El objetivo es profesionalizar la logística que actualmente ocurre en grupos de WhatsApp.
 
 Roles de Usuario y Onboarding:
 
