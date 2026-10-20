@@ -116,7 +116,9 @@ export function CourierHome() {
         await Promise.all(
           (rs ?? []).map(async (r: any) => {
             let signed: string | null = null;
-            if (r.facade_url) {
+            if (r.facade_url?.startsWith("data:") || r.facade_url?.startsWith("http")) {
+              signed = r.facade_url;
+            } else if (r.facade_url) {
               const { data: s } = await supabase.storage
                 .from("restaurant-photos")
                 .createSignedUrl(r.facade_url, 3600);

@@ -19,7 +19,7 @@ export type PublicRestaurant = {
 
 export function publicMediaUrl(path: string | null | undefined): string | null {
   if (!path) return null;
-  if (path.startsWith("http")) return path;
+  if (path.startsWith("http") || path.startsWith("data:")) return path;
   const base = import.meta.env.VITE_SUPABASE_URL as string | undefined;
   if (!base) return null;
   return `${base}/storage/v1/object/public/restaurant-media/${path}`;
@@ -39,6 +39,34 @@ export function parseMenu(value: unknown): MenuItem[] {
       description: typeof row.description === "string" ? row.description : "",
       image: typeof row.image === "string" ? row.image : "",
     }];
+  });
+}
+
+export function compressImage(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const image = new Image();
+    image.onload = () => {
+      const maxEdge = 960;
+      const scale = Math.min(1, maxEdge / Math.max(image.width, image.height));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(image.width * scale));
+      canvas.height = Math.max(1, Math.round(image.height * scale));
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        URL.revokeObjectURL(url);
+        reject(new Error("No se pudo preparar la foto"));
+        return;
+      }
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL("image/jpeg", 0.72));
+    };
+    image.onerror = () => {
+      URL.revokeObjectURL(url);
+      reject(new Error("No se pudo leer la foto"));
+    };
+    image.src = url;
   });
 }
 

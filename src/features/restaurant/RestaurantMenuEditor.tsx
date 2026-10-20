@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { parseMenu, publicMediaUrl, type MenuItem, type PublicRestaurant } from "@/lib/restaurant-media";
+import { compressImage, parseMenu, publicMediaUrl, type MenuItem, type PublicRestaurant } from "@/lib/restaurant-media";
 import { RestaurantProfile } from "./PublicDirectory";
 
 type RestaurantRow = {
@@ -47,39 +47,34 @@ export function RestaurantMenuEditor() {
   const upload = async (file: File, kind: "logo" | "facade") => {
     if (!user || !row) return;
     if (file.size > 8 * 1024 * 1024) return toast.error("La imagen no debe pesar más de 8MB");
-    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-    const path = `${user.id}/${kind}-${Date.now()}.${ext}`;
     setBusy(true);
-    const { error } = await supabase.storage.from("restaurant-media").upload(path, file, {
-      upsert: true,
-      contentType: file.type,
-    });
-    if (error) {
+    try {
+      const image = await compressImage(file);
+      const patch = kind === "logo" ? { logo_url: image } : { facade_url: image };
+      const { error } = await supabase.from("restaurants").update(patch).eq("id", row.id);
       setBusy(false);
-      return toast.error(error.message);
+      if (error) return toast.error(error.message);
+      toast.success(kind === "logo" ? "Logo guardado" : "Foto guardada");
+      load();
+    } catch (error) {
+      setBusy(false);
+      toast.error(error instanceof Error ? error.message : "No se pudo guardar la foto");
     }
-    const patch = kind === "logo" ? { logo_url: path } : { facade_url: path };
-    const { error: saveError } = await supabase.from("restaurants").update(patch).eq("id", row.id);
-    setBusy(false);
-    if (saveError) return toast.error(saveError.message);
-    toast.success(kind === "logo" ? "Logo guardado" : "Foto guardada");
-    load();
   };
 
   const uploadDish = async (index: number, file: File) => {
     if (!user) return;
     if (file.size > 8 * 1024 * 1024) return toast.error("La imagen no debe pesar más de 8MB");
-    const ext = file.name.split(".").pop()?.toLowerCase() || "jpg";
-    const path = `${user.id}/dish-${Date.now()}.${ext}`;
     setBusy(true);
-    const { error } = await supabase.storage.from("restaurant-media").upload(path, file, {
-      upsert: true,
-      contentType: file.type,
-    });
-    setBusy(false);
-    if (error) return toast.error(error.message);
-    setMenu((current) => current.map((item, i) => i === index ? { ...item, image: path } : item));
-    toast.success("Foto del platillo lista. Pulsa Guardar menú.");
+    try {
+      const image = await compressImage(file);
+      setMenu((current) => current.map((item, i) => i === index ? { ...item, image } : item));
+      setBusy(false);
+      toast.success("Foto del platillo lista. Pulsa Guardar menú.");
+    } catch (error) {
+      setBusy(false);
+      toast.error(error instanceof Error ? error.message : "No se pudo guardar la foto");
+    }
   };
 
   const saveMenu = async () => {
