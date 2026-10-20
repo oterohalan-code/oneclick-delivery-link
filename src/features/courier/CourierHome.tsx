@@ -23,7 +23,8 @@ import { fetchEtaMinutes, formatEta } from "@/lib/eta";
 import { toast } from "sonner";
 import { googleMapsDirectionsUrl, whatsappChatUrl } from "@/lib/maps";
 import { formatMxn } from "@/lib/business";
-import { orderCode, orderMoney, readFlowFlag, writeFlowFlag } from "@/lib/order-flow";
+import { orderCode, orderMoney, parseOrderFlow } from "@/lib/order-flow";
+import { recordOrderFlow } from "@/lib/rpc/orders.functions";
 import { CheckRow, FlowButton, FlowCard, MoneyLine } from "@/components/order/FlowCard";
 
 interface Courier {
@@ -42,6 +43,7 @@ interface OrderRow {
   shipping_fee: number; distance_km: number | null;
   food_amount_cents?: number | null;
   shipping_amount_cents?: number | null;
+  flow?: unknown;
   restaurant_id: string; courier_id: string | null; created_at: string;
 }
 
@@ -82,7 +84,11 @@ export function CourierHome() {
       const { data: pend } = await supabase.rpc("get_available_orders", { _limit: 30 });
       // RPC no devuelve PII (customer_name/phone, notes, amount_to_collect): se carga al aceptar.
       setFeed(((pend as any) ?? []).map((o: any) => ({
-        ...o, customer_name: null, customer_phone: null, notes: null, amount_to_collect: 0,
+        ...o,
+        customer_name: null,
+        customer_phone: null,
+        notes: null,
+        amount_to_collect: Number(o.amount_to_collect ?? 0),
       })));
 
       const ids = Array.from(new Set([...(pend ?? []).map((o: any) => o.restaurant_id), ...list.map((o: any) => o.restaurant_id)]));
@@ -450,12 +456,24 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
   const [proofOpen, setProofOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [eta, setEta] = useState<number | null>(null);
-  const [gotFood, setGotFood] = useState(false);
-  const [paidRestaurant, setPaidRestaurant] = useState(false);
-  const [deliveredFood, setDeliveredFood] = useState(false);
-  const [collected, setCollected] = useState(false);
-  const [savedFirst, setSavedFirst] = useState(() => readFlowFlag(order.id, "courier-first"));
-  const [savedSecond, setSavedSecond] = useState(() => readFlowFlag(order.id, "courier-second"));
+  const record = useServerFn(recordOrderFlow);
+  const shared = parseOrderFlow(order.flow);
+  const [gotFood, setGotFood] = useState(!!shared.productReceivedAt);
+  const [paidRestaurant, setPaidRestaurant] = useState(!!shared.advancePaidAt);
+  const [deliveredFood, setDeliveredFood] = useState(!!shared.foodDeliveredAt);
+  const [collected, setCollected] = useState(!!shared.cashCollectedAt);
+  const [incident, setIncident] = useState(shared.incidentNote ?? "");
+  const savedFirst = !!shared.courierFirstSavedAt;
+  const savedSecond = !!shared.courierSecondSavedAt;
+
+  useEffect(() => {
+    const next = parseOrderFlow(order.flow);
+    setGotFood(!!next.productReceivedAt);
+    setPaidRestaurant(!!next.advancePaidAt);
+    setDeliveredFood(!!next.foodDeliveredAt);
+    setCollected(!!next.cashCollectedAt);
+    setIncident(next.incidentNote ?? "");
+  }, [order.id, order.flow]);
 
   // Recalcula ETA cada 30s usando la posición del courier hacia el target actual
   useEffect(() => {
@@ -568,13 +586,42 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
 
   const code = orderCode(order);
   const money = orderMoney(order);
-  const saveFirst = () => {
-    writeFlowFlag(order.id, "courier-first");
-    setSavedFirst(true);
+  const persist = async (payload: {
+    action: "courier_first_saved" | "courier_second_saved" | "courier_checks" | "courier_incident";
+    productReceived?: boolean;
+    advancePaid?: boolean;
+    foodDelivered?: boolean;
+    cashCollected?: boolean;
+    incidentNote?: string;
+  }) => {
+    const token = session?.access_token;
+    if (!token) { toast.error("Sesión expirada."); return false; }
+    const res = await record({
+      headers: { Authorization: `Bearer ${token}` },
+      data: { orderId: order.id, ...payload },
+    }).catch(() => null);
+    if (!res?.ok) {
+      toast.error(res?.message ?? "No se pudo guardar.");
+      return false;
+    }
+    onChange();
+    return true;
   };
-  const saveSecond = () => {
-    writeFlowFlag(order.id, "courier-second");
-    setSavedSecond(true);
+  const toggleCheck = (
+    field: "productReceived" | "advancePaid" | "foodDelivered" | "cashCollected",
+    value: boolean,
+  ) => {
+    if (field === "productReceived") setGotFood(value);
+    if (field === "advancePaid") setPaidRestaurant(value);
+    if (field === "foodDelivered") setDeliveredFood(value);
+    if (field === "cashCollected") setCollected(value);
+    const next = {
+      productReceived: field === "productReceived" ? value : gotFood,
+      advancePaid: field === "advancePaid" ? value : paidRestaurant,
+      foodDelivered: field === "foodDelivered" ? value : deliveredFood,
+      cashCollected: field === "cashCollected" ? value : collected,
+    };
+    void persist({ action: "courier_checks", ...next });
   };
 
   return (
@@ -587,13 +634,17 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
 
       {order.status === "assigned" && !savedFirst && (
         <FlowCard step="02" title="Reserva pendiente">
-          <p className="mb-3 text-sm text-graphite">Abre el restaurante en Maps y guarda la primera liga.</p>
-          {pickupMaps && (
+          <p className="mb-3 text-sm text-graphite">
+            {shared.restaurantFirstSentAt
+              ? "El restaurante ya mandó esta liga. Ábrela y guárdala en el pedido."
+              : "Puedes abrir el restaurante en Maps. Cuando el restaurante confirme el envío, la liga queda en el pedido."}
+          </p>
+          {(shared.restaurantFirstUrl || pickupMaps) && (
             <Button asChild variant="outline" className="mb-2 h-12 w-full">
-              <a href={pickupMaps} target="_blank" rel="noopener noreferrer">Abrir restaurante en Maps</a>
+              <a href={shared.restaurantFirstUrl || pickupMaps || "#"} target="_blank" rel="noopener noreferrer">Abrir restaurante en Maps</a>
             </Button>
           )}
-          <FlowButton onClick={saveFirst}>Guardar primera liga</FlowButton>
+          <FlowButton onClick={() => persist({ action: "courier_first_saved" })}>Guardar primera liga</FlowButton>
         </FlowCard>
       )}
 
@@ -603,8 +654,8 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
             Entregas {formatMxn(money.food)} en efectivo al restaurante.
           </p>
           <div className="space-y-2">
-            <CheckRow checked={gotFood} label="Producto recibido" onChange={setGotFood} />
-            <CheckRow checked={paidRestaurant} label="Anticipo entregado" onChange={setPaidRestaurant} />
+            <CheckRow checked={gotFood} label="Producto recibido" onChange={(value) => toggleCheck("productReceived", value)} />
+            <CheckRow checked={paidRestaurant} label="Anticipo entregado" onChange={(value) => toggleCheck("advancePaid", value)} />
           </div>
           <div className="mt-3">
             <FlowButton disabled={busy || !gotFood || !paidRestaurant} onClick={goInTransit}>
@@ -616,13 +667,17 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
 
       {order.status === "in_transit" && !savedSecond && (
         <FlowCard step="04" title="Segundo recorrido">
-          <p className="mb-3 text-sm text-graphite">Abre el domicilio del cliente y guarda la segunda liga.</p>
-          {dropoffMaps && (
+          <p className="mb-3 text-sm text-graphite">
+            {shared.restaurantSecondSentAt
+              ? "El restaurante ya mandó al cliente la liga del domicilio."
+              : "Abre el domicilio. La liga queda en el pedido cuando la guardas."}
+          </p>
+          {(shared.restaurantSecondUrl || dropoffMaps) && (
             <Button asChild variant="outline" className="mb-2 h-12 w-full">
-              <a href={dropoffMaps} target="_blank" rel="noopener noreferrer">Abrir destino en Maps</a>
+              <a href={shared.restaurantSecondUrl || dropoffMaps || "#"} target="_blank" rel="noopener noreferrer">Abrir destino en Maps</a>
             </Button>
           )}
-          <FlowButton onClick={saveSecond}>Guardar segunda liga</FlowButton>
+          <FlowButton onClick={() => persist({ action: "courier_second_saved" })}>Guardar segunda liga</FlowButton>
         </FlowCard>
       )}
 
@@ -630,10 +685,27 @@ function ActiveOrderView({ order, restaurant, courier, onChange }: {
         <FlowCard step="05" title="Entrega y cobro">
           <p className="mb-3 text-lg font-semibold text-primary">Cobra al cliente {formatMxn(money.total)}</p>
           <div className="space-y-2">
-            <CheckRow checked={deliveredFood} label="Entregué el pedido" onChange={setDeliveredFood} />
-            <CheckRow checked={collected} label={`Cobré ${formatMxn(money.total)}`} onChange={setCollected} />
+            <CheckRow checked={deliveredFood} label="Entregué el pedido" onChange={(value) => toggleCheck("foodDelivered", value)} />
+            <CheckRow checked={collected} label={`Cobré ${formatMxn(money.total)}`} onChange={(value) => toggleCheck("cashCollected", value)} />
           </div>
+          <label className="mt-3 block text-sm">
+            <span className="text-graphite">Incidencia</span>
+            <textarea
+              value={incident}
+              onChange={(event) => setIncident(event.target.value)}
+              maxLength={300}
+              className="mt-1 h-20 w-full rounded-xl border border-hairline bg-white px-3 py-2"
+              placeholder="Si algo falló, escríbelo aquí"
+            />
+          </label>
           <div className="mt-3 space-y-2">
+            <FlowButton
+              variant="outline"
+              disabled={!incident.trim()}
+              onClick={() => persist({ action: "courier_incident", incidentNote: incident.trim() })}
+            >
+              Reportar incidencia
+            </FlowButton>
             <FlowButton disabled={!deliveredFood || !collected} onClick={() => setProofOpen(true)}>
               Confirmar entrega
             </FlowButton>

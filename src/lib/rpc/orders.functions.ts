@@ -4,6 +4,8 @@ import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { hasActiveMembership } from "@/lib/membership-access.server";
 import { computeOrderMoney, type PaymentMode } from "@/lib/order-money";
+import { googleMapsDirectionsUrl } from "@/lib/maps";
+import type { OrderFlow } from "@/lib/order-flow";
 
 const InputSchema = z.object({
   orderId: z.string().uuid(),
@@ -424,4 +426,136 @@ export const notifyCouriersNewOrder = createServerFn({ method: "POST" })
     }
 
     return { ok: true as const, sent: userIds.length };
+  });
+
+const FlowActionSchema = z.object({
+  orderId: z.string().uuid(),
+  action: z.enum([
+    "restaurant_first_sent",
+    "restaurant_second_sent",
+    "courier_first_saved",
+    "courier_second_saved",
+    "courier_checks",
+    "courier_incident",
+  ]),
+  productReceived: z.boolean().optional(),
+  advancePaid: z.boolean().optional(),
+  foodDelivered: z.boolean().optional(),
+  cashCollected: z.boolean().optional(),
+  incidentNote: z.string().trim().max(300).optional(),
+});
+
+function stamp(on: boolean | undefined, previous: string | undefined): string | undefined {
+  if (on === undefined) return previous;
+  if (!on) return undefined;
+  return previous ?? new Date().toISOString();
+}
+
+export const recordOrderFlow = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input) => FlowActionSchema.parse(input))
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const { data: order, error: loadError } = await supabaseAdmin
+      .from("orders")
+      .select("id, status, restaurant_id, courier_id, pickup_address, pickup_lat, pickup_lng, dropoff_address, dropoff_lat, dropoff_lng, flow")
+      .eq("id", data.orderId)
+      .maybeSingle();
+    if (loadError) {
+      const missing = /flow/i.test(loadError.message);
+      return {
+        ok: false as const,
+        message: missing
+          ? "Falta aplicar la migración del flujo del pedido."
+          : loadError.message,
+      };
+    }
+    if (!order) return { ok: false as const, message: "Pedido no encontrado." };
+
+    const { data: rest } = await supabaseAdmin
+      .from("restaurants")
+      .select("user_id")
+      .eq("id", order.restaurant_id)
+      .maybeSingle();
+    const isRestaurant = rest?.user_id === userId;
+
+    let isCourier = false;
+    if (order.courier_id) {
+      const { data: courier } = await supabaseAdmin
+        .from("couriers")
+        .select("user_id")
+        .eq("id", order.courier_id)
+        .maybeSingle();
+      isCourier = courier?.user_id === userId;
+    }
+    if (!isRestaurant && !isCourier) return { ok: false as const, message: "No autorizado." };
+
+    const current = (order.flow && typeof order.flow === "object" && !Array.isArray(order.flow)
+      ? order.flow
+      : {}) as OrderFlow;
+    const next: OrderFlow = { ...current };
+    const pickupUrl = googleMapsDirectionsUrl({
+      lat: order.pickup_lat,
+      lng: order.pickup_lng,
+      address: order.pickup_address,
+    });
+    const dropoffUrl = googleMapsDirectionsUrl({
+      lat: order.dropoff_lat,
+      lng: order.dropoff_lng,
+      address: order.dropoff_address,
+    });
+
+    if (data.action === "restaurant_first_sent" || data.action === "restaurant_second_sent") {
+      if (!isRestaurant) return { ok: false as const, message: "Solo el restaurante puede confirmar el envío." };
+      if (data.action === "restaurant_first_sent") {
+        if (order.status !== "assigned") return { ok: false as const, message: "El repartidor todavía no acepta el pedido." };
+        next.restaurantFirstSentAt = current.restaurantFirstSentAt ?? new Date().toISOString();
+        next.restaurantFirstUrl = pickupUrl ?? undefined;
+      } else {
+        if (order.status !== "in_transit") return { ok: false as const, message: "El pedido todavía no va en camino." };
+        next.restaurantSecondSentAt = current.restaurantSecondSentAt ?? new Date().toISOString();
+        next.restaurantSecondUrl = dropoffUrl ?? undefined;
+      }
+    } else {
+      if (!isCourier) return { ok: false as const, message: "Solo el repartidor asignado puede registrar esto." };
+      if (data.action === "courier_first_saved") {
+        if (order.status !== "assigned") return { ok: false as const, message: "Esta liga es para la recogida." };
+        next.courierFirstSavedAt = current.courierFirstSavedAt ?? new Date().toISOString();
+      } else if (data.action === "courier_second_saved") {
+        if (order.status !== "in_transit") return { ok: false as const, message: "Esta liga es para la entrega." };
+        next.courierSecondSavedAt = current.courierSecondSavedAt ?? new Date().toISOString();
+      } else if (data.action === "courier_checks") {
+        if (order.status === "assigned") {
+          next.productReceivedAt = stamp(data.productReceived, current.productReceivedAt);
+          next.advancePaidAt = stamp(data.advancePaid, current.advancePaidAt);
+          if (!next.productReceivedAt) delete next.productReceivedAt;
+          if (!next.advancePaidAt) delete next.advancePaidAt;
+        } else if (order.status === "in_transit") {
+          next.foodDeliveredAt = stamp(data.foodDelivered, current.foodDeliveredAt);
+          next.cashCollectedAt = stamp(data.cashCollected, current.cashCollectedAt);
+          if (!next.foodDeliveredAt) delete next.foodDeliveredAt;
+          if (!next.cashCollectedAt) delete next.cashCollectedAt;
+        } else {
+          return { ok: false as const, message: "El pedido no está en recogida ni en entrega." };
+        }
+      } else if (data.action === "courier_incident") {
+        const note = data.incidentNote?.trim();
+        if (!note) return { ok: false as const, message: "Escribe qué pasó." };
+        next.incidentNote = note;
+        next.incidentAt = new Date().toISOString();
+      }
+    }
+
+    const { error: saveError } = await supabaseAdmin
+      .from("orders")
+      .update({ flow: next as never })
+      .eq("id", order.id);
+    if (saveError) {
+      const missing = /flow/i.test(saveError.message);
+      return {
+        ok: false as const,
+        message: missing ? "Falta aplicar la migración del flujo del pedido." : saveError.message,
+      };
+    }
+    return { ok: true as const, flow: next };
   });

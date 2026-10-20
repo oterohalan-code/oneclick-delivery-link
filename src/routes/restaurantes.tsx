@@ -25,12 +25,14 @@ function DirectoryPage() {
   useEffect(() => {
     let active = true;
     supabase
-      .from("restaurants")
-      .select("id,name,category,address,phone")
-      .limit(24)
-      .then(({ data }) => {
+      .rpc("list_public_restaurants")
+      .then(({ data, error }) => {
         if (!active) return;
-        setPlaces((data as Place[] | null) ?? []);
+        if (error) {
+          setPlaces([]);
+        } else {
+          setPlaces((data as Place[] | null) ?? []);
+        }
         setReady(true);
       });
     return () => {

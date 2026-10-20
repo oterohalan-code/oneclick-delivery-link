@@ -36,6 +36,26 @@ export function maskPhone(phone: string | null | undefined): string {
   return `${digits.slice(0, 3)} ••• ••${digits.slice(-2)}`;
 }
 
+export type OrderFlow = {
+  restaurantFirstSentAt?: string;
+  restaurantFirstUrl?: string;
+  restaurantSecondSentAt?: string;
+  restaurantSecondUrl?: string;
+  courierFirstSavedAt?: string;
+  courierSecondSavedAt?: string;
+  productReceivedAt?: string;
+  advancePaidAt?: string;
+  foodDeliveredAt?: string;
+  cashCollectedAt?: string;
+  incidentNote?: string;
+  incidentAt?: string;
+};
+
+export function parseOrderFlow(value: unknown): OrderFlow {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  return value as OrderFlow;
+}
+
 function flagKey(orderId: string, flag: string) {
   return `oc-flow:${orderId}:${flag}`;
 }

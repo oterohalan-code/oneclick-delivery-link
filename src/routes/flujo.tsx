@@ -51,6 +51,7 @@ function FlowPreview() {
             restaurantName="Cocina del Puerto"
             courierName={status === "pending" ? null : "Luis M."}
             courierPhone={status === "pending" ? null : "3140001122"}
+            persist={false}
           />
         ))}
       </main>
