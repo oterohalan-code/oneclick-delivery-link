@@ -4,7 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
 import { AddressSearch } from "@/components/AddressSearch";
-import { MapView } from "@/components/MapView";
+import { isInManzanillo, MapView } from "@/components/MapView";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth-context";
 import { toast } from "sonner";
@@ -30,6 +30,7 @@ export function RestaurantOnboarding({ onDone }: { onDone: () => void }) {
     const p = schema.safeParse(form);
     if (!p.success) return toast.error(p.error.issues[0].message);
     if (form.lat == null || form.lng == null) return toast.error("Selecciona la dirección desde la búsqueda o el mapa");
+    if (!isInManzanillo(form.lat, form.lng)) return toast.error("El local tiene que estar en Manzanillo");
     setLoading(true);
     const { error } = await supabase.from("restaurants").insert({
       user_id: user!.id,
@@ -75,7 +76,10 @@ export function RestaurantOnboarding({ onDone }: { onDone: () => void }) {
         <div className="h-72">
           <MapView
             pins={form.lat && form.lng ? [{ lat: form.lat, lng: form.lng, label: form.name || "Mi local" }] : []}
-            onMapClick={(lat, lng) => setForm({ ...form, lat, lng })}
+            onMapClick={(lat, lng) => {
+              if (!isInManzanillo(lat, lng)) return toast.error("El local tiene que estar en Manzanillo");
+              setForm({ ...form, lat, lng });
+            }}
             height="100%"
           />
           <p className="text-xs text-muted-foreground mt-1">Tip: toca el mapa para ajustar la ubicación.</p>

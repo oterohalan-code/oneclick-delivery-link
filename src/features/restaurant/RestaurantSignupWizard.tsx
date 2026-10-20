@@ -7,7 +7,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { PhoneInput } from "@/components/PhoneInput";
 import { AddressSearch } from "@/components/AddressSearch";
-import { MapView, reverseGeocode } from "@/components/MapView";
+import { isInManzanillo, MapView, reverseGeocode } from "@/components/MapView";
 import { DEFAULT_COUNTRY } from "@/lib/countries";
 import { supabase } from "@/integrations/supabase/client";
 import { compressImage } from "@/lib/restaurant-media";
@@ -64,6 +64,7 @@ export function RestaurantSignupWizard() {
   const [geocoding, setGeocoding] = useState(false);
 
   const handleMapPick = async (la: number, ln: number) => {
+    if (!isInManzanillo(la, ln)) return toast.error("El local tiene que estar en Manzanillo");
     setLat(la);
     setLng(ln);
     setGeocoding(true);
@@ -148,6 +149,7 @@ export function RestaurantSignupWizard() {
       facadeUrl,
     });
     if (!parsed.success) return toast.error(parsed.error.issues[0].message);
+    if (lat == null || lng == null || !isInManzanillo(lat, lng)) return toast.error("El local tiene que estar en Manzanillo");
 
     setSubmitting(true);
     const { error } = await supabase.from("restaurants").insert({

@@ -34,6 +34,8 @@ export type OrderSeed = {
   amount: string;
   notes: string;
   requestId?: string;
+  lat?: number | null;
+  lng?: number | null;
 };
 
 export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated, seed }: {
@@ -62,8 +64,8 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated, s
       customer_name: seed.customer_name,
       customer_phone: seed.customer_phone,
       dropoff_address: seed.dropoff_address,
-      lat: null,
-      lng: null,
+      lat: seed.lat ?? null,
+      lng: seed.lng ?? null,
       amount: seed.amount,
       paymentMode: "collect_on_delivery",
       notes: seed.notes,
@@ -165,10 +167,11 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated, s
     setForm({ customer_name: "", customer_phone: "", dropoff_address: "", lat: null, lng: null, amount: "", paymentMode: "collect_on_delivery", notes: "" });
 
     try {
-      await notifyCouriersFn({
+      const notice = await notifyCouriersFn({
         headers: { Authorization: `Bearer ${token}` },
         data: { orderId: result.orderId },
       });
+      if (notice?.sent === 0) toast.info("Pedido publicado. Aún no hay un repartidor activo para avisarle.");
     } catch (e) {
       console.warn("notify couriers failed", e);
     }

@@ -402,14 +402,7 @@ export const notifyCouriersNewOrder = createServerFn({ method: "POST" })
     const { data: couriers } = await supabaseAdmin
       .from("couriers")
       .select("user_id, subscription_active, subscription_expires_at, status");
-    const eligible = (couriers ?? []).filter((c) => {
-      if (c.status !== "active") return false;
-      return (
-        !!c.subscription_active &&
-        !!c.subscription_expires_at &&
-        new Date(c.subscription_expires_at).getTime() > Date.now()
-      );
-    });
+    const eligible = (couriers ?? []).filter((c) => c.status === "active");
 
     const userIds = eligible.map((c) => c.user_id);
     if (!userIds.length) return { ok: true as const, sent: 0 };

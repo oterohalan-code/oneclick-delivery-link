@@ -128,6 +128,21 @@ export async function compressImage(file: File): Promise<string> {
   return jpegFromBlob(blob);
 }
 
+export function packDropoff(address: string, lat: number, lng: number): string {
+  const clean = address.replace(/\s*·\s*-?\d+\.\d+,-?\d+\.\d+\s*$/, "").trim();
+  return `${clean} · ${lat.toFixed(5)},${lng.toFixed(5)}`.slice(0, 300);
+}
+
+export function unpackDropoff(value: string): { address: string; lat: number | null; lng: number | null } {
+  const match = value.match(/·\s*(-?\d+\.\d+),(-?\d+\.\d+)\s*$/);
+  if (!match || match.index == null) return { address: value, lat: null, lng: null };
+  return {
+    address: value.slice(0, match.index).trim(),
+    lat: Number(match[1]),
+    lng: Number(match[2]),
+  };
+}
+
 export function whatsappOrderUrl(phone: string | null | undefined, name: string): string | null {
   const digits = (phone ?? "").replace(/\D/g, "");
   if (!digits) return null;
