@@ -16,6 +16,10 @@ export const Route = createFileRoute("/t/$token")({
     meta: [
       { title: "Sigue tu pedido — 1Click" },
       { name: "description", content: "Rastrea tu pedido en tiempo real." },
+      { property: "og:title", content: "Sigue tu pedido — 1Click" },
+      { property: "og:description", content: "Rastrea tu pedido en tiempo real." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "noindex, nofollow" },
     ],
   }),
@@ -149,13 +153,13 @@ function TrackingContent({ data }: { data: Tracking }) {
 
   return (
     <div className="mx-auto max-w-lg space-y-4">
-      <section className="rounded-2xl border border-hairline bg-white p-4">
+      <section className="rounded-2xl border border-hairline bg-card p-4">
         <p className="text-sm text-graphite">{data.restaurant_name ?? "Tu pedido"}</p>
         <h1 className="mt-1 text-2xl font-semibold">
           {isDelivered ? "Pedido entregado" : STATUS_STEPS[stepIndex].label}
         </h1>
         {isDelivered ? (
-          <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-3 text-sm text-emerald-800">
+          <p className="mt-3 rounded-xl alert-success px-3 py-3 text-sm">
             Entrega registrada por el repartidor
           </p>
         ) : (
@@ -168,16 +172,16 @@ function TrackingContent({ data }: { data: Tracking }) {
       </section>
 
       {(data.food_mxn != null || data.total_mxn != null) && (
-        <section className="rounded-2xl border border-hairline bg-white p-4 text-sm">
+        <section className="rounded-2xl border border-hairline bg-card p-4 text-sm">
           <div className="flex justify-between py-1"><span>Comida</span><span>{formatMxn(Number(data.food_mxn ?? 0))}</span></div>
           <div className="flex justify-between py-1 text-graphite"><span>Envío</span><span>{formatMxn(Number(data.shipping_mxn ?? 0))}</span></div>
           <div className="mt-2 flex justify-between border-t border-hairline pt-2 font-semibold"><span>Total</span><span>{formatMxn(Number(data.total_mxn ?? 0))}</span></div>
-          {isDelivered && <p className="mt-3 rounded-xl bg-emerald-50 px-3 py-2 text-emerald-800">Cobro confirmado por el repartidor</p>}
+          {isDelivered && <p className="mt-3 rounded-xl alert-success px-3 py-2">Cobro confirmado por el repartidor</p>}
         </section>
       )}
 
       {!isDelivered && homeMaps && (
-        <a href={homeMaps} target="_blank" rel="noopener noreferrer" className="block rounded-xl border border-hairline bg-white px-4 py-3 text-center text-sm font-semibold text-primary">
+        <a href={homeMaps} target="_blank" rel="noopener noreferrer" className="block rounded-xl border border-hairline bg-card px-4 py-3 text-center text-sm font-semibold text-primary">
           Seguir recorrido en Google Maps
         </a>
       )}

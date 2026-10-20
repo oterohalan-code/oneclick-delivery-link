@@ -293,7 +293,7 @@ export function CourierHome() {
           <p className="font-display text-2xl font-bold">${Number(courier.wallet_balance).toFixed(2)}</p>
         </div>
         <div className="flex flex-col items-end gap-1">
-          <Badge className={subActive ? "bg-success/20 text-success-foreground" : "bg-accent text-accent-foreground"}>
+          <Badge className={subActive ? "alert-success" : "bg-accent text-accent-foreground"}>
             {subActive ? "Membresía activa" : "Sin membresía"}
           </Badge>
           {(courier as any).stats_total_deliveries > 0 && (
@@ -690,7 +690,7 @@ function ActiveOrderView({ order, restaurant, courier, onChange, onBack }: {
               value={pastedFirst}
               onChange={(event) => setPastedFirst(event.target.value)}
               placeholder="https://maps.google.com/..."
-              className="mt-1 h-11 w-full rounded-xl border border-hairline bg-white px-3"
+              className="mt-1 h-11 w-full rounded-xl border border-hairline bg-card px-3"
             />
           </label>
           <FlowButton onClick={() => persist({ action: "courier_first_saved", linkUrl: pastedFirst.trim() || undefined })}>Guardar primera liga</FlowButton>
@@ -699,7 +699,7 @@ function ActiveOrderView({ order, restaurant, courier, onChange, onBack }: {
 
       {order.status === "assigned" && savedFirst && (
         <FlowCard step="03" title="Recogida" subtitle="Confirma que ya tienes el pedido y que entregaste el dinero.">
-          <p className="mb-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-950">
+          <p className="mb-3 rounded-xl alert-warning px-3 py-2 text-sm">
             Entregas {formatMxn(money.food)} en efectivo al restaurante.
           </p>
           <div className="space-y-2">
@@ -732,7 +732,7 @@ function ActiveOrderView({ order, restaurant, courier, onChange, onBack }: {
               value={pastedSecond}
               onChange={(event) => setPastedSecond(event.target.value)}
               placeholder="https://maps.google.com/..."
-              className="mt-1 h-11 w-full rounded-xl border border-hairline bg-white px-3"
+              className="mt-1 h-11 w-full rounded-xl border border-hairline bg-card px-3"
             />
           </label>
           <FlowButton onClick={() => persist({ action: "courier_second_saved", linkUrl: pastedSecond.trim() || undefined })}>Guardar segunda liga</FlowButton>
@@ -752,7 +752,7 @@ function ActiveOrderView({ order, restaurant, courier, onChange, onBack }: {
               value={incident}
               onChange={(event) => setIncident(event.target.value)}
               maxLength={300}
-              className="mt-1 h-20 w-full rounded-xl border border-hairline bg-white px-3 py-2"
+              className="mt-1 h-20 w-full rounded-xl border border-hairline bg-card px-3 py-2"
               placeholder="Si algo falló, escríbelo aquí"
             />
           </label>
@@ -778,7 +778,7 @@ function ActiveOrderView({ order, restaurant, courier, onChange, onBack }: {
 
       {order.status === "delivered" && (
         <FlowCard step="06" title="Pedido finalizado">
-          <div className="mb-3 rounded-xl bg-emerald-50 px-3 py-3 text-sm text-emerald-800">Entrega confirmada</div>
+          <div className="mb-3 rounded-xl alert-success px-3 py-3 text-sm">Entrega confirmada</div>
           <MoneyLine label="Cobro registrado" amount={formatMxn(money.total)} />
           <MoneyLine label="Anticipo recuperado" amount={formatMxn(money.food)} />
           <MoneyLine label="Tu envío" amount={formatMxn(money.shipping)} strong />

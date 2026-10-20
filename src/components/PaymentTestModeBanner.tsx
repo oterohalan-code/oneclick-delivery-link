@@ -4,7 +4,7 @@ export function PaymentTestModeBanner() {
   if (!publishableKey?.startsWith("pk_test_")) return null;
 
   return (
-    <div className="w-full bg-orange-100 border-b border-orange-300 px-4 py-2 text-center text-sm text-orange-800">
+    <div className="w-full alert-warning border-b px-4 py-2 text-center text-sm">
       Los pagos en la vista previa están en modo de prueba.{" "}
       <a
         href="https://docs.lovable.dev/features/payments#test-and-live-environments"

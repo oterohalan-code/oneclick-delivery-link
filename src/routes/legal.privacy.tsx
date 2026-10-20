@@ -5,6 +5,10 @@ export const Route = createFileRoute("/legal/privacy")({
     meta: [
       { title: "Aviso de Privacidad — 1Click" },
       { name: "description", content: "Aviso de privacidad de 1Click conforme a la LFPDPPP." },
+      { property: "og:title", content: "Aviso de Privacidad — 1Click" },
+      { property: "og:description", content: "Aviso de privacidad de 1Click conforme a la LFPDPPP." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
       { name: "robots", content: "index,follow" },
     ],
   }),

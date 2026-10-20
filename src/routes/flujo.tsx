@@ -4,7 +4,16 @@ import { RestaurantProfile } from "@/features/restaurant/PublicDirectory";
 import { Logo } from "@/components/Logo";
 
 export const Route = createFileRoute("/flujo")({
-  head: () => ({ meta: [{ title: "Flujo de un pedido — One Click" }] }),
+  head: () => ({
+    meta: [
+      { title: "Flujo de un pedido — 1Click" },
+      { name: "description", content: "Así se ve un pedido de 1Click paso a paso, del restaurante a la entrega." },
+      { property: "og:title", content: "Flujo de un pedido — 1Click" },
+      { property: "og:description", content: "Así se ve un pedido de 1Click paso a paso, del restaurante a la entrega." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
+    ],
+  }),
   component: FlowPreview,
 });
 

@@ -104,7 +104,7 @@ export function RestaurantMenuEditor() {
       </div>
       <div className="mt-4">
         <Label>Categoría</Label>
-        <select className="mt-1 h-11 w-full rounded-xl border border-hairline bg-white px-3" value={category} onChange={(event) => setCategory(event.target.value)}>
+        <select className="mt-1 h-11 w-full rounded-xl border border-hairline bg-card px-3" value={category} onChange={(event) => setCategory(event.target.value)}>
           {["Mariscos", "Mexicana", "Tacos", "Hamburguesas", "Cafetería", "Pizza", "Sushi"].map((item) => (
             <option key={item}>{item}</option>
           ))}

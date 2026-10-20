@@ -121,7 +121,7 @@ export function RestaurantOrderBoard({
   if (order.status === "delivered") {
     return (
       <FlowCard title={`Pedido #${code}`} step="Completado">
-        <div className="mb-3 rounded-xl bg-emerald-50 px-3 py-3 text-sm text-emerald-800">
+        <div className="mb-3 rounded-xl alert-success px-3 py-3 text-sm">
           Entrega registrada por el repartidor
         </div>
         <MoneyLine label="Comida recibida" amount={formatMxn(money.food)} />
@@ -129,7 +129,7 @@ export function RestaurantOrderBoard({
         <MoneyLine label="Total del pedido" amount={formatMxn(money.total)} strong />
         {shared.cashCollectedAt && <p className="mt-2 text-sm text-graphite">El repartidor registró el cobro.</p>}
         {shared.incidentNote && (
-          <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-950">Incidencia: {shared.incidentNote}</p>
+          <p className="mt-2 rounded-xl alert-warning px-3 py-2 text-sm">Incidencia: {shared.incidentNote}</p>
         )}
       </FlowCard>
     );
@@ -144,7 +144,7 @@ export function RestaurantOrderBoard({
         <MoneyLine label="Comida" amount={formatMxn(money.food)} />
         <MoneyLine label="Envío" amount={formatMxn(money.shipping)} />
         <MoneyLine label="Total" amount={formatMxn(money.total)} strong />
-        <p className="mt-3 rounded-xl bg-sky-50 px-3 py-2 text-sm text-sky-900">
+        <p className="mt-3 rounded-xl alert-info px-3 py-2 text-sm">
           Pago en domicilio. La primera liga se manda cuando un repartidor acepte.
         </p>
         {onCancel && (
@@ -192,12 +192,12 @@ export function RestaurantOrderBoard({
   if (order.status === "assigned") {
     return (
       <FlowCard step="03" title="Hacia el restaurante">
-        <div className="rounded-xl bg-sky-50 px-3 py-3 text-sm text-sky-900">
+        <div className="rounded-xl alert-info px-3 py-3 text-sm">
           Primera liga registrada en el pedido. {courierSaved ? `${courierName || "El repartidor"} ya la guardó.` : `Esperando a que ${courierName || "el repartidor"} la guarde.`}
         </div>
         {cashNoted && <p className="mt-2 text-sm text-graphite">El repartidor marcó producto recibido y anticipo entregado.</p>}
         {shared.incidentNote && (
-          <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-950">Incidencia: {shared.incidentNote}</p>
+          <p className="mt-2 rounded-xl alert-warning px-3 py-2 text-sm">Incidencia: {shared.incidentNote}</p>
         )}
       </FlowCard>
     );
@@ -208,7 +208,7 @@ export function RestaurantOrderBoard({
     const dropoffUrl = googleMapsDirectionsUrl(dropoff);
     return (
       <FlowCard step="04" title="Hacia el cliente" subtitle="Comparte la segunda liga para el recorrido a la casa.">
-        <div className="mb-3 rounded-xl bg-emerald-50 px-3 py-3 text-sm text-emerald-800">
+        <div className="mb-3 rounded-xl alert-success px-3 py-3 text-sm">
           Pedido recogido. Comparte la segunda liga para que el cliente vea el recorrido a su casa.
         </div>
         {order.dropoff_lat != null && order.dropoff_lng != null && (
@@ -234,13 +234,13 @@ export function RestaurantOrderBoard({
 
   return (
     <FlowCard step="04" title="Hacia el cliente">
-      <div className="rounded-xl bg-sky-50 px-3 py-3 text-sm text-sky-900">
+      <div className="rounded-xl alert-info px-3 py-3 text-sm">
         Segunda liga registrada. El cliente puede abrir Google Maps. Esperando la entrega.
       </div>
       <MoneyLine label="Total a cobrar" amount={formatMxn(money.total)} strong />
       {shared.courierSecondSavedAt && <p className="mt-2 text-sm text-graphite">El repartidor guardó la liga del domicilio.</p>}
       {shared.incidentNote && (
-        <p className="mt-2 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-950">Incidencia: {shared.incidentNote}</p>
+        <p className="mt-2 rounded-xl alert-warning px-3 py-2 text-sm">Incidencia: {shared.incidentNote}</p>
       )}
     </FlowCard>
   );
