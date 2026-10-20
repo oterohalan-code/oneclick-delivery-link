@@ -27,10 +27,20 @@ const schema = z.object({
   notes: z.string().trim().max(500).optional(),
 });
 
-export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }: {
+export type OrderSeed = {
+  customer_name: string;
+  customer_phone: string;
+  dropoff_address: string;
+  amount: string;
+  notes: string;
+  requestId?: string;
+};
+
+export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated, seed }: {
   open: boolean; onOpenChange: (v: boolean) => void;
   restaurant: { id: string; name: string; address: string; lat: number | null; lng: number | null };
   onCreated: () => void;
+  seed?: OrderSeed | null;
 }) {
   const [form, setForm] = useState({
     customer_name: "", customer_phone: "",
@@ -45,6 +55,21 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated }:
   const [routeLoading, setRouteLoading] = useState(false);
   const [addressLoading, setAddressLoading] = useState(false);
   const [step, setStep] = useState<1 | 2>(1);
+
+  useEffect(() => {
+    if (!open || !seed) return;
+    setForm({
+      customer_name: seed.customer_name,
+      customer_phone: seed.customer_phone,
+      dropoff_address: seed.dropoff_address,
+      lat: null,
+      lng: null,
+      amount: seed.amount,
+      paymentMode: "collect_on_delivery",
+      notes: seed.notes,
+    });
+    setStep(1);
+  }, [open, seed]);
 
   const handleMapClick = useCallback(async (lat: number, lng: number) => {
     setForm((f) => ({ ...f, lat, lng }));

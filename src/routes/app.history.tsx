@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { SkeletonList, SkeletonStat } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Inbox } from "lucide-react";
+import { formatMxn } from "@/lib/business";
+import { parseOrderFlow } from "@/lib/order-flow";
 
 export const Route = createFileRoute("/app/history")({
   component: HistoryPage,
@@ -106,7 +108,9 @@ function HistoryPage() {
                 <div className="min-w-0 flex-1">
                   <div className="text-xs text-muted-foreground">#{o.external_order_id ?? o.id.slice(0, 6)} · {new Date(o.created_at).toLocaleString()}</div>
                   <div className="text-sm font-medium truncate">{o.dropoff_address}</div>
-                  <div className="text-sm">${Number(o.amount_to_collect).toFixed(2)} MXN</div>
+                  <div className="text-sm">{formatMxn(Number(o.amount_to_collect))} cobrados al cliente</div>
+                  {parseOrderFlow(o.flow).advancePaidAt && <div className="text-xs text-graphite">Anticipo entregado al restaurante</div>}
+                  {parseOrderFlow(o.flow).cashCollectedAt && <div className="text-xs text-graphite">Cliente pagó el total</div>}
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <Badge variant="secondary">{STATUS_LABELS[o.status]}</Badge>

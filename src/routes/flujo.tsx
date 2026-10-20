@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { RestaurantOrderBoard, type RestaurantBoardOrder } from "@/features/restaurant/RestaurantOrderBoard";
+import { RestaurantProfile } from "@/features/restaurant/PublicDirectory";
 import { Logo } from "@/components/Logo";
 
 export const Route = createFileRoute("/flujo")({
@@ -38,6 +39,23 @@ function FlowPreview() {
         </div>
       </header>
       <main className="mx-auto max-w-lg space-y-4 px-4 py-6">
+        <RestaurantProfile
+          demo
+          place={{
+            id: "ejemplo",
+            name: "Cocina del Puerto",
+            category: "Mariscos",
+            address: "Salagua, Manzanillo",
+            phone: "3140001122",
+            hours: "Lun a Dom 10:00–22:00",
+            logo_url: null,
+            facade_url: null,
+            menu: [
+              { name: "Aguachile", price: 180, description: "Camarón fresco", image: "" },
+              { name: "Pescado zarandeado", price: 220, description: "A las brasas", image: "" },
+            ],
+          }}
+        />
         <div>
           <h1 className="text-2xl font-semibold">Un pedido en efectivo</h1>
           <p className="mt-1 text-sm text-graphite">

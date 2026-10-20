@@ -24,6 +24,7 @@ export function RestaurantMenuEditor() {
   const { user } = useAuth();
   const [row, setRow] = useState<RestaurantRow | null>(null);
   const [hours, setHours] = useState("");
+  const [category, setCategory] = useState("Mexicana");
   const [menu, setMenu] = useState<MenuItem[]>([]);
   const [busy, setBusy] = useState(false);
 
@@ -37,6 +38,7 @@ export function RestaurantMenuEditor() {
     if (!data) return;
     setRow(data as RestaurantRow);
     setHours(data.hours ?? "");
+    setCategory(data.category || "Mexicana");
     setMenu(parseMenu(data.menu));
   };
 
@@ -86,6 +88,7 @@ export function RestaurantMenuEditor() {
     setBusy(true);
     const { error } = await supabase.from("restaurants").update({
       hours: hours.trim() || null,
+      category,
       menu: clean as never,
     }).eq("id", row.id);
     setBusy(false);
@@ -103,6 +106,14 @@ export function RestaurantMenuEditor() {
       <div className="mt-4 grid gap-4 sm:grid-cols-2">
         <ImageField label="Logo" src={publicMediaUrl(row.logo_url)} busy={busy} onFile={(file) => upload(file, "logo")} />
         <ImageField label="Foto del local" src={publicMediaUrl(row.facade_url)} busy={busy} onFile={(file) => upload(file, "facade")} />
+      </div>
+      <div className="mt-4">
+        <Label>Categoría</Label>
+        <select className="mt-1 h-11 w-full rounded-xl border border-hairline bg-white px-3" value={category} onChange={(event) => setCategory(event.target.value)}>
+          {["Mariscos", "Mexicana", "Tacos", "Hamburguesas", "Cafetería", "Pizza", "Sushi"].map((item) => (
+            <option key={item}>{item}</option>
+          ))}
+        </select>
       </div>
       <div className="mt-4">
         <Label>Horario</Label>
@@ -161,17 +172,17 @@ export function RestaurantMenuEditor() {
       </div>
       <Button className="mt-4 h-12 w-full" disabled={busy} onClick={saveMenu}>Guardar menú</Button>
       <div className="mt-6">
-        <RestaurantProfile preview place={previewPlace(row, hours, menu)} />
+        <RestaurantProfile preview place={previewPlace(row, hours, category, menu)} />
       </div>
     </section>
   );
 }
 
-function previewPlace(row: RestaurantRow, hours: string, menu: MenuItem[]): PublicRestaurant {
+function previewPlace(row: RestaurantRow, hours: string, category: string, menu: MenuItem[]): PublicRestaurant {
   return {
     id: row.id,
     name: row.name,
-    category: row.category,
+    category,
     address: row.address,
     phone: row.phone,
     hours: hours.trim() || row.hours,

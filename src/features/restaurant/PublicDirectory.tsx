@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -89,13 +90,25 @@ export function PublicDirectory({ selectedId }: { selectedId?: string }) {
   );
 }
 
-export function RestaurantProfile({ place, preview = false }: { place: PublicRestaurant; preview?: boolean }) {
+export function RestaurantProfile({ place, preview = false, demo = false }: { place: PublicRestaurant; preview?: boolean; demo?: boolean }) {
+  const [qty, setQty] = useState<Record<string, number>>({});
+  const [name, setName] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [sending, setSending] = useState(false);
+  const chosen = place.menu.flatMap((item) => {
+    const count = qty[item.name] ?? 0;
+    return count > 0 ? [{ name: item.name, price: item.price, qty: count }] : [];
+  });
+  const foodTotal = chosen.reduce((sum, item) => sum + item.price * item.qty, 0);
   const photo = publicMediaUrl(place.facade_url);
   const logo = publicMediaUrl(place.logo_url);
   const orderUrl = whatsappOrderUrl(place.phone, place.name);
   return (
     <div className="mx-auto max-w-lg">
-      {preview ? (
+      {demo ? (
+        <p className="text-sm font-medium text-graphite">Datos de ejemplo</p>
+      ) : preview ? (
         <p className="text-sm font-medium text-graphite">Así lo ve el cliente</p>
       ) : (
         <Link to="/" search={(previous) => ({ ...previous, local: undefined })} className="text-sm text-graphite">Volver a restaurantes</Link>
@@ -128,12 +141,55 @@ export function RestaurantProfile({ place, preview = false }: { place: PublicRes
                     <div className="font-medium">{item.name}</div>
                     {item.description && <p className="text-sm text-graphite">{item.description}</p>}
                   </div>
-                  <div className="font-semibold">{formatMxn(item.price)}</div>
+                  <div className="text-right">
+                    <div className="font-semibold">{formatMxn(item.price)}</div>
+                    <div className="mt-1 flex items-center justify-end gap-2">
+                      <button type="button" className="h-7 w-7 rounded-full border" onClick={() => setQty({ ...qty, [item.name]: Math.max(0, (qty[item.name] ?? 0) - 1) })}>-</button>
+                      <span className="w-4 text-center text-sm">{qty[item.name] ?? 0}</span>
+                      <button type="button" className="h-7 w-7 rounded-full border" onClick={() => setQty({ ...qty, [item.name]: (qty[item.name] ?? 0) + 1 })}>+</button>
+                    </div>
+                  </div>
                 </li>
               );
             })}
           </ul>
-          {orderUrl && (
+          {(!preview || demo) && (
+            <form
+              className="mt-4 space-y-2"
+              onSubmit={async (event) => {
+                event.preventDefault();
+                if (!chosen.length) return toast.error("Elige al menos un platillo");
+                if (!/^\d{10}$/.test(phone)) return toast.error("Teléfono de 10 dígitos");
+                if (demo) {
+                  toast.success("Ejemplo: el restaurante vería este pedido");
+                  return;
+                }
+                setSending(true);
+                const { error } = await supabase.rpc("place_menu_request", {
+                  _restaurant_id: place.id,
+                  _customer_name: name,
+                  _customer_phone: phone,
+                  _dropoff_address: address,
+                  _items: chosen,
+                });
+                setSending(false);
+                if (error) return toast.error(error.message);
+                toast.success("Pedido enviado al restaurante");
+                setQty({});
+                setName("");
+                setPhone("");
+                setAddress("");
+              }}
+            >
+              <input className="h-11 w-full rounded-xl border px-3" placeholder="Tu nombre" value={name} onChange={(event) => setName(event.target.value)} required />
+              <input className="h-11 w-full rounded-xl border px-3" placeholder="WhatsApp, 10 dígitos" value={phone} onChange={(event) => setPhone(event.target.value.replace(/\D/g, "").slice(0, 10))} required />
+              <input className="h-11 w-full rounded-xl border px-3" placeholder="Dirección de entrega" value={address} onChange={(event) => setAddress(event.target.value)} required />
+              <Button type="submit" className="h-12 w-full" disabled={sending || foodTotal <= 0}>
+                Enviar pedido {foodTotal > 0 ? formatMxn(foodTotal) : ""}
+              </Button>
+            </form>
+          )}
+          {orderUrl && !demo && (
             <Button asChild className="mt-4 h-12 w-full">
               <a href={orderUrl} target="_blank" rel="noopener noreferrer">Pedir por WhatsApp</a>
             </Button>
