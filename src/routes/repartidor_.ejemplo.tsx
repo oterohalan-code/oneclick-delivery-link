@@ -21,8 +21,6 @@ const money = { food: 250, shipping: 50, total: 300 };
 
 function CourierMock() {
   const [step, setStep] = useState<"offer" | "link1" | "pickup" | "link2" | "cash" | "done">("offer");
-  const [firstLink, setFirstLink] = useState("");
-  const [secondLink, setSecondLink] = useState("");
   const [gotFood, setGotFood] = useState(false);
   const [paid, setPaid] = useState(false);
   const [delivered, setDelivered] = useState(false);
@@ -57,23 +55,22 @@ function CourierMock() {
         )}
 
         {step === "link1" && (
-          <FlowCard step="02" title="Reserva pendiente" subtitle="Abre el restaurante en Maps y guarda la primera liga.">
+          <FlowCard step="02" title="Ve al restaurante" subtitle="La ubicación del restaurante ya está cargada.">
             {pickupUrl && (
               <Button asChild variant="outline" className="mb-2 h-12 w-full">
                 <a href={pickupUrl} target="_blank" rel="noopener noreferrer">Abrir restaurante en Maps</a>
               </Button>
             )}
-            <input value={firstLink} onChange={(event) => setFirstLink(event.target.value)} placeholder="https://maps.google.com/..." className="mb-3 h-11 w-full rounded-xl border border-hairline bg-card px-3" />
-            <FlowButton onClick={() => { toast.success("Primera liga guardada"); setStep("pickup"); }}>Guardar primera liga</FlowButton>
+            <FlowButton onClick={() => { toast.success("En camino al restaurante"); setStep("pickup"); }}>Voy en camino al restaurante</FlowButton>
           </FlowCard>
         )}
 
         {step === "pickup" && (
-          <FlowCard step="03" title="Recogida" subtitle="Confirma que ya tienes el pedido y que entregaste el dinero.">
+          <FlowCard step="03" title="Recogida" subtitle="Confirma que ya tienes el pedido y que dejaste el efectivo de la comida.">
             <p className="mb-3 rounded-xl alert-warning px-3 py-2 text-sm">Entregas {formatMxn(money.food)} en efectivo al restaurante.</p>
             <div className="space-y-2">
               <CheckRow checked={gotFood} label="Producto recibido" onChange={setGotFood} />
-              <CheckRow checked={paid} label="Anticipo entregado" onChange={setPaid} />
+              <CheckRow checked={paid} label={`Dejé ${formatMxn(money.food)} al restaurante`} onChange={setPaid} />
             </div>
             <div className="mt-3">
               <FlowButton disabled={!gotFood || !paid} onClick={() => setStep("link2")}>Confirmar recogida</FlowButton>
@@ -82,14 +79,13 @@ function CourierMock() {
         )}
 
         {step === "link2" && (
-          <FlowCard step="04" title="Segundo recorrido" subtitle="Abre el domicilio del cliente y guarda la segunda liga.">
+          <FlowCard step="04" title="Ve con el cliente" subtitle="El domicilio del cliente ya está cargado. Tu ubicación se comparte en vivo.">
             {dropoffUrl && (
               <Button asChild variant="outline" className="mb-2 h-12 w-full">
-                <a href={dropoffUrl} target="_blank" rel="noopener noreferrer">Abrir destino en Maps</a>
+                <a href={dropoffUrl} target="_blank" rel="noopener noreferrer">Abrir domicilio en Maps</a>
               </Button>
             )}
-            <input value={secondLink} onChange={(event) => setSecondLink(event.target.value)} placeholder="https://maps.google.com/..." className="mb-3 h-11 w-full rounded-xl border border-hairline bg-card px-3" />
-            <FlowButton onClick={() => { toast.success("Segunda liga guardada"); setStep("cash"); }}>Guardar segunda liga</FlowButton>
+            <FlowButton onClick={() => { toast.success("En camino al cliente"); setStep("cash"); }}>Voy en camino al cliente</FlowButton>
           </FlowCard>
         )}
 
