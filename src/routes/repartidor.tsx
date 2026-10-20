@@ -25,11 +25,11 @@ function CourierGuidePage() {
       steps={[
         "Te das de alta y activas la membresía.",
         "Aceptas la oferta. Ahí ves si la comida ya está pagada o se cobra en domicilio, y cuánto es tu envío.",
-        "Vas al restaurante y recoges la comida. Si se paga en domicilio, dejas el efectivo de la comida.",
+        "Vas al restaurante y recoges la comida. Si ya se pagó en el restaurante, el restaurante te paga el envío ahí. Si se paga en domicilio, dejas el efectivo de la comida.",
         "Abres la liga de la casa y llevas el pedido.",
         "Si se paga en domicilio, cobras al cliente la comida más el envío. El envío es tu pago.",
       ]}
-      feeLead="Tu pago es la tarifa de envío. El cobro de la comida es del restaurante, no de la plataforma: la comida no es ganancia."
+      feeLead="Tu pago es la tarifa de envío. Si el cliente pagó en el restaurante, el restaurante te paga el envío. Si paga en domicilio, se lo cobras al cliente. El cobro de la comida es del restaurante, no de la plataforma."
       membership={{
         priceMxn: BUSINESS.membership.courierMonthlyMxn,
         note: "Pago fijo mensual. Sin ella no se pueden aceptar pedidos.",
