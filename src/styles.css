@@ -176,11 +176,11 @@
   --mesh-2: color-mix(in srgb, #0E3140 40%, transparent);
   --mesh-3: color-mix(in srgb, #EC7440 18%, transparent);
 
-  --sidebar: #120F0D;
-  --sidebar-foreground: #F5F2EB;
-  --sidebar-accent: #2A2420;
-  --sidebar-accent-foreground: #F5F2EB;
-  --sidebar-border: color-mix(in srgb, #F5F2EB 10%, transparent);
+  --sidebar: #0A232F;
+  --sidebar-foreground: #F7F4EF;
+  --sidebar-accent: #123C4E;
+  --sidebar-accent-foreground: #F7F4EF;
+  --sidebar-border: color-mix(in srgb, #F7F4EF 10%, transparent);
 }
 
 @layer base {
