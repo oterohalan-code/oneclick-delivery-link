@@ -8,7 +8,7 @@ import { MapView } from "@/components/MapView";
 import { formatMxn } from "@/lib/business";
 import { googleMapsDirectionsUrl } from "@/lib/maps";
 
-export const Route = createFileRoute("/repartidor/ejemplo")({
+export const Route = createFileRoute("/repartidor_/ejemplo")({
   head: () => ({
     meta: [{ title: "Repartidor de ejemplo — 1Click" }],
   }),
