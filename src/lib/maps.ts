@@ -20,6 +20,18 @@ export function googleMapsPlaceUrl(point: GeoPoint): string | null {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(address)}`;
 }
 
+/** A pasted Google Maps link. Short links may not include the pin. */
+export function parseGoogleMapsLink(raw: string): { url: string; lat: number | null; lng: number | null } | null {
+  const url = raw.trim();
+  if (!/^https:\/\/(?:(?:www\.)?google\.[a-z.]+\/maps|maps\.google\.[a-z.]+|maps\.app\.goo\.gl|goo\.gl\/maps)\b/i.test(url)) {
+    return null;
+  }
+  const at = url.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+  const query = url.match(/[?&](?:q|query|destination|ll|daddr)=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+  const hit = at ?? query;
+  return { url, lat: hit ? Number(hit[1]) : null, lng: hit ? Number(hit[2]) : null };
+}
+
 /** Driving directions. Omitting origin lets Google Maps use the device location. */
 export function googleMapsDirectionsUrl(point: GeoPoint): string | null {
   if (hasCoords(point)) {

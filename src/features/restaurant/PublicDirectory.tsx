@@ -5,8 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { formatMxn } from "@/lib/business";
 import { packDropoff, parseMenu, publicMediaUrl, whatsappOrderUrl, type PublicRestaurant } from "@/lib/restaurant-media";
-import { AddressSearch } from "@/components/AddressSearch";
-import { isInManzanillo, MapView, reverseGeocode } from "@/components/MapView";
+import { googleMapsPlaceUrl, parseGoogleMapsLink } from "@/lib/maps";
+import { isInManzanillo } from "@/components/MapView";
 
 export function PublicDirectory({ selectedId }: { selectedId?: string }) {
   const [places, setPlaces] = useState<PublicRestaurant[]>([]);
@@ -99,6 +99,7 @@ export function RestaurantProfile({ place, preview = false, demo = false }: { pl
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [mapsLink, setMapsLink] = useState("");
   const [lat, setLat] = useState<number | null>(null);
   const [lng, setLng] = useState<number | null>(null);
   const [sending, setSending] = useState(false);
@@ -172,8 +173,10 @@ export function RestaurantProfile({ place, preview = false, demo = false }: { pl
                 event.preventDefault();
                 if (!chosen.length) return toast.error("Elige al menos un platillo");
                 if (!/^\d{10}$/.test(phone)) return toast.error("Teléfono de 10 dígitos");
-                if (lat == null || lng == null) return toast.error("Pon tu ubicación en el mapa");
-                if (!isInManzanillo(lat, lng)) return toast.error("La entrega es solo en Manzanillo");
+                const parsedLink = parseGoogleMapsLink(mapsLink);
+                if (!parsedLink) return toast.error("Pega la liga de Google Maps de tu casa");
+                if (parsedLink.lat == null || parsedLink.lng == null) return toast.error("Esa liga no trae el punto. En Google Maps mantén pulsada tu casa, Comparte y copia el enlace.");
+                if (!isInManzanillo(parsedLink.lat, parsedLink.lng)) return toast.error("La entrega es solo en Manzanillo");
                 if (demo) {
                   setSent(true);
                   return;
@@ -183,7 +186,7 @@ export function RestaurantProfile({ place, preview = false, demo = false }: { pl
                   _restaurant_id: place.id,
                   _customer_name: name,
                   _customer_phone: phone,
-                  _dropoff_address: packDropoff(address, lat, lng),
+                  _dropoff_address: packDropoff(address || "Casa del cliente", parsedLink.lat, parsedLink.lng, parsedLink.url),
                   _items: chosen,
                 });
                 setSending(false);
@@ -200,28 +203,26 @@ export function RestaurantProfile({ place, preview = false, demo = false }: { pl
             >
               <input className="h-11 w-full rounded-xl border px-3" placeholder="Tu nombre" value={name} onChange={(event) => setName(event.target.value)} required />
               <input className="h-11 w-full rounded-xl border px-3" placeholder="WhatsApp, 10 dígitos" value={phone} onChange={(event) => setPhone(event.target.value.replace(/\D/g, "").slice(0, 10))} required />
-              <AddressSearch
-                value={address}
-                onChange={(next, nextLat, nextLng) => {
-                  setAddress(next);
-                  if (nextLat != null) setLat(nextLat);
-                  if (nextLng != null) setLng(nextLng);
+              <input className="h-11 w-full rounded-xl border px-3" placeholder="Calle y colonia" value={address} onChange={(event) => setAddress(event.target.value)} required />
+              <a className="block text-sm text-primary" href="https://www.google.com/maps/search/?api=1&query=Manzanillo%2C%20Colima" target="_blank" rel="noopener noreferrer">Abrir Google Maps</a>
+              <input
+                className="h-11 w-full rounded-xl border px-3"
+                placeholder="Pega la liga de tu casa"
+                value={mapsLink}
+                onChange={(event) => {
+                  const next = event.target.value;
+                  setMapsLink(next);
+                  const parsed = parseGoogleMapsLink(next);
+                  setLat(parsed?.lat ?? null);
+                  setLng(parsed?.lng ?? null);
                 }}
-                placeholder="Calle y colonia en Manzanillo"
+                required
               />
-              <MapView
-                height="220px"
-                pins={lat != null && lng != null ? [{ lat, lng, label: "Tu entrega" }] : []}
-                onMapClick={async (nextLat, nextLng) => {
-                  if (!isInManzanillo(nextLat, nextLng)) return toast.error("Ese punto está fuera de Manzanillo");
-                  setLat(nextLat);
-                  setLng(nextLng);
-                  const found = await reverseGeocode(nextLat, nextLng);
-                  if (found) setAddress(found);
-                }}
-              />
-              <p className="text-xs text-graphite">Toca el mapa para marcar tu casa. El mapa abre en Manzanillo.</p>
-              <Button type="submit" className="h-12 w-full" disabled={sending || foodTotal <= 0 || lat == null}>
+              <p className="text-xs text-graphite">En Google Maps mantén pulsada tu casa, toca Compartir y copia el enlace.</p>
+              {lat != null && lng != null && (
+                <a className="block text-sm text-primary" href={googleMapsPlaceUrl({ lat, lng }) ?? "#"} target="_blank" rel="noopener noreferrer">Ver el punto en Google Maps</a>
+              )}
+              <Button type="submit" className="h-12 w-full" disabled={sending || foodTotal <= 0 || !mapsLink.trim()}>
                 Enviar pedido {foodTotal > 0 ? formatMxn(foodTotal) : ""}
               </Button>
             </form>

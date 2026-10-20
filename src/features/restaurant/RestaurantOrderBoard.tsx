@@ -145,8 +145,13 @@ export function RestaurantOrderBoard({
         <MoneyLine label="Envío" amount={formatMxn(money.shipping)} />
         <MoneyLine label="Total" amount={formatMxn(money.total)} strong />
         <p className="mt-3 rounded-xl bg-sky-50 px-3 py-2 text-sm text-sky-900">
-          Pago en domicilio. La primera liga se manda cuando un repartidor acepte.
+          Pago en domicilio. La liga de la casa ya queda en el pedido.
         </p>
+        {googleMapsDirectionsUrl(dropoff) && (
+          <a href={googleMapsDirectionsUrl(dropoff) ?? "#"} target="_blank" rel="noopener noreferrer" className="mt-3 block rounded-xl border border-hairline px-3 py-2 text-sm text-primary">
+            Liga de la casa del cliente
+          </a>
+        )}
         {onCancel && (
           <div className="mt-3">
             <FlowButton variant="outline" onClick={onCancel}>Cancelar envío</FlowButton>
