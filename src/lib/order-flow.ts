@@ -126,12 +126,15 @@ export function courierPickupMessage(input: {
 export function customerEnRouteMessage(input: {
   dropoff: GeoPoint;
   money: OrderMoney;
+  trackingUrl?: string | null;
 }): string {
   const url = googleMapsDirectionsUrl(input.dropoff);
   return [
     "Tu comida ya va en camino.",
-    "Este es el enlace de Google Maps para seguir el recorrido a tu domicilio.",
-    url ?? "",
+    input.trackingUrl
+      ? `Sigue en vivo dónde va tu repartidor y su ruta: ${input.trackingUrl}`
+      : "Este es el enlace de Google Maps para seguir el recorrido a tu domicilio.",
+    input.trackingUrl ? "" : url ?? "",
     input.money.prepaid
       ? "Tu pedido ya está pagado. No pagas nada al repartidor."
       : `Total a pagar al repartidor: ${formatMxn(input.money.collect)}.`,
