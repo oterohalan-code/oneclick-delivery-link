@@ -10,8 +10,8 @@ interface MeshBackgroundProps {
 export function MeshBackground({ variant = "light", className = "" }: MeshBackgroundProps) {
   const bg =
     variant === "dark"
-      ? "bg-[radial-gradient(at_18%_22%,color-mix(in_srgb,#B8693A_35%,transparent),transparent_55%),radial-gradient(at_82%_18%,color-mix(in_srgb,#C47A4A_22%,transparent),transparent_60%),radial-gradient(at_50%_92%,#120F0D,transparent_70%)] bg-[#1A1614]"
-      : "bg-[radial-gradient(at_15%_18%,color-mix(in_srgb,#B8693A_22%,transparent),transparent_55%),radial-gradient(at_85%_22%,color-mix(in_srgb,#F5F2EB_80%,white),transparent_60%),radial-gradient(at_60%_88%,color-mix(in_srgb,#1A1614_5%,transparent),transparent_65%)] bg-[#F5F2EB]";
+      ? "bg-navy bg-[radial-gradient(at_20%_15%,color-mix(in_srgb,var(--ember)_22%,transparent),transparent_55%)]"
+      : "bg-background bg-[radial-gradient(at_15%_10%,color-mix(in_srgb,var(--ember)_10%,transparent),transparent_50%),radial-gradient(at_85%_20%,color-mix(in_srgb,var(--color-navy)_7%,transparent),transparent_55%)]";
   return (
     <div aria-hidden className={`pointer-events-none absolute inset-0 -z-10 overflow-hidden ${className}`}>
       <div className={`absolute inset-0 ${bg}`} />
