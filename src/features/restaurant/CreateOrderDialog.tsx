@@ -261,7 +261,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated, s
           <div className="rounded-xl alert-warning px-3 py-3 text-sm">
             <div className="text-xs uppercase tracking-wide text-amber-900">Modalidad de pago</div>
             <Select value={form.paymentMode} onValueChange={(v) => setForm({ ...form, paymentMode: v as PaymentMode })}>
-              <SelectTrigger className="mt-2 bg-white"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="mt-2 bg-card"><SelectValue /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="collect_on_delivery">Pago en domicilio</SelectItem>
                 <SelectItem value="prepaid_at_restaurant">Ya pagó en el restaurante</SelectItem>

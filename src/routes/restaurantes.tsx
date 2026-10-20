@@ -60,7 +60,7 @@ function DirectoryPage() {
           value={query}
           onChange={(event) => setQuery(event.target.value)}
           placeholder="Buscar por nombre o tipo de comida"
-          className="mt-6 h-12 w-full rounded-xl border border-hairline bg-white px-4"
+          className="mt-6 h-12 w-full rounded-xl border border-hairline bg-card px-4"
         />
         {!ready ? (
           <p className="mt-8 text-sm text-graphite">Cargando locales…</p>
@@ -71,7 +71,7 @@ function DirectoryPage() {
         ) : (
           <ul className="mt-6 grid gap-3 sm:grid-cols-2">
             {shown.map((place) => (
-              <li key={place.id} className="rounded-2xl border border-hairline bg-white p-4">
+              <li key={place.id} className="rounded-2xl border border-hairline bg-card p-4">
                 <h2 className="text-lg font-semibold">{place.name}</h2>
                 <p className="text-sm text-graphite">{place.category || "Restaurante"} · Manzanillo</p>
                 {place.address && <p className="mt-2 text-sm">{place.address}</p>}

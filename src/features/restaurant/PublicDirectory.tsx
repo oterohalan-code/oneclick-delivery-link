@@ -70,7 +70,7 @@ export function PublicDirectory({ selectedId }: { selectedId?: string }) {
                 <Link
                   to="/"
                   search={(previous) => ({ ...previous, local: place.id })}
-                  className="block overflow-hidden rounded-2xl border border-hairline bg-white"
+                  className="block overflow-hidden rounded-2xl border border-hairline bg-card"
                 >
                   <div className="h-40 bg-bone">
                     {photo && <img src={photo} alt="" className="h-full w-full object-cover" />}
@@ -113,7 +113,7 @@ export function RestaurantProfile({ place, preview = false, demo = false }: { pl
       ) : (
         <Link to="/" search={(previous) => ({ ...previous, local: undefined })} className="text-sm text-graphite">Volver a restaurantes</Link>
       )}
-      <div className="mt-3 overflow-hidden rounded-2xl border border-hairline bg-white">
+      <div className="mt-3 overflow-hidden rounded-2xl border border-hairline bg-card">
         <div className="h-48 bg-bone">
           {photo && <img src={photo} alt="" className="h-full w-full object-cover" />}
         </div>

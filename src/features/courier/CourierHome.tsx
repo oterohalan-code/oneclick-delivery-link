@@ -690,7 +690,7 @@ function ActiveOrderView({ order, restaurant, courier, onChange, onBack }: {
               value={pastedFirst}
               onChange={(event) => setPastedFirst(event.target.value)}
               placeholder="https://maps.google.com/..."
-              className="mt-1 h-11 w-full rounded-xl border border-hairline bg-white px-3"
+              className="mt-1 h-11 w-full rounded-xl border border-hairline bg-card px-3"
             />
           </label>
           <FlowButton onClick={() => persist({ action: "courier_first_saved", linkUrl: pastedFirst.trim() || undefined })}>Guardar primera liga</FlowButton>
@@ -732,7 +732,7 @@ function ActiveOrderView({ order, restaurant, courier, onChange, onBack }: {
               value={pastedSecond}
               onChange={(event) => setPastedSecond(event.target.value)}
               placeholder="https://maps.google.com/..."
-              className="mt-1 h-11 w-full rounded-xl border border-hairline bg-white px-3"
+              className="mt-1 h-11 w-full rounded-xl border border-hairline bg-card px-3"
             />
           </label>
           <FlowButton onClick={() => persist({ action: "courier_second_saved", linkUrl: pastedSecond.trim() || undefined })}>Guardar segunda liga</FlowButton>
@@ -752,7 +752,7 @@ function ActiveOrderView({ order, restaurant, courier, onChange, onBack }: {
               value={incident}
               onChange={(event) => setIncident(event.target.value)}
               maxLength={300}
-              className="mt-1 h-20 w-full rounded-xl border border-hairline bg-white px-3 py-2"
+              className="mt-1 h-20 w-full rounded-xl border border-hairline bg-card px-3 py-2"
               placeholder="Si algo falló, escríbelo aquí"
             />
           </label>
