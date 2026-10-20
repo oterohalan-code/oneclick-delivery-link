@@ -505,8 +505,6 @@ function ActiveOrderView({ order, restaurant, courier, onChange, onBack }: {
   const [deliveredFood, setDeliveredFood] = useState(!!shared.foodDeliveredAt);
   const [collected, setCollected] = useState(!!shared.cashCollectedAt);
   const [incident, setIncident] = useState(shared.incidentNote ?? "");
-  const [pastedFirst, setPastedFirst] = useState("");
-  const [pastedSecond, setPastedSecond] = useState("");
   const savedFirst = !!shared.courierFirstSavedAt;
   const savedSecond = !!shared.courierSecondSavedAt;
 
