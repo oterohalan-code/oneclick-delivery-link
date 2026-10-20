@@ -19,7 +19,7 @@ if (!prodHook) {
   prodHook = await stripe.webhookEndpoints.create({
     url: WEBHOOK_URL,
     enabled_events: events,
-    description: '1-Click Cancún (producción)',
+    description: '1-Click Manzanillo (producción)',
   });
   console.log(`✅ Webhook PROD creado: ${prodHook.id}`);
   console.log(`   🔑 SECRET: ${prodHook.secret}`);
@@ -34,7 +34,7 @@ if (!prevHook) {
   prevHook = await stripe.webhookEndpoints.create({
     url: PREVIEW_WEBHOOK_URL,
     enabled_events: events,
-    description: '1-Click Cancún (preview)',
+    description: '1-Click Manzanillo (preview)',
   });
   console.log(`\n✅ Webhook PREVIEW creado: ${prevHook.id}`);
   console.log(`   🔑 SECRET: ${prevHook.secret}`);
