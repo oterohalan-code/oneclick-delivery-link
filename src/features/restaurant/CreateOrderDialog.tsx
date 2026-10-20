@@ -16,6 +16,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useAuth } from "@/lib/auth-context";
 import type { PaymentMode } from "@/lib/order-money";
 import { formatMxn } from "@/lib/business";
+import { googleMapsPlaceUrl, parseGoogleMapsLink } from "@/lib/maps";
+import { isInManzanillo } from "@/components/MapView";
 import { StepHeading } from "@/components/order/FlowCard";
 
 const schema = z.object({
@@ -36,6 +38,7 @@ export type OrderSeed = {
   requestId?: string;
   lat?: number | null;
   lng?: number | null;
+  mapsUrl?: string | null;
 };
 
 export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated, seed }: {
@@ -48,6 +51,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated, s
     customer_name: "", customer_phone: "",
     dropoff_address: "", lat: null as number | null, lng: null as number | null,
     amount: "", paymentMode: "collect_on_delivery" as PaymentMode, notes: "",
+    mapsUrl: "",
   });
   const [loading, setLoading] = useState(false);
   const { session } = useAuth();
@@ -69,6 +73,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated, s
       amount: seed.amount,
       paymentMode: "collect_on_delivery",
       notes: seed.notes,
+      mapsUrl: seed.mapsUrl || googleMapsPlaceUrl({ lat: seed.lat, lng: seed.lng }) || "",
     });
     setStep(1);
   }, [open, seed]);
@@ -131,8 +136,17 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated, s
       toast.error(parsed.error.issues[0].message);
       return false;
     }
+    const parsedLink = parseGoogleMapsLink(form.mapsUrl);
+    if (!parsedLink) {
+      toast.error("Pega la liga de Google Maps del cliente");
+      return false;
+    }
     if (form.lat == null || form.lng == null) {
-      toast.error("Selecciona el destino en el mapa");
+      toast.error("Esa liga no trae el punto. Mantén pulsada la casa y copia el enlace.");
+      return false;
+    }
+    if (!isInManzanillo(form.lat, form.lng)) {
+      toast.error("La entrega es solo en Manzanillo");
       return false;
     }
     return true;
@@ -164,7 +178,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated, s
     setStep(1);
     toast.success("Pedido publicado. La liga al cliente se manda cuando el repartidor recoja.");
     onOpenChange(false);
-    setForm({ customer_name: "", customer_phone: "", dropoff_address: "", lat: null, lng: null, amount: "", paymentMode: "collect_on_delivery", notes: "" });
+    setForm({ customer_name: "", customer_phone: "", dropoff_address: "", lat: null, lng: null, amount: "", paymentMode: "collect_on_delivery", notes: "", mapsUrl: "" });
 
     try {
       const notice = await notifyCouriersFn({
@@ -181,7 +195,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated, s
 
   const resetAndClose = () => {
     setStep(1);
-    setForm({ customer_name: "", customer_phone: "", dropoff_address: "", lat: null, lng: null, amount: "", paymentMode: "collect_on_delivery", notes: "" });
+    setForm({ customer_name: "", customer_phone: "", dropoff_address: "", lat: null, lng: null, amount: "", paymentMode: "collect_on_delivery", notes: "", mapsUrl: "" });
     onOpenChange(false);
   };
 
@@ -232,7 +246,27 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated, s
               value={form.dropoff_address}
               onChange={(a, lat, lng) => setForm({ ...form, dropoff_address: a, lat: lat ?? form.lat, lng: lng ?? form.lng })}
             />
-            <p className="text-xs text-muted-foreground mt-1">O toca el mapa para poner el pin del cliente.</p>
+            <Label className="mt-3 block">Liga de Google Maps del cliente</Label>
+            <Input
+              className="mt-1"
+              placeholder="https://maps.app.goo.gl/..."
+              value={form.mapsUrl}
+              onChange={(e) => {
+                const mapsUrl = e.target.value;
+                const parsed = parseGoogleMapsLink(mapsUrl);
+                setForm({
+                  ...form,
+                  mapsUrl,
+                  lat: parsed?.lat ?? form.lat,
+                  lng: parsed?.lng ?? form.lng,
+                  dropoff_address: form.dropoff_address || "Casa del cliente",
+                });
+              }}
+            />
+            <p className="text-xs text-muted-foreground mt-1">Pégala al crear el pedido. En Google Maps: mantener pulsada la casa, Compartir, copiar enlace.</p>
+            {form.lat != null && form.lng != null && (
+              <a className="mt-1 block text-sm text-primary" href={googleMapsPlaceUrl({ lat: form.lat, lng: form.lng }) ?? "#"} target="_blank" rel="noopener noreferrer">Abrir liga de la casa</a>
+            )}
           </div>
           <div className="h-48">
             <MapView pins={pins} showRoute onMapClick={handleMapClick} onRouteInfo={handleRouteInfo} height="100%" />

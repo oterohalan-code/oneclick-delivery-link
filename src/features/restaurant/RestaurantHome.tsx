@@ -369,6 +369,9 @@ export function RestaurantHome() {
             <Card key={request.id} className="p-4">
               <div className="font-medium">{request.customer_name} · {request.customer_phone}</div>
               <p className="text-sm text-graphite">{unpackDropoff(request.dropoff_address).address}</p>
+              {unpackDropoff(request.dropoff_address).mapsUrl && (
+                <a className="mt-1 block text-sm text-primary" href={unpackDropoff(request.dropoff_address).mapsUrl ?? "#"} target="_blank" rel="noopener noreferrer">Liga de la casa</a>
+              )}
               <p className="mt-1 text-sm">{formatMxn(Number(request.food_total))} en comida</p>
               <Button
                 className="mt-3 h-11 w-full"
@@ -385,6 +388,7 @@ export function RestaurantHome() {
                     requestId: request.id,
                     lat: dropoff.lat,
                     lng: dropoff.lng,
+                    mapsUrl: dropoff.mapsUrl,
                   });
                   setOpen(true);
                 }}

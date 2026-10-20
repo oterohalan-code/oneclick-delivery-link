@@ -128,18 +128,25 @@ export async function compressImage(file: File): Promise<string> {
   return jpegFromBlob(blob);
 }
 
-export function packDropoff(address: string, lat: number, lng: number): string {
-  const clean = address.replace(/\s*·\s*-?\d+\.\d+,-?\d+\.\d+\s*$/, "").trim();
-  return `${clean} · ${lat.toFixed(5)},${lng.toFixed(5)}`.slice(0, 300);
+export function packDropoff(address: string, lat: number | null, lng: number | null, mapsUrl?: string | null): string {
+  const clean = address.replace(/\s*·\s*.+$/, "").trim() || "Casa del cliente";
+  const parts = [clean];
+  if (lat != null && lng != null) parts.push(`${lat.toFixed(5)},${lng.toFixed(5)}`);
+  if (mapsUrl) parts.push(mapsUrl);
+  return parts.join(" · ").slice(0, 900);
 }
 
-export function unpackDropoff(value: string): { address: string; lat: number | null; lng: number | null } {
-  const match = value.match(/·\s*(-?\d+\.\d+),(-?\d+\.\d+)\s*$/);
-  if (!match || match.index == null) return { address: value, lat: null, lng: null };
+export function unpackDropoff(value: string): { address: string; lat: number | null; lng: number | null; mapsUrl: string | null } {
+  const urlMatch = value.match(/https:\/\/\S+/);
+  const mapsUrl = urlMatch?.[0] ?? null;
+  const withoutUrl = (mapsUrl ? value.replace(mapsUrl, "") : value).replace(/\s*·\s*$/, "").trim();
+  const match = withoutUrl.match(/·\s*(-?\d+\.\d+),(-?\d+\.\d+)\s*$/);
+  if (!match || match.index == null) return { address: withoutUrl, lat: null, lng: null, mapsUrl };
   return {
-    address: value.slice(0, match.index).trim(),
+    address: withoutUrl.slice(0, match.index).trim(),
     lat: Number(match[1]),
     lng: Number(match[2]),
+    mapsUrl,
   };
 }
 
