@@ -92,7 +92,6 @@ export function RestaurantMenuEditor() {
     if (!row || !user) return;
     if (!name.trim()) return toast.error("Escribe el nombre del negocio");
     if (!address.trim()) return toast.error("Escribe la dirección del negocio");
-    if (!phone.trim()) return toast.error("Escribe el teléfono del negocio");
     const clean = menu.filter((item) => item.name.trim());
     const link = mapsUrl.trim();
     const parsedLink = link ? parseGoogleMapsLink(link) : null;
