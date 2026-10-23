@@ -18,6 +18,8 @@ Verification: authenticated owner saved Taquería El Güero and reloaded its per
 Removed Cancun addresses, coordinates and business Maps link; retained cancelled order history, accounts, menus and memberships. Owner must supply actual Manzanillo address. Courier browser has no Cancun content but lacks active membership in the connected account; cancellation independently verified in database.
 
 # Resolve order locations
-- [ ] Save confirmed Manzanillo pickup coordinates for Taquería El Güero.
-- [ ] Resolve shared Google Maps links in customer orders and the owner editor; prevent stale coordinates and quotes.
-- [ ] Explain missing pickup locations and route failures; verify quote and payment displays without publishing a real delivery.
+- [x] Save confirmed Manzanillo pickup coordinates for Taquería El Güero.
+- [x] Resolve shared Google Maps links in customer orders and the owner editor; prevent stale coordinates and quotes.
+- [x] Explain missing pickup locations and route failures; verify quote and payment displays without publishing a real delivery.
+
+Verification: confirmed saved pickup coordinates; five link-parser tests passed; build OK. Authenticated owner reviewed an existing prepaid customer request: shipping $48, restaurant payment notice $48, locked customer payment mode, request button enabled, no runtime errors. Did not publish a delivery or charge anyone. Live Google short-link resolution remains unverified in the sandbox and must be checked on the authorized deployed origin.
