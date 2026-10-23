@@ -55,18 +55,21 @@ export function MapView({ pins = [], showRoute, center, zoom = 13, height = "320
   showRouteRef.current = showRoute;
   const zoomRef = useRef(zoom);
   zoomRef.current = zoom;
+  const routeAbortRef = useRef<AbortController | null>(null);
 
   function renderPins() {
     const L = LRef.current;
     if (!L || !mapRef.current || !layerRef.current) return;
+    routeAbortRef.current?.abort();
     layerRef.current.clearLayers();
     const valid = pinsRef.current.filter((p) => Number.isFinite(p.lat) && Number.isFinite(p.lng));
     valid.forEach((p) => {
       const m = L.marker([p.lat, p.lng]).bindPopup(p.label ?? "");
-      layerRef.current!.addLayer(m);
+      layerRef.current?.addLayer(m);
     });
 
     const controller = new AbortController();
+    routeAbortRef.current = controller;
 
     if (showRouteRef.current && valid.length >= 2) {
       const straight = L.polyline(valid.map((p) => [p.lat, p.lng]) as [number, number][], {
@@ -76,7 +79,7 @@ export function MapView({ pins = [], showRoute, center, zoom = 13, height = "320
 
       fetchRoute({ lat: valid[0].lat, lng: valid[0].lng }, { lat: valid[1].lat, lng: valid[1].lng }, controller.signal)
         .then((route) => {
-          if (!mapRef.current || !layerRef.current || !LRef.current) return;
+          if (controller.signal.aborted || !mapRef.current || !layerRef.current || !LRef.current) return;
           if (!route) { onRouteInfoRef.current?.(null); return; }
           layerRef.current.removeLayer(straight);
           const line = LRef.current.polyline(route.coords, { color: "#22c55e", weight: 5, opacity: 0.9 });
@@ -85,7 +88,7 @@ export function MapView({ pins = [], showRoute, center, zoom = 13, height = "320
           mapRef.current.fitBounds(bounds, { padding: [40, 40] });
           onRouteInfoRef.current?.({ distanceKm: route.distanceKm, durationMin: route.durationMin });
         })
-        .catch(() => onRouteInfoRef.current?.(null));
+        .catch(() => { if (!controller.signal.aborted) onRouteInfoRef.current?.(null); });
     } else if (showRouteRef.current) {
       onRouteInfoRef.current?.(null);
     }
@@ -131,6 +134,7 @@ export function MapView({ pins = [], showRoute, center, zoom = 13, height = "320
 
     return () => {
       cancelled = true;
+      routeAbortRef.current?.abort();
       ro?.disconnect();
       try {
         mapRef.current?.off();

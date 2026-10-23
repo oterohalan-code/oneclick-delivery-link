@@ -8,6 +8,9 @@ import { toast } from "sonner";
 import { compressImage, parseMenu, publicMediaUrl, type MenuItem, type PublicRestaurant } from "@/lib/restaurant-media";
 import { RestaurantProfile } from "./PublicDirectory";
 import { parseGoogleMapsLink } from "@/lib/maps";
+import { useServerFn } from "@tanstack/react-start";
+import { resolveGoogleMapsLink } from "@/lib/rpc/maps.functions";
+import { isInManzanillo } from "@/components/MapView";
 
 type RestaurantRow = {
   id: string;
@@ -24,6 +27,7 @@ type RestaurantRow = {
 
 export function RestaurantMenuEditor() {
   const { user } = useAuth();
+  const resolveLink = useServerFn(resolveGoogleMapsLink);
   const [row, setRow] = useState<RestaurantRow | null>(null);
   const [name, setName] = useState("");
   const [address, setAddress] = useState("");
@@ -94,15 +98,23 @@ export function RestaurantMenuEditor() {
     if (!address.trim()) return toast.error("Escribe la dirección del negocio");
     const clean = menu.filter((item) => item.name.trim());
     const link = mapsUrl.trim();
-    const parsedLink = link ? parseGoogleMapsLink(link) : null;
+    let parsedLink = link ? parseGoogleMapsLink(link) : null;
     if (link && !parsedLink) return toast.error("La liga de Google Maps del negocio no es válida");
     setBusy(true);
+    try {
+    if (link && (parsedLink?.lat == null || parsedLink.lng == null)) {
+      const result = await resolveLink({ data: { url: link } });
+      if (!result.ok) return toast.error(result.message);
+      parsedLink = result.point;
+    }
+    if (parsedLink?.lat != null && parsedLink.lng != null && !isInManzanillo(parsedLink.lat, parsedLink.lng)) return toast.error("Tu negocio debe estar en Manzanillo");
     const { data, error } = await supabase.from("restaurants").update({
       name: name.trim(),
       address: address.trim(),
       phone: phone.trim(),
       maps_url: link || null,
-      ...(parsedLink?.lat != null && parsedLink?.lng != null ? { lat: parsedLink.lat, lng: parsedLink.lng } : {}),
+      lat: parsedLink?.lat ?? null,
+      lng: parsedLink?.lng ?? null,
       hours: hours.trim() || null,
       category,
       menu: clean as never,
@@ -112,6 +124,9 @@ export function RestaurantMenuEditor() {
     if (!data) return toast.error("No se pudieron guardar los datos del negocio");
     await load();
     toast.success("Datos del negocio y menú guardados");
+    } catch {
+      toast.error("No se pudo guardar la ubicación. Intenta otra vez.");
+    } finally { setBusy(false); }
   };
 
   if (!row) return null;
