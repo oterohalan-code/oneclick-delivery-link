@@ -13,13 +13,13 @@ const InputSchema = z.object({
 
 const CreateOrderSchema = z.object({
   dropoff_address: z.string().trim().min(5).max(300),
-  dropoff_lat: z.number(),
-  dropoff_lng: z.number(),
+  dropoff_lat: z.number().min(-90).max(90),
+  dropoff_lng: z.number().min(-180).max(180),
   customer_name: z.string().trim().min(2).max(80),
   customer_phone: z.string().regex(/^\d{10}$/),
   foodMxn: z.number().min(0).max(100000),
   shippingMxn: z.number().min(0).max(100000),
-  distanceKm: z.number().nullable(),
+  distanceKm: z.number().finite().positive().nullable(),
   notes: z.string().trim().max(500).optional(),
   paymentMode: z.enum(["prepaid_at_restaurant", "collect_on_delivery"]),
 });
@@ -39,6 +39,12 @@ export const createRestaurantOrder = createServerFn({ method: "POST" })
       .eq("user_id", userId)
       .maybeSingle();
     if (!rest) return { ok: false as const, message: "Restaurante no encontrado." };
+    if (rest.lat == null || rest.lng == null) {
+      return { ok: false as const, message: "Guarda el punto de recogida del negocio antes de solicitar repartidor." };
+    }
+    if (data.distanceKm == null || data.shippingMxn <= 0) {
+      return { ok: false as const, message: "Calcula la ruta y el envío antes de solicitar repartidor." };
+    }
 
     const money = computeOrderMoney({
       mode: data.paymentMode as PaymentMode,

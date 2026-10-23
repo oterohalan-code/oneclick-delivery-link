@@ -16,3 +16,8 @@ Verification: authenticated owner saved Taquería El Güero and reloaded its per
 - [x] Verify cancellation and absence of Cancun operational locations.
 
 Removed Cancun addresses, coordinates and business Maps link; retained cancelled order history, accounts, menus and memberships. Owner must supply actual Manzanillo address. Courier browser has no Cancun content but lacks active membership in the connected account; cancellation independently verified in database.
+
+# Resolve order locations
+- [ ] Save confirmed Manzanillo pickup coordinates for Taquería El Güero.
+- [ ] Resolve shared Google Maps links in customer orders and the owner editor; prevent stale coordinates and quotes.
+- [ ] Explain missing pickup locations and route failures; verify quote and payment displays without publishing a real delivery.

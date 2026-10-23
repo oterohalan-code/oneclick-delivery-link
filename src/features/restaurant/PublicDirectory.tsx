@@ -10,6 +10,8 @@ import { formatMxn } from "@/lib/business";
 import { packDropoff, parseMenu, publicMediaUrl, whatsappOrderUrl, type PublicRestaurant } from "@/lib/restaurant-media";
 import { googleMapsPlaceUrl, parseGoogleMapsLink } from "@/lib/maps";
 import { isInManzanillo } from "@/components/MapView";
+import { useServerFn } from "@tanstack/react-start";
+import { resolveGoogleMapsLink } from "@/lib/rpc/maps.functions";
 
 export function PublicDirectory({ selectedId }: { selectedId?: string }) {
   const [places, setPlaces] = useState<PublicRestaurant[]>([]);
@@ -105,6 +107,7 @@ export function PublicDirectory({ selectedId }: { selectedId?: string }) {
 }
 
 export function RestaurantProfile({ place, preview = false, demo = false }: { place: PublicRestaurant; preview?: boolean; demo?: boolean }) {
+  const resolveLink = useServerFn(resolveGoogleMapsLink);
   const [qty, setQty] = useState<Record<string, number>>({});
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
@@ -184,10 +187,20 @@ export function RestaurantProfile({ place, preview = false, demo = false }: { pl
                 event.preventDefault();
                 if (!chosen.length) return toast.error("Elige al menos un platillo");
                 if (!/^\d{10}$/.test(phone)) return toast.error("Teléfono de 10 dígitos");
-                const parsedLink = parseGoogleMapsLink(mapsLink);
+                let parsedLink = parseGoogleMapsLink(mapsLink);
                 if (!parsedLink) return toast.error("Pega la liga de Google Maps de tu casa");
-                if (parsedLink.lat == null || parsedLink.lng == null) return toast.error("Esa liga no trae el punto. En Google Maps mantén pulsada tu casa, Comparte y copia el enlace.");
+                if (sending) return;
+                setSending(true);
+                try {
+                if (parsedLink.lat == null || parsedLink.lng == null) {
+                  const result = await resolveLink({ data: { url: mapsLink } });
+                  if (!result.ok) return toast.error(result.message);
+                  parsedLink = result.point;
+                }
+                if (parsedLink.lat == null || parsedLink.lng == null) return toast.error("Comparte el punto exacto de tu casa.");
                 if (!isInManzanillo(parsedLink.lat, parsedLink.lng)) return toast.error("La entrega es solo en Manzanillo");
+                setLat(parsedLink.lat);
+                setLng(parsedLink.lng);
                 if (demo) {
                   setSent(true);
                   return;
@@ -211,6 +224,9 @@ export function RestaurantProfile({ place, preview = false, demo = false }: { pl
                   });
                 }
                 setSent(true);
+                } catch {
+                  toast.error("No se pudo enviar el pedido. Intenta otra vez.");
+                } finally { setSending(false); }
               }}
             >
               <input className="h-11 w-full rounded-xl border px-3" placeholder="Tu nombre" value={name} onChange={(event) => setName(event.target.value)} required />
@@ -221,6 +237,7 @@ export function RestaurantProfile({ place, preview = false, demo = false }: { pl
                 className="h-11 w-full rounded-xl border px-3"
                 placeholder="Pega la liga de tu casa"
                 value={mapsLink}
+                disabled={sending}
                 onChange={(event) => {
                   const next = event.target.value;
                   setMapsLink(next);
@@ -247,7 +264,7 @@ export function RestaurantProfile({ place, preview = false, demo = false }: { pl
                 ))}
               </fieldset>
               <Button type="submit" className="h-12 w-full" disabled={sending || foodTotal <= 0 || !mapsLink.trim()}>
-                Enviar pedido {foodTotal > 0 ? formatMxn(foodTotal) : ""}
+                {sending ? "Validando y enviando…" : `Enviar pedido ${foodTotal > 0 ? formatMxn(foodTotal) : ""}`}
               </Button>
             </form>
           )}

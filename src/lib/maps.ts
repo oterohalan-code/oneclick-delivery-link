@@ -23,13 +23,32 @@ export function googleMapsPlaceUrl(point: GeoPoint): string | null {
 /** A pasted Google Maps link. Short links may not include the pin. */
 export function parseGoogleMapsLink(raw: string): { url: string; lat: number | null; lng: number | null } | null {
   const url = raw.trim();
-  if (!/^https:\/\/(?:(?:www\.)?google\.[a-z.]+\/maps|maps\.google\.[a-z.]+|maps\.app\.goo\.gl|goo\.gl\/maps)\b/i.test(url)) {
-    return null;
-  }
-  const at = url.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
-  const query = url.match(/[?&](?:q|query|destination|ll|daddr)=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
-  const hit = at ?? query;
-  return { url, lat: hit ? Number(hit[1]) : null, lng: hit ? Number(hit[2]) : null };
+  if (!isAllowedGoogleMapsUrl(url)) return null;
+  let decoded: string;
+  try { decoded = decodeURIComponent(url).replace(/\+/g, " "); } catch { return null; }
+  // A place's data pin is more precise than the map viewport (@lat,lng).
+  const place = decoded.match(/!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/);
+  const query = decoded.match(/[?&](?:q|query|destination|ll|daddr)=\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/);
+  const search = decoded.match(/\/maps\/(?:search|place)\/\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)/);
+  const at = decoded.match(/@(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)/);
+  const hit = place ?? query ?? search ?? at;
+  if (!hit) return { url, lat: null, lng: null };
+  const lat = Number(hit[1]);
+  const lng = Number(hit[2]);
+  if (Math.abs(lat) > 90 || Math.abs(lng) > 180) return null;
+  return { url, lat, lng };
+}
+
+/** Exact hosts and paths only: never let a shared link become an arbitrary fetch. */
+export function isAllowedGoogleMapsUrl(raw: string): boolean {
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== "https:" || url.username || url.password || url.port || raw.length > 4096) return false;
+    if (url.hostname === "maps.app.goo.gl") return /^\/[A-Za-z0-9_-]+\/?$/.test(url.pathname);
+    if (url.hostname === "goo.gl") return /^\/maps\/[A-Za-z0-9_-]+\/?$/.test(url.pathname);
+    if (["google.com", "www.google.com", "google.com.mx", "www.google.com.mx"].includes(url.hostname)) return /^\/maps(?:\/|$)/.test(url.pathname);
+    return ["maps.google.com", "maps.google.com.mx"].includes(url.hostname) && /^\/(?:maps(?:\/|$))?$/.test(url.pathname);
+  } catch { return false; }
 }
 
 /** Driving directions. Omitting origin lets Google Maps use the device location. */

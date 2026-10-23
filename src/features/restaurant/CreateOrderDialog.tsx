@@ -19,6 +19,7 @@ import { formatMxn } from "@/lib/business";
 import { googleMapsPlaceUrl, parseGoogleMapsLink } from "@/lib/maps";
 import { isInManzanillo } from "@/components/MapView";
 import { StepHeading } from "@/components/order/FlowCard";
+import { resolveGoogleMapsLink } from "@/lib/rpc/maps.functions";
 
 const schema = z.object({
   customer_name: z.string().trim().min(2, "Nombre del cliente requerido").max(80),
@@ -59,6 +60,8 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated, s
   const { session } = useAuth();
   const createOrderFn = useServerFn(createRestaurantOrder);
   const notifyCouriersFn = useServerFn(notifyCouriersNewOrder);
+  const resolveLink = useServerFn(resolveGoogleMapsLink);
+  const [resolving, setResolving] = useState(false);
   const [routeInfo, setRouteInfo] = useState<{ distanceKm: number; durationMin: number } | null>(null);
   const [routeLoading, setRouteLoading] = useState(false);
   const [addressLoading, setAddressLoading] = useState(false);
@@ -100,6 +103,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated, s
 
   // Reset route info & mark loading whenever destination changes
   useEffect(() => {
+    setRouteInfo(null);
     if (restaurant.lat == null || restaurant.lng == null || form.lat == null || form.lng == null) {
       setRouteInfo(null);
       setRouteLoading(false);
@@ -125,7 +129,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated, s
   const foodMxn = Number(form.amount || 0);
   const clientTotal = foodMxn + shippingFee;
 
-  const readyForReview = () => {
+  const readyForReview = async () => {
     const parsed = schema.safeParse({
       customer_name: form.customer_name,
       customer_phone: form.customer_phone,
@@ -144,8 +148,19 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated, s
       return false;
     }
     if (form.lat == null || form.lng == null) {
-      toast.error("Esa liga no trae el punto. Mantén pulsada la casa y copia el enlace.");
-      return false;
+      setResolving(true);
+      try {
+        const result = await resolveLink({ data: { url: form.mapsUrl } });
+        if (!result.ok) { toast.error(result.message); return false; }
+        if (result.point.lat == null || result.point.lng == null || !isInManzanillo(result.point.lat, result.point.lng)) {
+          toast.error("La entrega es solo en Manzanillo"); return false;
+        }
+        setRouteInfo(null);
+        setForm((current) => ({ ...current, lat: result.point.lat, lng: result.point.lng }));
+        return true;
+      } catch {
+        toast.error("No se pudo consultar la ubicación. Intenta otra vez."); return false;
+      } finally { setResolving(false); }
     }
     if (!isInManzanillo(form.lat, form.lng)) {
       toast.error("La entrega es solo en Manzanillo");
@@ -156,10 +171,12 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated, s
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!readyForReview() || form.lat == null || form.lng == null) return;
+    if (loading || routeLoading || distanceKm == null || restaurant.lat == null || restaurant.lng == null) return;
+    if (!(await readyForReview()) || form.lat == null || form.lng == null) return;
     const token = session?.access_token;
     if (!token) return toast.error("Sesión expirada.");
     setLoading(true);
+    try {
     const result = await createOrderFn({
       headers: { Authorization: `Bearer ${token}` },
       data: {
@@ -193,6 +210,9 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated, s
     }
 
     onCreated();
+    } catch {
+      toast.error("No se pudo publicar el pedido. Intenta otra vez.");
+    } finally { setLoading(false); }
   };
 
   const resetAndClose = () => {
@@ -210,9 +230,9 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated, s
         {step === 1 ? (
         <form
           className="space-y-4"
-          onSubmit={(e) => {
+          onSubmit={async (e) => {
             e.preventDefault();
-            if (readyForReview()) setStep(2);
+            if (!resolving && await readyForReview()) setStep(2);
           }}
         >
           <StepHeading step="01" title="Datos del pedido" subtitle="Captura al cliente, la dirección y cuánto cuesta la comida." />
@@ -253,14 +273,15 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated, s
               className="mt-1"
               placeholder="https://maps.app.goo.gl/..."
               value={form.mapsUrl}
+              disabled={resolving}
               onChange={(e) => {
                 const mapsUrl = e.target.value;
                 const parsed = parseGoogleMapsLink(mapsUrl);
                 setForm({
                   ...form,
                   mapsUrl,
-                  lat: parsed?.lat ?? form.lat,
-                  lng: parsed?.lng ?? form.lng,
+                  lat: parsed?.lat ?? null,
+                  lng: parsed?.lng ?? null,
                   dropoff_address: form.dropoff_address || "Casa del cliente",
                 });
               }}
@@ -286,7 +307,7 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated, s
             <Label>Notas</Label>
             <Textarea rows={2} value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
           </div>
-          <Button type="submit" className="h-12 w-full">Continuar</Button>
+          <Button type="submit" disabled={resolving} className="h-12 w-full">{resolving ? "Validando ubicación…" : "Continuar"}</Button>
         </form>
         ) : (
         <form onSubmit={submit} className="space-y-4">
@@ -324,13 +345,19 @@ export function CreateOrderDialog({ open, onOpenChange, restaurant, onCreated, s
           </div>
           {form.paymentMode === "prepaid_at_restaurant" && (
             <p className="rounded-xl alert-info px-3 py-3 text-sm">
-              El cliente te paga la comida a ti. Al recoger, tú le pagas {formatMxn(shippingFee)} de envío al repartidor. El repartidor no cobra nada en el domicilio.
+              El cliente te paga la comida a ti. Al recoger, tú le pagas {quote && !routeLoading ? formatMxn(shippingFee) : "el envío (pendiente de calcular)"} de envío al repartidor. El repartidor no cobra nada en el domicilio.
             </p>
           )}
           {form.paymentMode === "collect_on_delivery" && (
             <p className="rounded-xl alert-info px-3 py-3 text-sm">
-              Recibes {formatMxn(foodMxn)} en efectivo del repartidor. Él cobra {formatMxn(clientTotal)} al cliente.
+              Recibes {formatMxn(foodMxn)} en efectivo del repartidor. Él cobra {quote && !routeLoading ? formatMxn(clientTotal) : "comida más envío (pendiente de calcular)"} al cliente.
             </p>
+          )}
+          {(restaurant.lat == null || restaurant.lng == null) && (
+            <p role="alert" className="rounded-lg alert-warning px-3 py-3 text-sm">Falta el punto de recogida del restaurante. Guarda la liga de tu negocio en «Tu página pública» y vuelve a abrir este pedido; los datos del cliente se conservan.</p>
+          )}
+          {restaurant.lat != null && restaurant.lng != null && !routeLoading && distanceKm == null && (
+            <p role="alert" className="rounded-lg alert-warning px-3 py-3 text-sm">No se pudo calcular la ruta y el envío. Vuelve a los datos y verifica el punto de entrega antes de solicitar al repartidor.</p>
           )}
           <Button type="button" variant="outline" className="h-12 w-full" onClick={() => setStep(1)}>Volver</Button>
           <Button type="submit" disabled={loading || routeLoading || distanceKm == null} className="h-12 w-full">
